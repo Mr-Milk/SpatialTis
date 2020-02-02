@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import pickle
 from collections import Counter
 
 from anndata import AnnData
@@ -11,31 +12,29 @@ def type_counter(
         group_by: list = None,
         selected_type: list = None
 ) -> pd.DataFrame:
+
     sindex = group_by.copy()
-
     sindex.append(type_col)
-
     sdata = data.obs[sindex]
 
-    groups = np.unique(sdata[group_by].to_numpy(dtype=str), axis=0)
-
+    groups = sdata.groupby(group_by)
     types = np.unique(sdata[type_col].to_numpy(dtype=str))
 
     if selected_type is not None:
         types = [t for t in selected_type if t in types]
 
-    multicol = pd.MultiIndex.from_tuple(groups, names=group_by)
+    matrix = list()
+    mindex = list()
+    for n, g in groups:
+        c = Counter(g.leiden)
+        matrix.append([c[t] for t in types])
+        mindex.append(n)
 
-    all_results = pd.DataFrame(columns=multicol, index=types)
-    all_results.index.name = 'type'
+    multiIndex = pd.MultiIndex.from_tuples(mindex)
+    all_results = pd.DataFrame(dict(zip(types, np.array(matrix).T)), index=multiIndex)
+    all_results.index.set_names(group_by, inplace=True)
 
-    for label in all_results.columns:
-        query = ' & '.join([f'{x} == "{y}"' for (x, y) in zip(group_by, label)])
-        result = sdata.query(query)[type_col]
-        c = Counter(result)
-        all_results[label] = [c[t] for t in types]
-
-    return all_results
+    return all_results  # obs as index, var as columns
 
 
 def cell_components(
@@ -43,9 +42,7 @@ def cell_components(
         data: AnnData,
         type_col: str,
         group_by: list,
-        count_base: str,
         selected_type: list = None,
-        metrics: str = 'percentage',
         export_key: str = 'cell_components'
 
 ):
@@ -53,9 +50,11 @@ def cell_components(
 
     container = {'parameters': {'group_by': group_by,
                                 'counted_column': type_col,
-                                'types': all_results.index,
+                                'types': list(all_results.columns),
                                 },
-                 'data': all_results}
+                 'data': dict(df=str(all_results.to_dict()),
+                              iname=all_results.index.names,
+                              columns=list(all_results.columns))}
 
     # write to anndata object
     data.uns[export_key] = container
