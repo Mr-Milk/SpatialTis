@@ -4,10 +4,11 @@ from bokeh.io import output_notebook
 from .palette import colorcycle, get_colors, view_palette
 from ._bar_plot import stacked_bar
 from ._cell_map import cell_map
+from ._violin_plot import violin_plot
 from .wrapper import cell_components
 
 
-if WORKING_ENV == 'Jupyter':
+if WORKING_ENV == 'jupyter':
     output_notebook(hide_banner=True)
-elif WORKING_ENV == 'Zeppelin':
-    output_notebook(hide_banner=True, notebook_type='Zepplin')
+elif WORKING_ENV == 'zeppelin':
+    output_notebook(hide_banner=True, notebook_type='zepplin')

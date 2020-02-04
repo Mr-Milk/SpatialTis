@@ -1,11 +1,11 @@
 """
 Setting Global config for whole processing level
 """
-from typing import Optional
+from typing import Optional, Sequence, Union
 
 # can be override in plotting function
-# ['Jupyter', 'Zepplin', None]
-WORKING_ENV: Optional[str] = 'Jupyter'
+# ['jupyter', 'zepplin', None]
+WORKING_ENV: Optional[str] = 'jupyter'
 
 """
 If working in Jupyter Lab/Hub, please install the following dependencies
@@ -21,7 +21,7 @@ If working with Zeppelin, please install `bkzep` (Only PyPI)
 
 # Which file format to save across spatialTis
 # ['png', 'svg', 'html', None]
-SAVE_FORMAT: Optional[str] = None
+SAVE_FORMAT: Union[str, Sequence[str], None] = None
 """
 Supported format:
 Static file: PNG, SVG,

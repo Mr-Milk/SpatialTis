@@ -1,13 +1,11 @@
-from collections import OrderedDict
 from typing import Sequence, Union, Optional
 
-import numpy as np
 import pandas as pd
 from bokeh.plotting import figure, show
 from bokeh.models import ColumnDataSource, FactorRange, Legend
 from bokeh.io import output_notebook, export_svgs, save
 
-from spatialtis.plotting.palette import get_colors, colorcycle
+from spatialtis.plotting.palette import get_colors
 from spatialtis.config import WORKING_ENV
 
 
@@ -28,15 +26,18 @@ def stacked_bar(
         df: pd.DataFrame,
         group_by: Sequence[str],
         percentage: bool = True,
-        size: Union[Sequence[int], str] = None,
+        direction: Union[str] = 'vertical',
+        display: bool = True,
         title: Optional[str] = None,
-        notebook: Optional[str] = None,
+        size: Optional[Sequence[int]] = None,
         save_svg: Optional[str] = None,
         save_html: Optional[str] = None,
-        bar_direction: Union[str] = 'horizontal',
-        color: Optional[str] = None,
-        palette: Optional[str] = None,
+        palette: Union[Sequence[str], str, None] = None,
+
 ):
+    if direction not in ['vertical', 'horizontal']:
+        raise ValueError(f"Unrecognized direction '{direction}'")
+
     gl = len(group_by)
 
     if gl > 3:
@@ -59,34 +60,28 @@ def stacked_bar(
         tools='save,hover',
         toolbar_location='above',
         tooltips='$name @$name%' if percentage else '$name @$name',
+        title=title
     )
 
     if size is None:
-        if bar_direction == 'vertical':
+        if direction == 'vertical':
             figure_config['plot_height'] = 400
-            figure_config['plot_width'] = 400 + (bar_count - 8) * 50 if (bar_count > 8) else 400  # auto-adjust figure
-        elif bar_direction == 'horizontal':
+        elif direction == 'horizontal':
             figure_config['plot_width'] = 400
-            figure_config['plot_height'] = 400 + (bar_count - 8) * 50 if (bar_count > 8) else 400  # auto-adjust figure
     else:
         figure_config['plot_height'] = size[0]
         figure_config['plot_width'] = size[1]
 
-    if title is not None:
-        figure_config['title'] = title
-
-    # config plot
-    if (color is None) & (palette is None):
-        colors = get_colors(colorcycle('Spectral', 'Category20'), types_count)
-    elif color is not None:
-        colors = color
-    else:
-        colors = get_colors(colorcycle(palette), types_count)
+    # set colors
+    default_palette = ['Spectral', 'Category20']
+    if palette is None:
+        palette = default_palette
+    colors = get_colors(types_count, palette)
 
     franger = FactorRange(*factors, group_padding=0, factor_padding=-0.45, subgroup_padding=-0.35)
-    if bar_direction == 'vertical':
+    if direction == 'vertical':
         figure_config['x_range'] = factors if gl == 1 else franger
-    elif bar_direction == 'horizontal':
+    elif direction == 'horizontal':
         figure_config['y_range'] = factors if gl == 1 else franger
 
     # do the plotting
@@ -95,12 +90,12 @@ def stacked_bar(
 
     # some beautify setting
 
-    if bar_direction == 'vertical':
+    if direction == 'vertical':
         b = p.vbar_stack(types, x="factors", width=0.5, alpha=0.7, color=colors, source=source)
         p.y_range.start = 0
         p.xaxis.major_label_orientation = 1
         p.xgrid.grid_line_color = None
-    elif bar_direction == 'horizontal':
+    elif direction == 'horizontal':
         b = p.hbar_stack(types, y="factors", height=0.5, alpha=0.7, color=colors, source=source)
         p.x_range.start = 0
         p.yaxis.major_label_orientation = 1
@@ -119,8 +114,9 @@ def stacked_bar(
         export_svgs(p, filename=save_svg)
 
     # solve env here
-    if (WORKING_ENV is None) & (notebook is not None):
-        output_notebook(hide_banner=True, notebook_type=notebook)
+    if (WORKING_ENV is not None) & display:
+        output_notebook(hide_banner=True, notebook_type=WORKING_ENV)
         show(p)
-    elif (WORKING_ENV is not None) & (notebook is None):
-        show(p)
+
+    # it will return a bokeh plot instance, allow user to do some modification
+    return p
