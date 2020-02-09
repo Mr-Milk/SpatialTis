@@ -3,7 +3,7 @@ from typing import Sequence, Union, Optional
 import pandas as pd
 from bokeh.plotting import figure, show
 from bokeh.models import ColumnDataSource, FactorRange, Legend
-from bokeh.io import output_notebook, export_svgs, save
+from bokeh.io import output_notebook, export_svgs, output_file, save
 
 from spatialtis.plotting.palette import get_colors
 from spatialtis.config import WORKING_ENV
@@ -33,7 +33,7 @@ def stacked_bar(
         save_svg: Optional[str] = None,
         save_html: Optional[str] = None,
         palette: Union[Sequence[str], str, None] = None,
-
+        return_plot: bool = False,
 ):
     if direction not in ['vertical', 'horizontal']:
         raise ValueError(f"Unrecognized direction '{direction}'")
@@ -73,10 +73,10 @@ def stacked_bar(
         figure_config['plot_width'] = size[1]
 
     # set colors
-    default_palette = ['Spectral', 'Category20']
+    default_palette = 'Spectral', 'Category20'
     if palette is None:
         palette = default_palette
-    colors = get_colors(types_count, palette)
+    colors = get_colors(types_count, *palette)
 
     franger = FactorRange(*factors, group_padding=0, factor_padding=-0.45, subgroup_padding=-0.35)
     if direction == 'vertical':
@@ -108,9 +108,11 @@ def stacked_bar(
 
     # save something
     if save_html:
-        save(p, save_html)
+        output_file(save_html)
+        save(p)
 
     if save_svg:
+        p.output_backend = "svg"
         export_svgs(p, filename=save_svg)
 
     # solve env here
@@ -119,4 +121,5 @@ def stacked_bar(
         show(p)
 
     # it will return a bokeh plot instance, allow user to do some modification
-    return p
+    if return_plot:
+        return p

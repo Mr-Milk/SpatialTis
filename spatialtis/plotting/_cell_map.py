@@ -2,12 +2,13 @@ import numpy as np
 import pandas as pd
 
 from bokeh.plotting import figure
-from bokeh.io import show
-import bokeh.palettes as pl
+from bokeh.io import show, export_svgs, output_notebook, output_file, save
 from bokeh.models import Legend, LegendItem
-from .palette import colorcycle, get_colors
+from .palette import get_colors
 
 from typing import Optional, Union, Sequence
+
+from ..config import WORKING_ENV
 
 
 def cell_map(df: pd.DataFrame,
@@ -16,14 +17,18 @@ def cell_map(df: pd.DataFrame,
              shape_key: Optional[str] = 'cell_shape',
              display: bool = True,
              title: Optional[str] = None,
-             size: Optional[Sequence[int]] = None,
              save_svg: Optional[str] = None,
              save_html: Optional[str] = None,
              palette: Union[Sequence[str], str, None] = None,
+             return_plot: bool = False,
              ):
-    all_types = np.unique(df[type_col])
 
-    colors = get_colors(colorcycle('Spectral', 'Category20'), len(all_types))
+    groups = df.groupby(type_col)
+
+    default_palette = 'Spectral', 'Category20'
+    if palette is None:
+        palette = default_palette
+    colors = get_colors(len(groups), *palette)
 
     tools = "pan,wheel_zoom,box_zoom,reset,hover,save"
 
@@ -46,18 +51,17 @@ def cell_map(df: pd.DataFrame,
         b = p.patches('x', 'y', source=plot_data,
                       fill_color=fill_color,
                       fill_alpha=fill_alpha, line_color="white", line_width=0.5)
-        legends.append(LegendItem(label=t, renderers=[b]))
+        legends.append(LegendItem(label=name, renderers=[b]))
 
     if selected_types is None:
-        for ix, t in enumerate(all_types):
-            data = df[df[type_col] == t]
-            add_patches(t, fill_color=colors[ix], fill_alpha=0.8)
+        for ix, (n, data) in enumerate(groups):
+            add_patches(n, fill_color=colors[ix], fill_alpha=0.8)
     else:
-        for ix, t in enumerate(selected_types):
-            data = df[df[type_col] == t]
-            add_patches(t, fill_color=colors[ix], fill_alpha=0.8)
-        data = df[~df[type_col].isin(selected_types)]
-        add_patches('other', fill_color='grey', fill_alpha=0.5)
+        for ix, (n, data) in enumerate(groups):
+            if n in selected_types:
+                add_patches(n, fill_color=colors[ix], fill_alpha=0.8)
+            else:
+                add_patches('other', fill_color='grey', fill_alpha=0.5)
 
     p.add_layout(Legend(items=legends, location='center_right'), 'right')
 
@@ -70,4 +74,20 @@ def cell_map(df: pd.DataFrame,
     p.legend.label_text_baseline = 'bottom'
     p.legend.spacing = 1
 
-    show(p)
+    # save something
+    if save_html:
+        output_file(save_html)
+        save(p)
+
+    if save_svg:
+        p.output_backend = "svg"
+        export_svgs(p, filename=save_svg)
+
+    # solve env here
+    if (WORKING_ENV is not None) & display:
+        output_notebook(hide_banner=True, notebook_type=WORKING_ENV)
+        show(p)
+
+    # it will return a bokeh plot instance, allow user to do some modification
+    if return_plot:
+        return p

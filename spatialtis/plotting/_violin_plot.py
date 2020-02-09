@@ -4,7 +4,7 @@ from scipy.stats import gaussian_kde as kde
 
 from bokeh.models import FactorRange, Legend, LegendItem
 from bokeh.plotting import figure, show
-from bokeh.io import output_notebook, export_svgs, save
+from bokeh.io import output_notebook, export_svgs, output_file, save
 
 from typing import Optional, Union, Sequence
 
@@ -42,15 +42,16 @@ def _violin_patches(
     padding = 0.5
     for i, (n, g) in enumerate(groups):
         data = g[target_col].to_numpy()
+        if not len(data) > 1:
+            raise ValueError("Can't plot with only one point for each group")
         split_interval = round(len(data) / 4)
         split_interval = split_interval if split_interval >= 100 else 100
         points = np.linspace(np.min(data), np.max(data), split_interval)
         curvepoint = _kde_points(data, points)
         # set endpoints to zero to close violin patches
-        norm_curve = (curvepoint / (np.max(curvepoint) - np.min(curvepoint))) * 0.3
+        norm_curve = ((curvepoint - np.min(curvepoint)) / (np.max(curvepoint) - np.min(curvepoint))) * 0.3
         norm_curve[0] = 0
         norm_curve[-1] = 0
-
         if side == 'both':
             violins.append([
                 np.hstack((-norm_curve + i + padding, norm_curve + i + padding,)),
@@ -111,10 +112,16 @@ def _violin_main(violins, target_col, figure_config, colors, direction='vertical
     q23 = q2[target_col] - q3[target_col]
     q12 = q1[target_col] - q2[target_col]
 
-    p.segment(factors, upper[target_col], factors, lower[target_col], line_color="black")
+    if direction == 'vertical':
+        p.segment(factors, upper[target_col], factors, lower[target_col], line_color="black")
 
-    p.rect(factors, q3[target_col] + q23 / 2, 0.05, q23, fill_color="#E08E79", line_color="black")
-    p.rect(factors, q2[target_col] + q12 / 2, 0.05, q12, fill_color="#3B8686", line_color="black")
+        p.rect(factors, q3[target_col] + q23 / 2, 0.05, q23, fill_color="#E08E79", line_color="black")
+        p.rect(factors, q2[target_col] + q12 / 2, 0.05, q12, fill_color="#3B8686", line_color="black")
+    elif direction == 'horizontal':
+        p.segment(upper[target_col], factors, lower[target_col], factors, line_color="black")
+
+        p.rect(q3[target_col] + q23 / 2, factors, q23, 0.05, fill_color="#E08E79", line_color="black")
+        p.rect(q2[target_col] + q12 / 2, factors, q12, 0.05, fill_color="#3B8686", line_color="black")
 
     return p
 
@@ -122,14 +129,15 @@ def _violin_main(violins, target_col, figure_config, colors, direction='vertical
 def _set_figure_config(title=None, size=None, direction='vertical'):
     # config for figure
     figure_config = dict(
-        tools='save',
+        tools='save,hover',
         toolbar_location='above',
         title=title
     )
+    franger = FactorRange(*factors, group_padding=0, subgroup_padding=0)
     if direction == 'vertical':
-        figure_config['x_range'] = factors if gl == 1 else FactorRange(*factors, group_padding=0)
+        figure_config['x_range'] = factors if gl == 1 else franger
     elif direction == 'horizontal':
-        figure_config['y_range'] = factors if gl == 1 else FactorRange(*factors, group_padding=0)
+        figure_config['y_range'] = factors if gl == 1 else franger
 
     if size is None:
         if direction == 'vertical':
@@ -170,6 +178,7 @@ def violin_plot(
         save_svg: Optional[str] = None,
         save_html: Optional[str] = None,
         palette: Union[Sequence[str], str, None] = None,
+        return_plot: bool = False,
 ):
     if direction not in ['vertical', 'horizontal']:
         raise ValueError(f"Unrecognized direction '{direction}'")
@@ -186,7 +195,7 @@ def violin_plot(
             gl = gl - 1
 
             if gl > 3:
-                raise ValueError('Only support 3 levels depth categorical data')
+                raise ValueError('Only support 3 levels depth categorical data, maybe too much group_by elements')
 
             groups = df.loc[:, [target_col]].groupby(level=split)
 
@@ -216,7 +225,7 @@ def violin_plot(
         figure_config = _set_figure_config(title=title, size=size, direction=direction)
         colors = _set_colors(palette, mapper=True)
 
-        p = _violin_main(violins, target_col, figure_config, colors)
+        p = _violin_main(violins, target_col, figure_config, colors, direction=direction)
 
     if direction == 'vertical':
         p.xgrid.grid_line_color = None
@@ -227,13 +236,16 @@ def violin_plot(
 
     # save something
     if save_html:
-        save(p, save_html)
+        output_file(save_html)
+        save(p)
 
     if save_svg:
+        p.output_backend = "svg"
         export_svgs(p, filename=save_svg)
 
     if (WORKING_ENV is not None) & display:
         output_notebook(hide_banner=True, notebook_type=WORKING_ENV)
         show(p)
 
-    return p
+    if return_plot:
+        return p

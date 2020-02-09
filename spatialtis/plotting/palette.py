@@ -1,6 +1,8 @@
+import numpy as np
 from itertools import cycle
 
 import bokeh.palettes as pl
+from bokeh.palettes import cividis, gray, inferno, magma, viridis
 
 import seaborn as sns
 
@@ -14,20 +16,34 @@ def colorcycle(*palette):
         if p in palette_keys:
             pcolors: dict = pl.all_palettes[p]
             max_color = pcolors[max(pcolors.keys())]
-            new_palette += max_color
+            for c in max_color:
+                if c not in new_palette:
+                    new_palette.append(c)
         else:
             try:
                 c = Color(p).hex_l
-                new_palette.append(c)
+                if c not in new_palette:
+                    new_palette.append(c)
             except ValueError:
                 raise ValueError(f"'{p}' is not a palette name nor a color")
 
-    return cycle(new_palette)
+    new_palette = sorted(set(new_palette), key=new_palette.index)
+
+    return cycle(new_palette), new_palette
 
 
 def get_colors(n: int, *palette):
-    cycler = colorcycle(*palette)
+    cycler, _ = colorcycle(*palette)
     return [next(cycler) for i in range(0, n)]
+
+
+def get_linear_colors(n: int, palette):
+    cycler, colors = colorcycle(*palette)
+    max_colors = len(colors)
+    if n > max_colors:
+        raise Warning("Number of color generated has exceeded the length of palettes")
+    color_index = np.linspace(0, max_colors-1, n)
+    return [colors[int(i)] for i in color_index]
 
 
 def view_palette(palette):

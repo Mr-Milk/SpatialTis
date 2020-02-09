@@ -28,14 +28,17 @@ def type_counter(
 
     matrix = list()
     mindex = list()
-    for n, g in groups:
+    for i, (n, g) in enumerate(groups):
         c = Counter(g.leiden)
         matrix.append([c[t] for t in types])
-        mindex.append(n)
+        if isinstance(n, str):
+            mindex.append((n, i,))
+        else:
+            mindex.append((*n, i,))
 
     multiIndex = pd.MultiIndex.from_tuples(mindex)
     all_results = pd.DataFrame(dict(zip(types, np.array(matrix).T)), index=multiIndex)
-    all_results.index.set_names(group_by, inplace=True)
+    all_results.index.set_names(group_by + ['id'], inplace=True)
     all_results.columns.set_names('type', inplace=True)
 
     return all_results  # obs as index, var as columns
@@ -49,6 +52,7 @@ def cell_components(
         selected_type: Optional[Sequence] = None,
         export: bool = True,
         export_key: str = 'cell_components',
+        return_df: bool = False,
 
 ):
     results = type_counter(data, type_col, group_by, selected_type=selected_type)
@@ -60,14 +64,15 @@ def cell_components(
     if export:
         container = dict(df=str(results.to_dict()),
                          iname=results.index.names,
-                         columns=list(results.columns))
+                         colname=list(results.columns.names))
         # write to anndata object
         data.uns[export_key] = container
         print(f'''Finished!
         Add to AnnData object
         uns: '{export_key}' ''')
 
-    return results
+    if return_df:
+        return results
 
 
 def cell_co_occurrence(
@@ -99,9 +104,9 @@ def cell_density(
         selected_type: Optional[Sequence] = None,
         export: bool = True,
         export_key: str = 'cell_density',
-        ratio: float = 1.0
+        ratio: float = 1.0,
+        return_df: bool = False,
 ):
-
     counter = type_counter(data, type_col, group_by, selected_type=selected_type)
     if isinstance(size[0], (int, float)):
         area = size[0] * size[1]
@@ -114,11 +119,12 @@ def cell_density(
     if export:
         container = dict(df=str(results.to_dict()),
                          iname=results.index.names,
-                         columns=list(results.columns))
+                         colname=list(results.columns.names))
         # write to anndata object
         data.uns[export_key] = container
         print(f'''Finished!
         Add to AnnData object
         uns: '{export_key}' ''')
 
-    return results
+    if return_df:
+        return results

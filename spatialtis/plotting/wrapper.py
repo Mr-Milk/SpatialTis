@@ -15,6 +15,7 @@ def _plot_df(data: AnnData, key=None):
     container = data.uns[key]
     df = pd.DataFrame(eval(container['df']))
     df.index.set_names(container['iname'], inplace=True)
+    df.columns.set_names(container['colname'], inplace=True)
 
     return df
 
