@@ -13,12 +13,14 @@ Num = Union[int, float]
 def type_counter(
         data: AnnData,
         type_col: str,
-        group_by: list,
+        group_by: Union[Sequence, str],
         selected_type: Optional[Sequence] = None
 ) -> pd.DataFrame:
-    sindex = group_by.copy()
-    sindex.append(type_col)
-    sdata = data.obs[sindex]
+
+    if isinstance(group_by, str):
+        sdata = data.obs[[group_by, type_col]]
+    else:
+        sdata = data.obs[list(group_by) + [type_col]]
 
     groups = sdata.groupby(group_by)
     types = np.unique(sdata[type_col].to_numpy(dtype=str))

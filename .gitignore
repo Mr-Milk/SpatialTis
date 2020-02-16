@@ -5,8 +5,7 @@ tmp/
 tmp/test.h5ad
 tmp/test_adata.h5ad
 
-ploting test.ipynb
-annData.ipynb
+*.ipynb
 
 *.DS_Store
 .idea/
