@@ -1,16 +1,13 @@
+from collections import OrderedDict
+from pathlib import Path
+from typing import Sequence, Union
+
 import numpy as np
 import pandas as pd
-from pathlib import Path
 from skimage.io import imread
-from collections import OrderedDict
-
-from typing import Union, Sequence
 
 
-def mask2cells(
-        mask_img: Union[Path, str],
-        ignore_bg: bool = True
-) -> Sequence:
+def mask2cells(mask_img: Union[Path, str], ignore_bg: bool = True) -> Sequence:
     """
     Parameters
     mask_img: Path/str, the path to mask img
@@ -23,7 +20,7 @@ def mask2cells(
     # create list for each cell
     cells = [[] for i in range(0, len(counts))]
     # find the exact points that belong to each cell
-    it = np.nditer(mask, flags=['multi_index'])
+    it = np.nditer(mask, flags=["multi_index"])
     while not it.finished:
         cells[int(it[0])].append(it.multi_index)
         it.iternext()
@@ -34,28 +31,8 @@ def mask2cells(
         return cells
 
 
-def get_cell_exp_single_channel(
-        channel: Sequence,
-        cells: Sequence,
-        method: str = 'mean'
-) -> Sequence:
-    """
-    Parameters
-    channel: list or ndarray, matrix info of the channel
-    cells: list or ndarray, each element contains points for each cell
-    method: str, ('mean' / 'median' / 'sum' / ...)  any numpy method to compute expression level of single cell
-    """
-    cells_density = list()
-    for cell in cells:
-        density = channel[[i[0] for i in cell], [i[1] for i in cell]]
-        exec(f'cells_density.append(np.{method}(density))')
-    return cells_density
-
-
 def get_cell_exp_stack(
-        stack: Sequence,
-        cells: Sequence,
-        method: str = 'mean'
+    stack: Sequence, cells: Sequence, method: str = "mean"
 ) -> Sequence:
     """
     Parameters
@@ -66,7 +43,7 @@ def get_cell_exp_stack(
     cells_density = list()
     for cell in cells:
         cell_pixels = stack[:, [i[0] for i in cell], [i[1] for i in cell]]
-        exec(f'cells_density.append([np.{method}(density) for density in cell_pixels])')
+        exec(f"cells_density.append([np.{method}(density) for density in cell_pixels])")
     # each secondary array as a channel
     return cells_density
 
@@ -92,7 +69,9 @@ def config(cls, channels=None, markers=None, callback=None):
     return cls
 
 
-def config_file(cls, metadata, channel_col=None, marker_col=None, sep=',', callback=None):
+def config_file(
+    cls, metadata, channel_col=None, marker_col=None, sep=",", callback=None
+):
     meta = pd.read_csv(metadata, sep=sep)
     channels = meta[channel_col].values
     markers = None
@@ -121,4 +100,3 @@ def filter_channels(cls, channels=None):
             not_found_channels.append(i)
             print(f"{c} not found")
     return selected_channels
-

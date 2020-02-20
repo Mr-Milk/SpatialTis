@@ -1,25 +1,61 @@
-from skimage.external import tifffile
+import pandas as pd
+import matplotlib.pyplot as plt
 
-def tiff_header(img):
-    with tifffile.TiffFile(img) as tif:
-        for p in tif.pages:
-            print(p.tags)
 
-def diff_dicts_values(dict1, dict2):
-    k1 = dict1.keys()
+def df2adata_uns(df, adata, key, rewrite=False):
+    """preserve all info in pd.DataFrame as dict, and write to anndata.uns
 
-    for k in k1:
-        diff1 = dict1[k] - dict2[k]
-        diff2 = dict2[k] - dict1[k]
-        if len(diff1) > 0:
-            print(f'In dict1 not in dict2 {dff1}')
-        if len(diff2) > 0:
-            print(f'In dict2 not in dict1 {dff2}')
+    """
+    container = dict(
+        df=str(df.to_dict()),
+        iname=df.index.names,
+        colname=list(df.columns.names),
+    )
+
+    keys = adata.uns.keys()
+    if (key in keys) & (not rewrite):
+        raise KeyError(f"{key} already exists, if you want to rewrite, set rewrite=True")
+
+    adata.uns[key] = container
+
+    print(
+        f"""Finished!
+            Add to AnnData object
+            uns: '{key}' """
+    )
+
+
+def adata_uns2df(adata, key):
+
+    container = adata.uns[key]
+    df = pd.DataFrame(eval(container["df"]))
+    df.index.set_names(container["iname"], inplace=True)
+    df.columns.set_names(container["colname"], inplace=True)
+
+    return df
+
+
+def filter_adata(adata, groupby, type_col, *keys, selected_types=None, reset_index=True):
+
+    keys = [k for k in keys if k is not None]
+    df = adata.uns[groupby+keys+[type_col]]
+    df = df[df[type_col].isin(selected_types)]
+    if reset_index:
+        df = df.reset_index()
+
+    return df
+
 
 def plot_polygons(polygons):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     for i in polygons:
-        ax.plot(*i.exterior.xy, color='#6699cc', alpha=0.7,
-            linewidth=3, solid_capstyle='round', zorder=2)
-    ax.set_title('Polygons')
+        ax.plot(
+            *i.exterior.xy,
+            color="#6699cc",
+            alpha=0.7,
+            linewidth=3,
+            solid_capstyle="round",
+            zorder=2,
+        )
+    ax.set_title("Polygons")
