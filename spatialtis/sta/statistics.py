@@ -11,12 +11,11 @@ Num = Union[int, float]
 
 
 def type_counter(
-    adata: AnnData,
-    groupby: Union[Sequence, str],
-    type_col: str,
-    selected_types: Optional[Sequence] = None,
+        adata: AnnData,
+        groupby: Union[Sequence, str],
+        type_col: str,
+        selected_types: Optional[Sequence] = None,
 ) -> pd.DataFrame:
-
     if isinstance(groupby, str):
         groupby = [groupby]
     else:
@@ -50,13 +49,13 @@ def type_counter(
 
 
 def cell_components(
-    adata: AnnData,
-    type_col: str,
-    groupby: list,
-    selected_types: Optional[Sequence] = None,
-    export: bool = True,
-    export_key: str = "cell_components",
-    return_df: bool = False,
+        adata: AnnData,
+        type_col: str,
+        groupby: list,
+        selected_types: Optional[Sequence] = None,
+        export: bool = True,
+        export_key: str = "cell_components",
+        return_df: bool = False,
 ):
     results = type_counter(adata, groupby, type_col, selected_types=selected_types)
 
@@ -68,14 +67,14 @@ def cell_components(
 
 
 def cell_co_occurrence(
-    adata: AnnData,
-    type_col: str,
-    groupby: list,
-    selected_types: list = None,
-    export: bool = True,
-    export_key: str = "co_occurrence",
-    threshold: int = 50,
-    return_df: bool = False,
+        adata: AnnData,
+        type_col: str,
+        groupby: list,
+        selected_types: list = None,
+        export: bool = True,
+        export_key: str = "cell_co_occurrence",
+        threshold: int = 50,
+        return_df: bool = False,
 ):
     counter = type_counter(adata, groupby, type_col, selected_types=selected_types)
 
@@ -89,15 +88,15 @@ def cell_co_occurrence(
 
 
 def cell_density(
-    adata: AnnData,
-    type_col: str,
-    groupby: list,
-    size: Union[Sequence[Sequence[Num]], Sequence[Num]],
-    selected_types: Optional[Sequence] = None,
-    export: bool = True,
-    export_key: str = "cell_density",
-    ratio: float = 1.0,
-    return_df: bool = False,
+        adata: AnnData,
+        type_col: str,
+        groupby: list,
+        size: Union[Sequence[Sequence[Num]], Sequence[Num]],
+        selected_types: Optional[Sequence] = None,
+        export: bool = True,
+        export_key: str = "cell_density",
+        ratio: float = 1.0,
+        return_df: bool = False,
 ):
     counter = type_counter(adata, groupby, type_col, selected_types=selected_types)
     if isinstance(size[0], (int, float)):
@@ -116,15 +115,16 @@ def cell_density(
     if return_df:
         return results
 
+
 def cell_morphology(
-    adata: AnnData,
-    type_col: str,
-    groupby: list,
-    selected_types: Optional[Sequence] = None,
-    area_col: str = "area",
-    eccentricity_col: str = "eccentricity",
-    export: bool = True,
-    export_key: str = "cell_components",
-    return_df: bool = False,
+        adata: AnnData,
+        type_col: str,
+        groupby: list,
+        selected_types: Optional[Sequence] = None,
+        area_col: str = "area",
+        eccentricity_col: str = "eccentricity",
+        export: bool = True,
+        export_key: str = "cell_components",
+        return_df: bool = False,
 ):
     pass

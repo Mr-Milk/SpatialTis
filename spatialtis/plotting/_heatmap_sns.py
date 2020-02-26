@@ -18,13 +18,14 @@ def heatmap(
         palette: Union[Sequence[str], str, None] = None,
         colorbar_type: str = 'bar',
         categorical_colorbar_text: Union[Sequence[str], str, None] = None,
-        legend_bbox: Optional[Sequence[float]] = None,
+        row_colors_legend_bbox: Optional[Sequence[float]] = None,
+        col_colors_legend_bbox: Optional[Sequence[float]] = None,
         colorbar_bbox: Optional[Sequence[float]] = None,
         **kwargs,
 ):
     try:
         plot_kwargs = dict(**kwargs)
-    except NameError:
+    except:
         plot_kwargs = dict()
     heat_data = pd.DataFrame(df.to_numpy())
     # ==============handle axis test====================
@@ -39,16 +40,22 @@ def heatmap(
     # ==============handle color labels====================
     uni_bars = []
     if row_colors is not None:
+        row_colors_legend = []
         row_index = df.index.to_frame(index=False)
         row_index_items = [array for name, array in row_index.iteritems() if name in row_colors]
         for array in row_index_items:
-            uni_bars += list(pd.unique(array))
+            row_colors_legend += list(pd.unique(array))
+        row_colors_legend = list(np.unique(row_colors_legend))
+        uni_bars += row_colors_legend
 
     if col_colors is not None:
+        col_colors_legend = []
         col_index = df.columns.to_frame(index=False)
         col_index_items = [array for name, array in col_index.iteritems() if name in col_colors]
         for array in col_index_items:
-            uni_bars += list(pd.unique(array))
+            col_colors_legend += list(pd.unique(array))
+        col_colors_legend = list(np.unique(col_colors_legend))
+        uni_bars += col_colors_legend
 
     colors = get_colors(len(uni_bars), "Category20")
     colors_bar_mapper = dict(zip(uni_bars, colors))
@@ -68,11 +75,16 @@ def heatmap(
         cmap = get_linear_colors("Viridis")
 
     # handle legend bbox
-    default_legend_bbox = (-.25, 0.5)
+
     default_cbar_bbox = (1.05, .1, .03, .15)
+
+    default_col_legend_bbox = (-.25, 0.85)
+    default_row_legend_bbox = (-.25, 0.5)
     default_cbar_legend_bbox = (-.25, 0.15)
-    if legend_bbox is not None:
-        default_legend_bbox = legend_bbox
+    if row_colors_legend_bbox is not None:
+        default_row_legend_bbox = row_colors_legend_bbox
+    if col_colors_legend_bbox is not None:
+        default_col_legend_bbox = col_colors_legend_bbox
     if colorbar_bbox is not None:
         default_cbar_bbox = colorbar_bbox
         default_cbar_legend_bbox = colorbar_bbox
@@ -100,18 +112,27 @@ def heatmap(
 
     # return a ax_heatmap instance
     h = sns.clustermap(heat_data, **plot_kwargs)
-
-    # add legends for color annotations
-    legends = [mpatches.Patch(label=l, color=c) for l, c in colors_bar_mapper.items()]
     ax = h.ax_heatmap
 
-    if len(legends) > 0:
-        add_legend = ax.legend(loc="center left",
-                               bbox_to_anchor=default_legend_bbox,
-                               handlelength=0.8,
-                               handles=legends,
-                               frameon=False)
-        plt.gca().add_artist(add_legend)
+    # add legends for color annotations
+
+    if row_colors is not None:
+        row_legends = [mpatches.Patch(label=l, color=colors_bar_mapper[l]) for l in row_colors_legend]
+        add_row_legend = ax.legend(loc="center left",
+                                   bbox_to_anchor=default_row_legend_bbox,
+                                   handlelength=0.8,
+                                   handles=row_legends,
+                                   frameon=False)
+        plt.gca().add_artist(add_row_legend)
+
+    if col_colors is not None:
+        col_legends = [mpatches.Patch(label=l, color=colors_bar_mapper[l]) for l in col_colors_legend]
+        add_col_legend = ax.legend(loc="center left",
+                                   bbox_to_anchor=default_col_legend_bbox,
+                                   handlelength=0.8,
+                                   handles=col_legends,
+                                   frameon=False)
+        plt.gca().add_artist(add_col_legend)
 
     if colorbar_type is 'categorical':
         add_cbar_legend = ax.legend(loc="center left",

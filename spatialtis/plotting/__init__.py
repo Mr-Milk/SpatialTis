@@ -7,7 +7,7 @@ from ._violin_plot import violin_plot
 from ._heatmap_sns import heatmap
 from ._stacked_kde_sns import stacked_kde
 from .palette import colorcycle, get_colors, get_linear_colors, view_palette
-from .wrapper import cell_components, cell_density
+from .wrapper import cell_components, cell_density, cell_co_occurrence
 
 if WORKING_ENV == "jupyter":
     output_notebook(hide_banner=True)
