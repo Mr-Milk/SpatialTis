@@ -56,7 +56,7 @@ def stacked_bar(
     # config for figure
     figure_config = dict(
         tools="save,hover",
-        toolbar_location="above",
+        toolbar_location=None,
         tooltips="$name @$name%" if percentage else "$name @$name",
         title=title,
     )

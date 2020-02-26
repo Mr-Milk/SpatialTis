@@ -7,6 +7,8 @@ from anndata import AnnData
 from shapely.affinity import scale as sscale
 from shapely.geometry import asMultiPoint, box
 from shapely.strtree import STRtree
+from scipy.spatial.distance import euclidean
+import igraph as ig
 
 
 class Neighbors(object):
@@ -16,7 +18,7 @@ class Neighbors(object):
                  type_col: Optional[str] = None,
                  shape_col: Optional[str] = 'cell_shape',
                  selected_types: Optional[Sequence] = None,
-                 centroid_key: str = 'centroid'
+                 centroid_col: str = 'centroid'
                  ):
 
         # keys for query info from anndata
@@ -26,6 +28,7 @@ class Neighbors(object):
         else:
             keys += groupby
         keys.append(shape_col)
+        keys.append(centroid_col)
 
         if type_col is not None:
             keys.append(type_col)
@@ -34,6 +37,7 @@ class Neighbors(object):
         self.__data = data.obs[keys]
         self.__typecol = type_col
         self.__shapecol = shape_col
+        self.__centcol = centroid_col
         self.__adata_integrity = True
 
         if selected_types is not None:
@@ -196,12 +200,31 @@ class Neighbors(object):
         self.__neighborsdb = eval(self.__adata.uns[read_key]['data'])
         self.__neighbors_param = self.__adata.uns[read_key]['param']
 
+    def to_graphs(self):
+        if not self.__neighborsbuilt:
+            return None
+        new_graphs = {n:0 for n in self.__names}
+        for n, g in self.__groups:
+            centroids = g[self.__centcol]
+            edges = self.__neighborsdb[n]
+            graph_edges = []
+            for k, vs in edges.items():
+                for v in vs:
+                    distance = euclidean(centroids[k], centroids[v])
+                    graph_edges.append((str(k), str(v), distance))
+            g = ig.Graph.TupleList(graph_edges, weights=True)
+            g.vs["type"] = self.__types
+            new_graphs[n] = g.simplify()
+
+        return new_graphs
+
+
     @property
     def neighborsbuilt(self):
         return self.__neighborsbuilt
 
     @property
-    def types(self):
+    def unitypes(self):
         if self.__typecol is not None:
             return self.__uniquetypes
         else:
@@ -210,6 +233,10 @@ class Neighbors(object):
     @property
     def data(self):
         return self.__data
+
+    @property
+    def adata(self):
+        return self.__adata
 
     @property
     def neighbors(self):

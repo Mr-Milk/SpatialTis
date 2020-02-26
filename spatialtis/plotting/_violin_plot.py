@@ -93,7 +93,7 @@ def _violin_split(violins_a, violins_b, figure_config, colors, direction="vertic
             legends.append(LegendItem(label=splits[0], renderers=[b1]))
             legends.append(LegendItem(label=splits[1], renderers=[b2]))
 
-    p.add_layout(Legend(items=legends, location="center_right"), "center_right")
+    p.add_layout(Legend(items=legends, location="center_right"), "right")
 
     return p
 
@@ -169,7 +169,7 @@ def _violin_main(violins, target_col, figure_config, colors, direction="vertical
 
 def _set_figure_config(title=None, size=None, direction="vertical"):
     # config for figure
-    figure_config = dict(tools="save,hover", toolbar_location="above", title=title)
+    figure_config = dict(tools="save", toolbar_location=None, title=title)
     franger = FactorRange(*factors, group_padding=0, subgroup_padding=0)
     if direction == "vertical":
         figure_config["x_range"] = factors if gl == 1 else franger

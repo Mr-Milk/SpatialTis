@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
-def df2adata_uns(df, adata, key, rewrite=False):
+def df2adata_uns(df, adata, key, overwrite=False):
     """preserve all info in pd.DataFrame as dict, and write to anndata.uns
 
     """
@@ -13,7 +13,7 @@ def df2adata_uns(df, adata, key, rewrite=False):
     )
 
     keys = adata.uns.keys()
-    if (key in keys) & (not rewrite):
+    if (key in keys) & (not overwrite):
         raise KeyError(f"{key} already exists, if you want to rewrite, set rewrite=True")
 
     adata.uns[key] = container

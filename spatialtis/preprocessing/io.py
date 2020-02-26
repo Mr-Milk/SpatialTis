@@ -71,8 +71,8 @@ class read_all_ROIs:
         mask_pattern: str = "*mask*",
     ):
         self.__mask_pattern = mask_pattern
-        self.__channels = list()
-        self.__markers = dict()
+        self._channels = list()
+        self._markers = dict()
         self.__channels_files = dict()
 
         self.__tree = []
@@ -80,7 +80,7 @@ class read_all_ROIs:
         self.__depth = len(conditions)
         self.__exhaust_dir(entry)
         self.__obs = [p.parts[-self.__depth:] for p in self.__tree]
-        self.__var = None
+        self._var = None
 
     # walk through the directory, until there is no directory
     def __exhaust_dir(
@@ -99,7 +99,7 @@ class read_all_ROIs:
 
     @property
     def vars(self):
-        return self.__var
+        return self._var
 
     def config_file(
         self,
@@ -138,11 +138,11 @@ class read_all_ROIs:
 
     @property
     def channels(self):
-        return self.__channels
+        return self._channels
 
     @property
     def markers(self):
-        return self.__markers
+        return self._markers
 
     def to_anndata(self, polygonize=True, method="mean", mp=False):
 
@@ -175,8 +175,8 @@ class read_all_ROIs:
                 results.append(
                     _get_roi.remote(
                         d,
-                        self.__channels,
-                        self.__markers,
+                        self._channels,
+                        self._markers,
                         polygonize,
                         method,
                         self.__obs[i],
@@ -197,12 +197,12 @@ class read_all_ROIs:
         else:
             for i, d in enumerate(self.__tree):
 
-                if len(self.__markers) >= 1:
+                if len(self._markers) >= 1:
                     roi = read_ROI(d).config(
-                        channels=self.__channels, markers=self.__markers
+                        channels=self._channels, markers=self._markers
                     )
                 else:
-                    roi = read_ROI(d).config(channels=self.__channels)
+                    roi = read_ROI(d).config(channels=self._channels)
 
                 exp, cells = roi.exp_matrix(polygonize=polygonize, method=method)
 
@@ -230,7 +230,7 @@ class read_all_ROIs:
 
         X = np.asarray(X, dtype=float)
 
-        return ad.AnnData(X, obs=ann_obs, var=self.__var, dtype="float")
+        return ad.AnnData(X, obs=ann_obs, var=self._var, dtype="float")
 
 
 def set_info(cls):
@@ -273,8 +273,8 @@ class read_ROI:
         self.__mask_img = mask[0]
 
         # get channels info
-        self.__channels = list()
-        self.__markers = dict()
+        self._channels = list()
+        self._markers = dict()
         self.__channels_files = dict()
         for img in Path(folder).iterdir():
             if img not in mask:
@@ -287,7 +287,7 @@ class read_ROI:
                         if c[0] in ISOTOPES_NAME:
                             if int(c[1]) in ISOTOPES_MASS_NUMBER_MAP[c[0]]:
                                 cname = c[0] + c[1]
-                                self.__channels.append(cname)
+                                self._channels.append(cname)
                                 self.__channels_files[cname] = img
                                 correct_isotopes = True
                                 break
@@ -305,18 +305,18 @@ class read_ROI:
 
     @property
     def channels(self):
-        return self.__channels
+        return self._channels
 
     @property
     def markers(self):
-        return self.__markers
+        return self._markers
 
     def exp_matrix(self, polygonize=True, method="mean"):
-        if len(self.__markers) == 0:
+        if len(self._markers) == 0:
             print("ATTENTION: NO marker specific, using channels' name instead.")
         cells = mask2cells(self.__mask_img)
 
-        stacks = np.asarray([imread(self.__channels_files[c]) for c in self.__channels])
+        stacks = np.asarray([imread(self.__channels_files[c]) for c in self._channels])
         data = get_cell_exp_stack(stacks, cells, method=method)
         print(f"Detected {len(data)} cells.")
         if polygonize:

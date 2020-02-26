@@ -18,7 +18,7 @@ def cell_components(
     return p
 
 
-def cell_density(data: AnnData, groupby: list[str], key="cell_density", **kwargs):
+def cell_density(data: AnnData, groupby: Sequence[str], key="cell_density", **kwargs):
 
     df = adata_uns2df(data, key)
     df = pd.DataFrame(df.stack(), columns=["density"])

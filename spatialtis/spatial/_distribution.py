@@ -4,10 +4,12 @@ from scipy.spatial import cKDTree
 from scipy.stats import chisquare, chi2, norm
 from anndata import AnnData
 from shapely.geometry import box, Point
+from pointpats import PointPattern
+from pointpats.quadrat_statistics import QStatistic
 
 from typing import Sequence, Union, Optional
 
-from ..utils import filter_adata
+from ..utils import filter_adata, df2adata_uns
 
 
 def _index_of_dispersion(groups, types, type_col, centroid_col, resample, r, pval):
@@ -15,17 +17,9 @@ def _index_of_dispersion(groups, types, type_col, centroid_col, resample, r, pva
     patterns = {n: {t: 0 for t in types} for n in names}
 
     for name, group in groups:
-        typ = group[type_col]
-        ct = group[centroid_col]
-
-        uq_typ = pd.unique(typ)
-        ctdb = {t: [] for t in uq_typ}
-
-        for i, point in enumerate(ct):
-            ctdb[typ[i]].append(point)
-
-        for t, points in ctdb.items():
-            tree = cKDTree(points)
+        for t, tg in group.groupby(type_col):
+            cells = tg[centroid_col]
+            tree = cKDTree(cells)
             tmax = tree.maxes
             tmin = tree.mins
 
@@ -58,68 +52,26 @@ def _index_of_dispersion(groups, types, type_col, centroid_col, resample, r, pva
     return patterns
 
 
-def _rec_tesllation(
-        rect: tuple,
-        quad: Union[tuple, str] = 'auto'
-):
-    min_unit = 150
-    if quad == 'auto':
-        nx = int((rect[2] - rect[0]) / 20)
-        ny = int((rect[3] - rect[1]) / 20)
-        quad = (nx, ny)
-
-    xrange = np.linspace(rect[0], rect[2], quad[0] + 1)
-    yrange = np.linspace(rect[1], rect[3], quad[1] + 1)
-
-    rects = []
-    for i, x in enumerate(xrange[0:-1]):
-        x1 = x
-        x2 = xrange[i + 1]
-        lower = [(x1, y) for y in yrange[0:-1]]
-        higher = [(x2, y) for y in yrange[1::]]
-        for p in tuple(zip(lower, higher)):
-            rects.append(box(*tuple(np.asarray(p).ravel())))
-    return rects
-
-
 def _morisita(groups, types, type_col, centroid_col, quad, pval):
     names = [n for n in groups]
     patterns = {n: {t: 0 for t in types} for n in names}
 
     for name, group in groups:
-        typ = group[type_col]
-        ct = group[centroid_col]
+        for t, tg in group.groupby(type_col):
+            cells = tg[centroid_col]
 
-        uq_typ = pd.unique(typ)
-        ctdb = {t: [] for t in uq_typ}
-
-        x_coord = [p[0] for p in ct]
-        y_coord = [p[1] for p in ct]
-        xmin = np.min(x_coord)
-        ymin = np.min(y_coord)
-        xmax = np.max(x_coord)
-        ymax = np.max(y_coord)
-
-        rects = _rec_tesllation((xmin, ymin, xmax, ymax), quad=quad)
-
-        for i, point in enumerate(ct):
-            ctdb[typ[i]].append(point)
-
-        for t, points in ctdb.items():
-            rect_quads = [0 for i in range(0, len(rects))]
-            for p in points:
-                for i, rect in enumerate(rects):
-                    if rect.contains(Point(p)):
-                        rect_quads[i] += 1
+            pp = PointPattern(cells)
+            counts = QStatistic(pp, shape="rectangle", nx=quad[0], ny=quad[1]).mr.point_location_sta()
+            quad_count = counts.keys()
 
             # index of dispersion
-            n = len(rects)
-            sum_x = np.sum(rect_quads)
-            sum_x_sqr = np.sum(np.square(rect_quads))
+            n = len(cells)
+            sum_x = np.sum(quad_count)
+            sum_x_sqr = np.sum(np.square(quad_count))
             ID = n * (sum_x_sqr - sum_x) / (sum_x ** 2 - sum_x)
             chi2_value = ID * (sum_x - 1) + n - sum_x
             p_value = 1 - chi2.cdf(chi2_value, n - 1)
-            accept_null = p_value < pval
+            accept_null = p_value > pval
 
             if accept_null:
                 pattern = 1  # random
@@ -138,34 +90,26 @@ def _ce_aggindex(groups, types, type_col, centroid_col, pval):
     patterns = {n: {t: 0 for t in types} for n in names}
 
     for name, group in groups:
-        typ = group[type_col]
-        ct = group[centroid_col]
-
-        uq_typ = pd.unique(typ)
-        ctdb = {t: [] for t in uq_typ}
-
-        for i, point in enumerate(ct):
-            ctdb[typ[i]].append(point)
-
-        for t, points in ctdb.items():
-            tree = cKDTree(points)
+        for t, tg in group.groupby(type_col):
+            cells = tg[centroid_col]
+            tree = cKDTree(cells)
             tmax = tree.maxes
             tmin = tree.mins
 
-            area = (tmax[0] - tmin[0])*(tmax[1] - tmin[1])
-            r = [tree.query(p)[0] for p in points]
-            n = len(points)
+            area = (tmax[0] - tmin[0]) * (tmax[1] - tmin[1])
+            r = [tree.query(c)[0] for c in cells]
+            n = len(cells)
             sum_r = np.sum(r)
             r_A = sum_r / n
             rho = n / area
-            r_E = 1 / (2*np.sqrt(rho))
+            r_E = 1 / (2 * np.sqrt(rho))
 
             # aggregation index R
             R = r_A / r_E
             z_score = (r_A - r_E) / (0.26136 / np.sqrt(n * rho))
 
             p_value = 1 - norm.cdf(z_score)
-            accept_null = p_value < pval
+            accept_null = p_value > pval
 
             if accept_null:
                 pattern = 1  # random
@@ -189,7 +133,9 @@ def spatial_distribution(
         pval: float = 0.01,
         r: Optional[float] = None,
         resample: int = 50,
-        quad: Union[tuple, str] = 'auto',
+        quad: Sequence[int] = (10, 10),
+        export_key: str = 'spatial_distribution',
+        return_df: bool = False,
 ):
     """Cell distribution pattern
 
@@ -203,17 +149,37 @@ def spatial_distribution(
     - Morisita’s index of dispersion (MID)
     - Clark and Evans aggregation index (CE)
 
+    +-------------------------------------------------------------------+
+    |                                      | Random | Regular | Clumped |
+    +======================================+========+=========+=========+
+    | Index of dispersion: ID              | ID = 1 | ID < 1  | ID > 1  |
+    +--------------------------------------+--------+---------+---------+
+    | Morisita’s index of dispersion: I    | I = 1  |  I < 1  |  I > 1  |
+    +--------------------------------------+--------+---------+---------+
+    | Clark and Evans aggregation index: R | R = 1  |  R < 1  |  R > 1  |
+    +--------------------------------------+--------+---------+---------+
+
+    Index of Dispersion:
+    :math: `ID = \frac{s^2}{\overline{x}}`
+    :math: `\chi^2` test
+
+    Morisita’s index of dispersion
+    .. TODO: add equation
+
+
     Args:
         adata: anndata object to perform analysis
-        groupby: list of name describe your experiments
+        groupby: list of names describes your experiments
         type_col: name of the cell types column
         centroid_col: name of the cell's centroid column
-        selected_types: which cell type
+        selected_types: which cell type to select
         method: Use 'ID', 'MID', or 'CE'
         pval: if smaller than pval, reject null hypothesis (random distribute)
         r: only use when method='ID', diameter of sample window
         resample: only use when method='ID', the number of random permutations to perform
         quad: only use when method='MID', how to perform rectangle tessellation
+        export_key: the key name to store info, exported to anndata.uns field
+        return_df: whether to return a pandas DataFrame object
 
     MID is quadratic statistic, it cuts a ROI into few rectangles, quad=(10,10) means the ROI will have 10*10 grid,
     if you don't know what to choose, let us choose for you, the default is 'auto'
@@ -233,4 +199,7 @@ def spatial_distribution(
 
     results = pd.DataFrame(patterns)
 
-    return results
+    df2adata_uns(results, adata, export_key, overwrite='True')
+
+    if return_df:
+        return results

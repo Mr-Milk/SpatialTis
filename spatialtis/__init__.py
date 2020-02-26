@@ -1,6 +1,7 @@
 import platform
 
 from .preprocessing import read_all_ROIs, read_ROI
+from .spatial import Neighbors
 
 if platform.system() in ["Linux", "Darwin"]:
     import logging

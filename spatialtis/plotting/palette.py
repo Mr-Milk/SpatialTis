@@ -35,12 +35,10 @@ def get_colors(n: int, *palette):
     return [next(cycler) for i in range(0, n)]
 
 
-def get_linear_colors(n: int, palette):
+def get_linear_colors(*palette):
     cycler, colors = colorcycle(*palette)
     max_colors = len(colors)
-    if n > max_colors:
-        logging.WARNING("Number of color generated has exceeded the length of palettes")
-    color_index = np.linspace(0, max_colors - 1, n)
+    color_index = np.linspace(0, max_colors - 1, max_colors)
     return [colors[int(i)] for i in color_index]
 
 

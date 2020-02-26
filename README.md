@@ -82,7 +82,7 @@ data = data.config(channels=channels, markers=markers)
 data = data.config_file('./metadata.csv', channel_col='channel', marker_col='marker')
 ```
 
-Now you can generate the anndata object, if you work on linux and macOS, you can try to set `mp=True` to enable parallellism.
+Now you can generate the anndata object, if you work on linux and macOS, you can try to set `mp=True` to enable parallellism. The default is to take convex hull of cell shape to minimize the representing points of a cell, the underlying assumption is that most of the cell shape is round. If your cell has antennaes like a neuron cell, you can set `polygonize='concave'`, but this will dramatically increase the processing time. It's recommended to set as 'convex', since there is almost no difference in downstream analysis, only advantage is the visualization of ROI are more close to real.
 
 ```python
 adata = data.to_anndata(mp=True)
@@ -268,7 +268,7 @@ $U=\sqrt{\frac{[n\sum_{j=1}^n W_{i,j}^2 - (\sum_{j=1}^n W_{i,j})^2]}{n-1}}$
 
 $$W_{i,j} = \left\{\begin{equation}\begin{array}{lr}
              \text{1 if j is a neighbor of i}\\
-             \text{o if j is not a neighbor of i}
+             \text{0 if j is not a neighbor of i}
              \end{array}
 \end{equation}\right.$$
 
@@ -367,9 +367,9 @@ add test: after cci, 1d
 
 ## Q&A
 
-- spatialtis.spatial part and PySAL library?
+- spatialtis.spatial and PySAL library?
 
-PySAL is designed for geometry analysis, but it's API is not satified for spatialtis, so I implemented most of the spatial algorithms myself. Also there are performance issues, ususally there will be approx 10 thousands of cells each ROI in multiplexed data, and millions of cells for a dataset.
+Actually part of spatial module is based on pointpat in PySAL
 
 
 
