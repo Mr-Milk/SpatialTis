@@ -1,15 +1,14 @@
+from collections import OrderedDict
+from typing import Optional, Sequence, Union
+
 import numpy as np
 import pandas as pd
 from anndata import AnnData
-
-from shapely.geometry import MultiPoint
-from scipy.spatial import cKDTree
-from scipy.stats import norm
 from pointpats import PointPattern
 from pointpats.quadrat_statistics import QStatistic
-
-from typing import Sequence, Union, Optional
-from collections import OrderedDict
+from scipy.spatial import cKDTree
+from scipy.stats import norm
+from shapely.geometry import MultiPoint
 
 from ..utils import filter_adata
 from ._util import quad_tessellation

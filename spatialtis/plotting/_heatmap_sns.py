@@ -1,12 +1,12 @@
+from typing import Optional, Sequence, Union
+
+import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
 
-from typing import Union, Sequence, Optional
-
-from .palette import get_linear_colors, get_colors
+from .palette import get_colors, get_linear_colors
 
 
 def heatmap(
@@ -23,9 +23,27 @@ def heatmap(
         colorbar_bbox: Optional[Sequence[float]] = None,
         **kwargs,
 ):
+    """a higher wrapper for seaborn's clustermap
+
+    Args:
+        df: input data, all data should store in data part, annotations should store in MultiIndex
+        row_label: which level to plot row text
+        col_label: which level to plot col text
+        row_colors: which level to plot row colors
+        col_colors: which level to plot col colors
+        palette: colors for heatmap part
+        colorbar_type: continuous or categorical
+        categorical_colorbar_text: if set 'categorical', the text need to be provided
+        row_colors_legend_bbox: adjust the locations of row colors legend
+        col_colors_legend_bbox: adjust the locations of col colors legend
+        colorbar_bbox: adjust the locations of colorbar
+
+    the order of cateforical_colorbar_text match to the order of palette
+
+    """
     try:
         plot_kwargs = dict(**kwargs)
-    except:
+    except NameError:
         plot_kwargs = dict()
     heat_data = pd.DataFrame(df.to_numpy())
     # ==============handle axis test====================
@@ -45,7 +63,7 @@ def heatmap(
         row_index_items = [array for name, array in row_index.iteritems() if name in row_colors]
         for array in row_index_items:
             row_colors_legend += list(pd.unique(array))
-        row_colors_legend = list(np.unique(row_colors_legend))
+        row_colors_legend = list(pd.unique(row_colors_legend))
         uni_bars += row_colors_legend
 
     if col_colors is not None:
@@ -54,10 +72,10 @@ def heatmap(
         col_index_items = [array for name, array in col_index.iteritems() if name in col_colors]
         for array in col_index_items:
             col_colors_legend += list(pd.unique(array))
-        col_colors_legend = list(np.unique(col_colors_legend))
+        col_colors_legend = list(pd.unique(col_colors_legend))
         uni_bars += col_colors_legend
 
-    colors = get_colors(len(uni_bars), "Category20")
+    colors = get_colors(len(uni_bars), "Category20", "Category20b")
     colors_bar_mapper = dict(zip(uni_bars, colors))
 
     if row_colors is not None:

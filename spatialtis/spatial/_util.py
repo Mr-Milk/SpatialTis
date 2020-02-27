@@ -1,7 +1,7 @@
+from typing import Union
+
 import numpy as np
 from shapely.geometry import box
-
-from typing import Union
 
 from ._neighbors import Neighbors
 

@@ -1,5 +1,5 @@
-import pandas as pd
 import matplotlib.pyplot as plt
+import pandas as pd
 
 
 def df2adata_uns(df, adata, key, overwrite=False):
@@ -14,7 +14,7 @@ def df2adata_uns(df, adata, key, overwrite=False):
 
     keys = adata.uns.keys()
     if (key in keys) & (not overwrite):
-        raise KeyError(f"{key} already exists, if you want to rewrite, set rewrite=True")
+        raise KeyError(f"{key} already exists, if you want to rewrite, set overwrite=True")
 
     adata.uns[key] = container
 

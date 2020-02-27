@@ -1,13 +1,12 @@
+from collections import Counter
+from itertools import product
+from typing import Callable, Mapping, Sequence
+
 import numpy as np
 import pandas as pd
 
-from collections import Counter
-from itertools import product
-from typing import Sequence, Mapping, Callable
-
-from ._util import check_neighbors
-
 from ._neighbors import Neighbors
+from ._util import check_neighbors
 
 
 def _count_neighbors(

@@ -6,13 +6,14 @@ from bokeh.io import export_svgs, output_file, output_notebook, save, show
 from bokeh.models import Legend, LegendItem
 from bokeh.plotting import figure
 
-from ..config import WORKING_ENV
+from spatialtis import CONFIG
+
 from .palette import get_colors
 
 
 def cell_map(
     df: pd.DataFrame,
-    type_col: str,
+    type_col: Optional[str] = None,
     selected_types: Optional[Sequence] = None,
     shape_key: Optional[str] = "cell_shape",
     display: bool = True,
@@ -22,6 +23,8 @@ def cell_map(
     palette: Union[Sequence[str], str, None] = None,
     return_plot: bool = False,
 ):
+    if type_col is None:
+        type_col = CONFIG.CELL_TYPE_COL
 
     groups = df.groupby(type_col)
 
@@ -42,6 +45,7 @@ def cell_map(
     )
 
     legends = list()
+    legends_name = list()
 
     def add_patches(name, fill_color=None, fill_alpha=None):
         x = [[c[0] for c in eval(cell)] for cell in data[shape_key]]
@@ -56,7 +60,9 @@ def cell_map(
             line_color="white",
             line_width=0.5,
         )
-        legends.append(LegendItem(label=name, renderers=[b]))
+        if name not in legends_name:
+            legends_name.append(name)
+            legends.append(LegendItem(label=name, renderers=[b]))
 
     if selected_types is None:
         for ix, (n, data) in enumerate(groups):
@@ -89,8 +95,8 @@ def cell_map(
         export_svgs(p, filename=save_svg)
 
     # solve env here
-    if (WORKING_ENV is not None) & display:
-        output_notebook(hide_banner=True, notebook_type=WORKING_ENV)
+    if (CONFIG.WORKING_ENV is not None) & display:
+        output_notebook(hide_banner=True, notebook_type=CONFIG.WORKING_ENV)
         show(p)
 
     # it will return a bokeh plot instance, allow user to do some modification

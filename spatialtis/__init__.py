@@ -1,5 +1,6 @@
 import platform
 
+from .config import CONFIG
 from .preprocessing import read_all_ROIs, read_ROI
 from .spatial import Neighbors
 

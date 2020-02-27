@@ -1,8 +1,8 @@
+from typing import Optional, Sequence, Union
+
 import pandas as pd
 from anndata import AnnData
 from scipy.stats import entropy
-
-from typing import Sequence, Union, Optional
 
 from ..sta.statistics import type_counter
 from ..utils import df2adata_uns
@@ -69,10 +69,3 @@ def spatial_heterogeneity(
 
     if return_df:
         return roi_heterogeneity
-
-
-
-
-
-
-

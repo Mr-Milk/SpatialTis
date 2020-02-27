@@ -1,16 +1,19 @@
 import pickle
-from typing import Sequence
+from itertools import combinations
+from typing import Optional, Sequence
+
 import numpy as np
 import pandas as pd
 from anndata import AnnData
-
-from itertools import combinations
 from scipy.stats import chisquare
 
+from spatialtis.config import CONFIG
+from spatialtis.utils import adata_uns2df
+
 from ._bar_plot import stacked_bar
-from ._violin_plot import violin_plot
-from ..utils import adata_uns2df
 from ._heatmap_sns import heatmap
+from ._stacked_kde_sns import stacked_kde
+from ._violin_plot import violin_plot
 
 
 def cell_components(
@@ -43,6 +46,7 @@ def cell_co_occurrence(
         adata: AnnData,
         groupby: Sequence[str],
         key: str = "cell_co_occurrence",
+        pval: float = 0.01,
         **kwargs
 ):
     df = adata_uns2df(adata, key)
@@ -58,10 +62,41 @@ def cell_co_occurrence(
                 p = chisquare(comb).pvalue
             data.append(p)
         X.append(data)
-    pdf = (pd.DataFrame(X) > 0.95).astype(int)
+    pdf = (pd.DataFrame(X) > (1-pval)).astype(int)
     pdf.index = pd.MultiIndex.from_frame(df.index.to_frame(index=False)[groupby].drop_duplicates())
     pdf.columns = pd.MultiIndex.from_arrays(np.asarray([i for i in combinations(df.columns, 2)]).T,
                                             names=['Cell type1', 'Cell type2'])
-    p = heatmap(pdf, row_colors=groupby, col_colors=['Cell type1', 'Cell type2'], colorbar_type='categorical',
-                categorical_colorbar_text=['Co-occur', 'Non co-occur'], col_cluster=None, row_cluster=None)
+
+    plot_kwargs = dict(
+        row_colors=groupby,
+        col_colors=['Cell type1', 'Cell type2'],
+        colorbar_type='categorical',
+        categorical_colorbar_text=['Non co-occurrence', 'Co-occurrence'],
+        col_colors_legend_bbox=(1.05, 0.5),
+        row_colors_legend_bbox=(-.28, 0.5),
+        colorbar_bbox=(-.28, 0.15),
+        row_cluster=None,
+        col_cluster=True,
+    )
+    # allow user to overwrite the default plot config
+    for k, v in kwargs.items():
+        plot_kwargs[k] = v
+
+    p = heatmap(pdf, **plot_kwargs)
+    return p
+
+
+def cell_morphology(
+        adata: AnnData,
+        row: Optional[str] = None,
+        col: Optional[str] = None,
+        cell_type: Optional[str] = None,
+        *,
+        key: str = "cell_morphology",
+        **kwargs
+):
+    df = adata_uns2df(adata, key)
+    type_col = CONFIG.CELL_TYPE_COL
+
+    p = stacked_kde(df.xs(cell_type, level=type_col), row=row, col=col, **kwargs)
     return p

@@ -1,11 +1,11 @@
+from typing import Sequence, Union
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import matplotlib.pyplot as plt
 
-from typing import Union, Sequence
-
-from .palette import get_linear_colors, get_colors
+from .palette import get_colors, get_linear_colors
 
 
 def stacked_kde(

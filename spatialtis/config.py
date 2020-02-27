@@ -3,9 +3,43 @@ Setting Global config for whole processing level
 """
 from typing import Mapping, Optional, Sequence, Union
 
+
+class CONFIG(object):
+    def __init__(self):
+        self._EXP_OBS: Optional[Sequence[str]] = None
+        self._ROI_KEY: Optional[str] = None
+        self._CELL_TYPE_COL: Optional[str] = None
+        self.WORKING_ENV: Optional[str] = "jupyter"
+
+    @property
+    def EXP_OBS(self):
+        return self._EXP_OBS
+
+    @EXP_OBS.setter
+    def EXP_OBS(self, obs):
+        if isinstance(obs, (Sequence, str)):
+            self._EXP_OBS = list(obs)
+        else:
+            raise ValueError
+        self._ROI_KEY = self._EXP_OBS[-1]
+
+    @property
+    def CELL_TYPE_COL(self):
+        return self._CELL_TYPE_COL
+
+    @CELL_TYPE_COL.setter
+    def CELL_TYPE_COL(self, type_col):
+        if isinstance(type_col, (str, int, float)):
+            self._CELL_TYPE_COL = type_col
+        else:
+            raise ValueError
+
+
+CONFIG = CONFIG()
+
 # can be override in plotting function
 # ['jupyter', 'zepplin', None]
-WORKING_ENV: Optional[str] = "jupyter"
+
 
 """
 If working in Jupyter Lab/Hub, please install the following dependencies
@@ -18,22 +52,6 @@ If working with Zeppelin, please install `bkzep` (Only PyPI)
     ```pip install bkzep```
 
 """
-
-# Which file format to save across spatialTis
-# ['png', 'svg', 'html', None]
-SAVE_FORMAT: Union[str, Sequence[str], None] = None
-"""
-Supported format:
-Static file: PNG, SVG,
-Interactive file: HTML
-The default will embed the JS resource inside html
-if you want to switch to CDN, set `use_CDN = True`
-"""
-
-# Embed bokeh JS resource or use CDN
-use_CDN: bool = False
-
-ROI_KEY: str = "ROI"
 
 ISOTOPES_NAME: Sequence = [
     "H",

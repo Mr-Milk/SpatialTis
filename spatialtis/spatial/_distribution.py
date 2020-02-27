@@ -1,15 +1,15 @@
+from typing import Optional, Sequence, Union
+
 import numpy as np
 import pandas as pd
-from scipy.spatial import cKDTree
-from scipy.stats import chisquare, chi2, norm
 from anndata import AnnData
-from shapely.geometry import box, Point
 from pointpats import PointPattern
 from pointpats.quadrat_statistics import QStatistic
+from scipy.spatial import cKDTree
+from scipy.stats import chi2, chisquare, norm
+from shapely.geometry import Point, box
 
-from typing import Sequence, Union, Optional
-
-from ..utils import filter_adata, df2adata_uns
+from ..utils import df2adata_uns, filter_adata
 
 
 def _index_of_dispersion(groups, types, type_col, centroid_col, resample, r, pval):

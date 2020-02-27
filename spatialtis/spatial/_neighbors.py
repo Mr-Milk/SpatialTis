@@ -1,14 +1,14 @@
 from collections import OrderedDict
 from typing import Optional, Sequence, Union
 
+import igraph as ig
 import numpy as np
 import pandas as pd
 from anndata import AnnData
+from scipy.spatial.distance import euclidean
 from shapely.affinity import scale as sscale
 from shapely.geometry import asMultiPoint, box
 from shapely.strtree import STRtree
-from scipy.spatial.distance import euclidean
-import igraph as ig
 
 
 class Neighbors(object):
@@ -241,4 +241,3 @@ class Neighbors(object):
     @property
     def neighbors(self):
         return self.__neighborsdb
-

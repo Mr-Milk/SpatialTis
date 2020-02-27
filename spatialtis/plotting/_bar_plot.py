@@ -5,7 +5,7 @@ from bokeh.io import export_svgs, output_file, output_notebook, save
 from bokeh.models import ColumnDataSource, FactorRange, Legend
 from bokeh.plotting import figure, show
 
-from spatialtis.config import WORKING_ENV
+from spatialtis import CONFIG
 from spatialtis.plotting.palette import get_colors
 
 
@@ -122,8 +122,8 @@ def stacked_bar(
         export_svgs(p, filename=save_svg)
 
     # solve env here
-    if (WORKING_ENV is not None) & display:
-        output_notebook(hide_banner=True, notebook_type=WORKING_ENV)
+    if (CONFIG.WORKING_ENV is not None) & display:
+        output_notebook(hide_banner=True, notebook_type=CONFIG.WORKING_ENV)
         show(p)
 
     # it will return a bokeh plot instance, allow user to do some modification

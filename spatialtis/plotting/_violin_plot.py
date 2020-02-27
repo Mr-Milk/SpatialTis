@@ -7,7 +7,8 @@ from bokeh.models import FactorRange, Legend, LegendItem
 from bokeh.plotting import figure, show
 from scipy.stats import gaussian_kde as kde
 
-from ..config import WORKING_ENV
+from spatialtis import CONFIG
+
 from .palette import get_colors
 
 global gl, factors, q1, q2, q3, upper, lower, splits
@@ -290,8 +291,8 @@ def violin_plot(
         p.output_backend = "svg"
         export_svgs(p, filename=save_svg)
 
-    if (WORKING_ENV is not None) & display:
-        output_notebook(hide_banner=True, notebook_type=WORKING_ENV)
+    if (CONFIG.WORKING_ENV is not None) & display:
+        output_notebook(hide_banner=True, notebook_type=CONFIG.WORKING_ENV)
         show(p)
 
     if return_plot:

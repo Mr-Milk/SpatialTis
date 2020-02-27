@@ -5,29 +5,33 @@ import numpy as np
 import pandas as pd
 from anndata import AnnData
 
-from ..utils import df2adata_uns
+from spatialtis.config import CONFIG
+from spatialtis.utils import df2adata_uns
 
 Num = Union[int, float]
 
 
 def type_counter(
         adata: AnnData,
-        groupby: Union[Sequence, str],
-        type_col: str,
+        groupby: Union[Sequence, str] = None,
+        type_col: str = None,
         selected_types: Optional[Sequence] = None,
 ) -> pd.DataFrame:
-    if isinstance(groupby, str):
-        groupby = [groupby]
+    if groupby is None:
+        groupby = CONFIG.EXP_OBS
     else:
         groupby = list(groupby)
+
+    if type_col is None:
+        type_col = CONFIG.CELL_TYPE_COL
+
     df = adata.obs[groupby + [type_col]]
 
     if selected_types is not None:
         df = df[df[type_col].isin(selected_types)]
-
+    # the order of type will follow the order in df
     groups = df.groupby(groupby)
     types = pd.unique(df[type_col])
-    # TODO: sorted types based on selected types
     matrix = list()
     mindex = list()
     for i, (n, g) in enumerate(groups):
@@ -50,38 +54,40 @@ def type_counter(
 
 def cell_components(
         adata: AnnData,
-        type_col: str,
-        groupby: list,
+        groupby: Union[Sequence, str] = None,
+        type_col: str = None,
         selected_types: Optional[Sequence] = None,
         export: bool = True,
         export_key: str = "cell_components",
         return_df: bool = False,
+        overwrite: bool = False,
 ):
-    results = type_counter(adata, groupby, type_col, selected_types=selected_types)
+    counter = type_counter(adata, groupby, type_col, selected_types)
 
     if export:
-        df2adata_uns(results, adata, export_key)
+        df2adata_uns(counter, adata, export_key, overwrite)
 
     if return_df:
-        return results
+        return counter
 
 
 def cell_co_occurrence(
         adata: AnnData,
-        type_col: str,
-        groupby: list,
+        groupby: Union[Sequence, str] = None,
+        type_col: str = None,
         selected_types: list = None,
         export: bool = True,
         export_key: str = "cell_co_occurrence",
         threshold: int = 50,
         return_df: bool = False,
+        overwrite: bool = False,
 ):
-    counter = type_counter(adata, groupby, type_col, selected_types=selected_types)
+    counter = type_counter(adata, groupby, type_col, selected_types)
 
     occurrence = counter.gt(threshold)
 
     if export:
-        df2adata_uns(occurrence, adata, export_key)
+        df2adata_uns(occurrence, adata, export_key, overwrite)
 
     if return_df:
         return occurrence
@@ -89,15 +95,32 @@ def cell_co_occurrence(
 
 def cell_density(
         adata: AnnData,
-        type_col: str,
-        groupby: list,
         size: Union[Sequence[Sequence[Num]], Sequence[Num]],
+        ratio: float = 1.0,
+        groupby: Union[Sequence, str] = None,
+        type_col: str = None,
         selected_types: Optional[Sequence] = None,
         export: bool = True,
         export_key: str = "cell_density",
-        ratio: float = 1.0,
         return_df: bool = False,
+        overwrite: bool = False,
 ):
+    """Calculating cell density in each ROI
+
+    Args:
+        adata:
+        size:
+        ratio: the ratio between pixel and real size, default is 1.0
+        groupby:
+        type_col:
+        selected_types:
+        export:
+        export_key:
+        return_df:
+        overwrite:
+
+
+    """
     counter = type_counter(adata, groupby, type_col, selected_types=selected_types)
     if isinstance(size[0], (int, float)):
         area = size[0] * size[1]
@@ -110,7 +133,7 @@ def cell_density(
         raise ValueError("Unrecognized size input")
 
     if export:
-        df2adata_uns(results, adata, export_key)
+        df2adata_uns(results, adata, export_key, overwrite)
 
     if return_df:
         return results
@@ -118,13 +141,34 @@ def cell_density(
 
 def cell_morphology(
         adata: AnnData,
-        type_col: str,
-        groupby: list,
+        metrics_col: str = "eccentricity",
+        groupby: Union[Sequence, str] = None,
+        type_col: str = None,
         selected_types: Optional[Sequence] = None,
-        area_col: str = "area",
-        eccentricity_col: str = "eccentricity",
         export: bool = True,
-        export_key: str = "cell_components",
+        export_key: str = "cell_morphology",
         return_df: bool = False,
+        overwrite: bool = False,
 ):
-    pass
+    if groupby is None:
+        groupby = CONFIG.EXP_OBS
+    else:
+        groupby = list(groupby)
+
+    if type_col is None:
+        type_col = CONFIG.CELL_TYPE_COL
+
+    key = groupby + [type_col, metrics_col]
+    df = adata.obs[key]
+
+    if selected_types is not None:
+        df = df[df[type_col].isin(selected_types)]
+
+    df.index = pd.MultiIndex.from_frame(df[groupby + [type_col]])
+    df = df.drop(groupby + [type_col], axis=1)
+
+    if export:
+        df2adata_uns(df, adata, export_key, overwrite)
+
+    if return_df:
+        return df
