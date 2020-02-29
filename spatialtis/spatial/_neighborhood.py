@@ -118,7 +118,7 @@ def neighborhood_analysis(
         n: A spatialtis.Neighbors object, neighbors are already computed
         resample: perform resample for how many times
         pval: if smaller than pval, reject null hypothesis (No relationship)
-        export: whether export to anndata object obs field
+        export: whether export to anndata object uns field
         export_key: which key used to export
         return_df: whether to return result dataframe
         overwrite: whether to overwrite your previous results (if existed)
@@ -156,7 +156,7 @@ def spatial_enrichment_analysis(
         Args:
             n: A spatialtis.Neighbors object, neighbors are already computed
             resample: perform resample for how many times
-            export: whether export to anndata object obs field
+            export: whether export to anndata object uns field
             export_key: which key used to export
             return_df: whether to return result dataframe
             overwrite: whether to overwrite your previous results (if existed)

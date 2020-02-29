@@ -10,7 +10,7 @@ from ._violin_plot import violin_plot
 from .palette import colorcycle, get_colors, get_linear_colors, view_palette
 from .wrapper import (cell_co_occurrence, cell_components, cell_density,
                       cell_morphology, neighborhood_analysis,
-                      spatial_enrichment_analysis)
+                      spatial_enrichment_analysis, spatial_distribution)
 
 if CONFIG.WORKING_ENV == "jupyter":
     output_notebook(hide_banner=True)

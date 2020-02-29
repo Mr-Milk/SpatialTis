@@ -178,7 +178,7 @@ Ref: https://www.zoology.ubc.ca/~krebs/downloads/krebs_chapter_06_2017.pdf
 
 There are three options to measure the distribution of cells in spatialtis
 
-In the result table: 0 (No cell), 1 (Random), 2 (Regular), 3 (Clumped)
+In the result table: 0 (Blank), 1 (Random), 2 (Regular), 3 (Clumped)
 
 |                         | Random | Regular | Clumped |
 | ----------------------- | ------ | ------- | ------- |

@@ -115,7 +115,7 @@ def neighborhood_analysis(
         col_colors=['Cell type1', 'Cell type2'],
         palette=['#2f71ab', '#f7f7f7', '#ba262b'],
         colorbar_type='categorical',
-        categorical_colorbar_text=['Avoidance','Association'],
+        categorical_colorbar_text=['Avoidance', 'Association'],
         col_colors_legend_bbox=(1.05, 0.5),
         row_colors_legend_bbox=(-.25, 0.5),
         colorbar_bbox=(-.25, 0.15),
@@ -143,6 +143,33 @@ def spatial_enrichment_analysis(
         col_colors=['Cell type1', 'Cell type2'],
         col_colors_legend_bbox=(1.05, 0.5),
         row_colors_legend_bbox=(-.25, 0.15),
+        row_cluster=None,
+        col_cluster=True,
+    )
+    # allow user to overwrite the default plot config
+    for k, v in kwargs.items():
+        plot_kwargs[k] = v
+
+    p = heatmap(df, **plot_kwargs)
+    return p
+
+
+def spatial_distribution(
+        adata: AnnData,
+        groupby: Sequence[str],
+        key: str = "spatial_distribution",
+        **kwargs
+):
+    df = adata_uns2df(adata, key)
+
+    plot_kwargs = dict(
+        row_colors=groupby,
+        col_colors=['Cell type'],
+        palette=['#fffec6', '#c54a52', '#4a89b9', '#5a539d'],
+        colorbar_type='categorical',
+        categorical_colorbar_text=['Blank', 'Random', 'Regular', 'Clumped'],
+        col_colors_legend_bbox=(1.05, 0.5),
+        row_colors_legend_bbox=(-.25, 0.5),
         row_cluster=None,
         col_cluster=True,
     )

@@ -58,8 +58,9 @@ def adata_uns2df(adata, key):
 def filter_adata(adata, groupby, type_col, *keys, selected_types=None, reset_index=True):
 
     keys = [k for k in keys if k is not None]
-    df = adata.uns[groupby+keys+[type_col]]
-    df = df[df[type_col].isin(selected_types)]
+    df = adata.obs[groupby+keys+[type_col]]
+    if selected_types is not None:
+        df = df[df[type_col].isin(selected_types)]
     if reset_index:
         df = df.reset_index()
 
