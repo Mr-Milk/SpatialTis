@@ -6,12 +6,13 @@ from scipy.stats import entropy
 
 from ..sta.statistics import type_counter
 from ..utils import df2adata_uns
+from spatialtis.config import CONFIG
 
 
 def spatial_heterogeneity(
         adata: AnnData,
-        groupby: Union[Sequence, str],
-        type_col: str,
+        groupby: Union[Sequence, str, None] = None,
+        type_col: Optional[str] = None,
         compare: Optional[int] = None,
         selected_types: Optional[Sequence] = None,
         export_key: str = 'spatial_heterogeneity',
@@ -32,6 +33,10 @@ def spatial_heterogeneity(
         return_df: whether to return a pandas DataFrame object
 
     """
+    if groupby is None:
+        groupby = CONFIG.EXP_OBS
+    if type_col is None:
+        type_col = CONFIG.CELL_TYPE_COL
 
     df = type_counter(adata, groupby, type_col, selected_types=selected_types)
 

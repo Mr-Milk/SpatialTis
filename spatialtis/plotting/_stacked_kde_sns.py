@@ -17,7 +17,7 @@ def stacked_kde(
     new_df = pd.DataFrame(df.stack(), columns=['value']).reset_index()
 
     # handle colors
-    default_palette = get_colors(9, "Set1")
+    default_palette = get_colors(9, ["Set1"])
     if palette is not None:
         default_palette = get_linear_colors(palette)
 

@@ -13,8 +13,8 @@ Num = Union[int, float]
 
 def type_counter(
         adata: AnnData,
-        groupby: Union[Sequence, str] = None,
-        type_col: str = None,
+        groupby: Union[Sequence, str, None] = None,
+        type_col: Optional[str] = None,
         selected_types: Optional[Sequence] = None,
 ) -> pd.DataFrame:
     if groupby is None:
@@ -54,8 +54,8 @@ def type_counter(
 
 def cell_components(
         adata: AnnData,
-        groupby: Union[Sequence, str] = None,
-        type_col: str = None,
+        groupby: Union[Sequence, str, None] = None,
+        type_col: Optional[str] = None,
         selected_types: Optional[Sequence] = None,
         export: bool = True,
         export_key: str = "cell_components",
@@ -73,9 +73,9 @@ def cell_components(
 
 def cell_co_occurrence(
         adata: AnnData,
-        groupby: Union[Sequence, str] = None,
-        type_col: str = None,
-        selected_types: list = None,
+        groupby: Union[Sequence, str, None] = None,
+        type_col: Optional[str] = None,
+        selected_types: Optional[Sequence] = None,
         export: bool = True,
         export_key: str = "cell_co_occurrence",
         threshold: int = 50,
@@ -97,8 +97,8 @@ def cell_density(
         adata: AnnData,
         size: Union[Sequence[Sequence[Num]], Sequence[Num]],
         ratio: float = 1.0,
-        groupby: Union[Sequence, str] = None,
-        type_col: str = None,
+        groupby: Union[Sequence, str, None] = None,
+        type_col: Optional[str] = None,
         selected_types: Optional[Sequence] = None,
         export: bool = True,
         export_key: str = "cell_density",
@@ -142,8 +142,8 @@ def cell_density(
 def cell_morphology(
         adata: AnnData,
         metrics_col: str = "eccentricity",
-        groupby: Union[Sequence, str] = None,
-        type_col: str = None,
+        groupby: Union[Sequence, str, None] = None,
+        type_col: Optional[str] = None,
         selected_types: Optional[Sequence] = None,
         export: bool = True,
         export_key: str = "cell_morphology",

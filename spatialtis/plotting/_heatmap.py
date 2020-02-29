@@ -257,7 +257,7 @@ def heatmap(
             row_blocks = df_index[row_colors].to_numpy()
 
         unigp = np.array([np.unique(b) for b in row_blocks.T[::-1]]).ravel()
-        row_blocks_mapper = dict(zip(unigp, get_colors(len(unigp), "Category20")))
+        row_blocks_mapper = dict(zip(unigp, get_colors(len(unigp), ["Category20"])))
 
         def add_row_blocks(blocks, step):
             plot_blocks = ColumnDataSource(
@@ -318,7 +318,7 @@ def heatmap(
             col_blocks = df_col[col_colors].to_numpy()
 
         unigp = np.array([np.unique(b) for b in col_blocks.T[::-1]]).ravel()
-        col_blocks_mapper = dict(zip(unigp, get_colors(len(unigp), "Spectral")))
+        col_blocks_mapper = dict(zip(unigp, get_colors(len(unigp), ["Spectral"])))
         col_colors_legends = []
 
         def add_col_blocks(blocks, step):

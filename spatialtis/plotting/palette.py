@@ -30,12 +30,12 @@ def colorcycle(*palette):
     return cycle(new_palette), new_palette
 
 
-def get_colors(n: int, *palette):
+def get_colors(n: int, palette):
     cycler, _ = colorcycle(*palette)
     return [next(cycler) for i in range(0, n)]
 
 
-def get_linear_colors(*palette):
+def get_linear_colors(palette):
     cycler, colors = colorcycle(*palette)
     max_colors = len(colors)
     color_index = np.linspace(0, max_colors - 1, max_colors)

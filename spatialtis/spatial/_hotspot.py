@@ -12,12 +12,13 @@ from shapely.geometry import MultiPoint
 
 from ..utils import filter_adata
 from ._util import quad_tessellation
+from spatialtis.config import CONFIG
 
 
 def hotspot(
         adata: AnnData,
-        groupby: Union[Sequence, str],
-        type_col: str,
+        groupby: Union[Sequence, str, None] = None,
+        type_col: Optional[str] = None,
         centroid_col: str = 'centroid',
         selected_types: Optional[Sequence] = None,
         search_level: int = 3,
@@ -25,6 +26,10 @@ def hotspot(
         pval: float = 0.01,
         export_key: str = 'hotspot'
 ):
+    if groupby is None:
+        groupby = CONFIG.EXP_OBS
+    if type_col is None:
+        type_col = CONFIG.CELL_TYPE_COL
     df = filter_adata(adata, groupby, type_col, centroid_col, selected_types=selected_types, reset_index=False)
     groups = df.groupby(groupby)
     hotcells = []

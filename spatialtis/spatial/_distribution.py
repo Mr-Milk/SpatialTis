@@ -10,6 +10,7 @@ from scipy.stats import chi2, chisquare, norm
 from shapely.geometry import Point, box
 
 from ..utils import df2adata_uns, filter_adata
+from spatialtis.config import CONFIG
 
 
 def _index_of_dispersion(groups, types, type_col, centroid_col, resample, r, pval):
@@ -125,8 +126,8 @@ def _ce_aggindex(groups, types, type_col, centroid_col, pval):
 
 def spatial_distribution(
         adata: AnnData,
-        groupby: Union[Sequence, str],
-        type_col: str,
+        groupby: Union[Sequence, str, None] = None,
+        type_col: Optional[str] = None,
         centroid_col: str = 'centroid',
         selected_types: Optional[Sequence] = None,
         method: str = 'ID',
@@ -184,6 +185,10 @@ def spatial_distribution(
     MID is quadratic statistic, it cuts a ROI into few rectangles, quad=(10,10) means the ROI will have 10*10 grid,
     if you don't know what to choose, let us choose for you, the default is 'auto'
     """
+    if groupby is None:
+        groupby = CONFIG.EXP_OBS
+    if type_col is None:
+        type_col = CONFIG.CELL_TYPE_COL
     df = filter_adata(adata, groupby, type_col, centroid_col, selected_types=selected_types)
     types = df.unique(df[type_col])
     groups = df.groupby(groupby)

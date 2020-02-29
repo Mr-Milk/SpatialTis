@@ -28,10 +28,10 @@ def cell_map(
 
     groups = df.groupby(type_col)
 
-    default_palette = "Spectral", "Category20"
+    default_palette = ["Spectral", "Category20"]
     if palette is None:
         palette = default_palette
-    colors = get_colors(len(groups), *palette)
+    colors = get_colors(len(groups), palette)
 
     tools = "pan,wheel_zoom,box_zoom,reset,hover,save"
 

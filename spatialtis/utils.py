@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 
+from typing import Sequence
+
 
 def df2adata_uns(df, adata, key, overwrite=False):
     """preserve all info in pd.DataFrame as dict, and write to anndata.uns
@@ -20,8 +22,26 @@ def df2adata_uns(df, adata, key, overwrite=False):
 
     print(
         f"""Finished!
-            Add to AnnData object
-            uns: '{key}' """
+    Add to AnnData object
+    uns: '{key}' """
+    )
+
+
+def col2adata_obs(col: Sequence,
+                  adata, key, overwrite=False):
+    """preserve all info in pd.DataFrame as dict, and write to anndata.uns
+
+    """
+    keys = adata.uns.keys()
+    if (key in keys) & (not overwrite):
+        raise KeyError(f"{key} already exists, if you want to rewrite, set overwrite=True")
+
+    adata.obs[key] = col
+
+    print(
+        f"""Finished!
+    Add to AnnData object
+    obs: '{key}' """
     )
 
 

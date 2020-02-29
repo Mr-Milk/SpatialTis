@@ -10,11 +10,14 @@ from shapely.affinity import scale as sscale
 from shapely.geometry import asMultiPoint, box
 from shapely.strtree import STRtree
 
+from spatialtis.config import CONFIG
+from spatialtis.utils import col2adata_obs
+
 
 class Neighbors(object):
     def __init__(self,
                  data: AnnData,
-                 groupby: Union[str, Sequence],
+                 groupby: Union[Sequence, str, None] = None,
                  type_col: Optional[str] = None,
                  shape_col: Optional[str] = 'cell_shape',
                  selected_types: Optional[Sequence] = None,
@@ -22,6 +25,11 @@ class Neighbors(object):
                  ):
 
         # keys for query info from anndata
+        if groupby is None:
+            groupby = CONFIG.EXP_OBS
+        if type_col is None:
+            type_col = CONFIG.CELL_TYPE_COL
+
         keys = []
         if isinstance(groupby, str):
             keys.append(groupby)
@@ -38,6 +46,7 @@ class Neighbors(object):
         self.__typecol = type_col
         self.__shapecol = shape_col
         self.__centcol = centroid_col
+        self.__expobs = groupby
         self.__adata_integrity = True
 
         if selected_types is not None:
@@ -85,7 +94,7 @@ class Neighbors(object):
             elif (expand != 0) & (scale == 1.0):
                 bbox = cell.bounds
                 expanded_bbox = [bbox[0] - expand, bbox[1] - expand, bbox[2] + expand, bbox[3] + expand]
-                scaled_cell = box(expanded_bbox)
+                scaled_cell = box(*expanded_bbox)
             else:
                 scaled_cell = cell
             result = tree.query(scaled_cell)
@@ -117,7 +126,7 @@ class Neighbors(object):
         # if the param is the same, prevent repetitive work
         run_neighbors_search = False
         pre_method = self.__neighbors_param['method']
-        pre_unit = self.__neighbors_param['unit']
+        pre_unit = self.__neighbors_param['units']
         if pre_method == 0:
             run_neighbors_search = True
         else:
@@ -163,7 +172,7 @@ class Neighbors(object):
 
         self.__adata.uns[export_key] = {'data': str(self.__neighborsdb), 'param': self.__neighbors_param}
 
-    def neighbors_count(self, export_key: str = 'neighbors_count'):
+    def neighbors_count(self, export_key: str = 'neighbors_count', overwrite: bool = False):
         """Get how many neighbors for each cell
 
         This will write to anndata object's obs field,
@@ -171,14 +180,12 @@ class Neighbors(object):
 
         Args:
             export_key: the key name to export
+            overwrite: if to overwrite existed key
 
         """
 
         if not self.__neighborsbuilt:
             return "Please run .find_neighbors() before further analysis."
-
-        if export_key in self.__adata.obs.keys():
-            return f'export key "{export_key}" exists'
 
         if self.__adata_integrity:
             counts = []
@@ -190,7 +197,7 @@ class Neighbors(object):
                     except KeyError:
                         count = 0
                     counts.append(count)
-            self.__adata.obs[export_key] = counts
+            col2adata_obs(counts, self.__adata, export_key, overwrite)
         else:
             return 'Cannot write to incomplete anndata because "selected_types" are used.'
 
@@ -231,6 +238,13 @@ class Neighbors(object):
             return None
 
     @property
+    def types(self):
+        if self.__typecol is not None:
+            return self.__types
+        else:
+            return None
+
+    @property
     def data(self):
         return self.__data
 
@@ -241,3 +255,7 @@ class Neighbors(object):
     @property
     def neighbors(self):
         return self.__neighborsdb
+
+    @property
+    def expobs(self):
+        return self.__expobs

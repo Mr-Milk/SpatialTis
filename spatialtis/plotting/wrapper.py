@@ -62,7 +62,7 @@ def cell_co_occurrence(
                 p = chisquare(comb).pvalue
             data.append(p)
         X.append(data)
-    pdf = (pd.DataFrame(X) > (1-pval)).astype(int)
+    pdf = (pd.DataFrame(X) > (1 - pval)).astype(int)
     pdf.index = pd.MultiIndex.from_frame(df.index.to_frame(index=False)[groupby].drop_duplicates())
     pdf.columns = pd.MultiIndex.from_arrays(np.asarray([i for i in combinations(df.columns, 2)]).T,
                                             names=['Cell type1', 'Cell type2'])
@@ -71,10 +71,10 @@ def cell_co_occurrence(
         row_colors=groupby,
         col_colors=['Cell type1', 'Cell type2'],
         colorbar_type='categorical',
-        categorical_colorbar_text=['Non co-occurrence', 'Co-occurrence'],
+        categorical_colorbar_text=['Absent', 'Presence'],
         col_colors_legend_bbox=(1.05, 0.5),
-        row_colors_legend_bbox=(-.28, 0.5),
-        colorbar_bbox=(-.28, 0.15),
+        row_colors_legend_bbox=(-.25, 0.5),
+        colorbar_bbox=(-.25, 0.15),
         row_cluster=None,
         col_cluster=True,
     )
@@ -99,4 +99,56 @@ def cell_morphology(
     type_col = CONFIG.CELL_TYPE_COL
 
     p = stacked_kde(df.xs(cell_type, level=type_col), row=row, col=col, **kwargs)
+    return p
+
+
+def neighborhood_analysis(
+        adata: AnnData,
+        groupby: Sequence[str],
+        key: str = "neighborhood_analysis",
+        **kwargs
+):
+    df = adata_uns2df(adata, key)
+
+    plot_kwargs = dict(
+        row_colors=groupby,
+        col_colors=['Cell type1', 'Cell type2'],
+        palette=['#2f71ab', '#f7f7f7', '#ba262b'],
+        colorbar_type='categorical',
+        categorical_colorbar_text=['Avoidance','Association'],
+        col_colors_legend_bbox=(1.05, 0.5),
+        row_colors_legend_bbox=(-.25, 0.5),
+        colorbar_bbox=(-.25, 0.15),
+        row_cluster=None,
+        col_cluster=True,
+    )
+    # allow user to overwrite the default plot config
+    for k, v in kwargs.items():
+        plot_kwargs[k] = v
+
+    p = heatmap(df, **plot_kwargs)
+    return p
+
+
+def spatial_enrichment_analysis(
+        adata: AnnData,
+        groupby: Sequence[str],
+        key: str = "spatial_enrichment_analysis",
+        **kwargs
+):
+    df = adata_uns2df(adata, key)
+
+    plot_kwargs = dict(
+        row_colors=groupby,
+        col_colors=['Cell type1', 'Cell type2'],
+        col_colors_legend_bbox=(1.05, 0.5),
+        row_colors_legend_bbox=(-.25, 0.15),
+        row_cluster=None,
+        col_cluster=True,
+    )
+    # allow user to overwrite the default plot config
+    for k, v in kwargs.items():
+        plot_kwargs[k] = v
+
+    p = heatmap(df, **plot_kwargs)
     return p

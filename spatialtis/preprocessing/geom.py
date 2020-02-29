@@ -6,6 +6,7 @@ def geom_cells(cells):
     """
     return cell approximate borders, to save computation power
     """
+    # TODO: add concave method, alphashape algorithm in python
     polycells = [MultiPoint(cell).convex_hull for cell in cells]
 
     area = []

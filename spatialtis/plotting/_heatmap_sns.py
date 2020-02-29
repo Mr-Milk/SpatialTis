@@ -75,7 +75,7 @@ def heatmap(
         col_colors_legend = list(pd.unique(col_colors_legend))
         uni_bars += col_colors_legend
 
-    colors = get_colors(len(uni_bars), "Category20", "Category20b")
+    colors = get_colors(len(uni_bars), ["Category20", "Category20b"])
     colors_bar_mapper = dict(zip(uni_bars, colors))
 
     if row_colors is not None:
@@ -90,7 +90,7 @@ def heatmap(
     if palette is not None:
         cmap = get_linear_colors(palette)
     else:
-        cmap = get_linear_colors("Viridis")
+        cmap = get_linear_colors(["Viridis"])
 
     # handle legend bbox
 
@@ -141,7 +141,7 @@ def heatmap(
                                    handlelength=0.8,
                                    handles=row_legends,
                                    frameon=False)
-        plt.gca().add_artist(add_row_legend)
+        ax.add_artist(add_row_legend)
 
     if col_colors is not None:
         col_legends = [mpatches.Patch(label=l, color=colors_bar_mapper[l]) for l in col_colors_legend]
@@ -150,7 +150,7 @@ def heatmap(
                                    handlelength=0.8,
                                    handles=col_legends,
                                    frameon=False)
-        plt.gca().add_artist(add_col_legend)
+        ax.add_artist(add_col_legend)
 
     if colorbar_type is 'categorical':
         add_cbar_legend = ax.legend(loc="center left",

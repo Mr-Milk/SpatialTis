@@ -71,10 +71,10 @@ def stacked_bar(
         figure_config["plot_width"] = size[1]
 
     # set colors
-    default_palette = "Spectral", "Category20"
+    default_palette = ["Spectral", "Category20"]
     if palette is None:
         palette = default_palette
-    colors = get_colors(types_count, *palette)
+    colors = get_colors(types_count, palette)
 
     franger = FactorRange(
         *factors, group_padding=0, factor_padding=-0.45, subgroup_padding=-0.35
