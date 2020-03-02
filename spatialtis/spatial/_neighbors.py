@@ -2,6 +2,7 @@ from collections import OrderedDict
 from typing import Optional, Sequence, Union
 
 import igraph as ig
+
 import numpy as np
 import pandas as pd
 from anndata import AnnData
@@ -210,9 +211,9 @@ class Neighbors(object):
     def to_graphs(self):
         if not self.__neighborsbuilt:
             return None
-        new_graphs = {n:0 for n in self.__names}
+        new_graphs = {n: 0 for n in self.__names}
         for n, g in self.__groups:
-            centroids = g[self.__centcol]
+            centroids = [eval(c) for c in g[self.__centcol]]
             edges = self.__neighborsdb[n]
             graph_edges = []
             for k, vs in edges.items():
@@ -224,7 +225,6 @@ class Neighbors(object):
             new_graphs[n] = g.simplify()
 
         return new_graphs
-
 
     @property
     def neighborsbuilt(self):

@@ -7,6 +7,8 @@ tmp/test_adata.h5ad
 
 *.ipynb
 
+tissue.yml
+
 *.DS_Store
 .idea/
 

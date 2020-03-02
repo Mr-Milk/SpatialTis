@@ -1,8 +1,13 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from typing import Sequence
+from anndata import AnnData
 
+from typing import Sequence, Optional, Union
+from pathlib import Path
+import shutil
+
+from spatialtis.config import CONFIG
 
 def df2adata_uns(df, adata, key, overwrite=False):
     """preserve all info in pd.DataFrame as dict, and write to anndata.uns
@@ -80,3 +85,69 @@ def plot_polygons(polygons):
             zorder=2,
         )
     ax.set_title("Polygons")
+
+
+def prepare_svca(
+        adata: AnnData,
+        export: Union[Path, str] = '/',
+        marker_col: str = 'Markers',
+        *,
+        groupby: Union[Sequence, str, None] = None,
+        centroid_col: str = 'centroid',
+        entry_folder: str = 'svca_data',
+        overwrite: bool = True,
+):
+    """export anndata to SVAC analysis input formats
+
+    Args:
+        adata: AnnData object
+        export: where to store the data
+        marker_col: which key in anndata var is used in the header of the expressions.txt
+        groupby:
+        centroid_col:
+        overwrite: whether overwrite the export folder when already exists
+
+    """
+    if marker_col not in adata.var.keys():
+        raise ValueError(f"{marker_col} not in anndata object's var field")
+    else:
+        marker_info = adata.var[marker_col]
+
+    if groupby is None:
+        groupby = CONFIG.EXP_OBS
+
+    keys = list(groupby) + [centroid_col]
+
+    groups = adata.obs[keys].groupby(groupby)
+
+    p = Path(export) / entry_folder
+
+    if p.exists():
+        if overwrite:
+            shutil.rmtree(p)
+        else:
+            raise FileExistsError(f"Folder `{entry_folder}` is already exists")
+
+    p.mkdir(exist_ok=True)
+
+    for n, g in groups:
+        folder_name = "_".join([str(i) for i in n])
+        folder_path = p / folder_name
+        folder_path.mkdir()
+
+        expression_path = folder_path / 'expressions.txt'
+        position_path = folder_path / 'positions.txt'
+
+        # export to expressions.txt
+        pd.DataFrame(adata.X[[int(i) for i in g.index]], columns=marker_info)\
+            .to_csv(expression_path, sep='\t', index=False)
+
+        # export to positions.txt
+        cents = []
+        for c in g[centroid_col]:
+            c = eval(c)
+            cents.append([c[0], c[1]])
+        pd.DataFrame(cents).to_csv(position_path, sep='\t', index=False, header=False)
+
+
+

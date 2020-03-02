@@ -45,9 +45,9 @@ def spatial_heterogeneity(
         return None
 
     KL_div = {}
-    if compare:
+    if compare is not None:
         groups = df.groupby(level=groupby[compare])
-        for n,g in groups:
+        for n, g in groups:
             count_g = g.sum()
             qk = count_g.div(count_g.sum())
             KL_div[n] = qk
@@ -57,14 +57,14 @@ def spatial_heterogeneity(
     KL_level = []
     for row in df.iterrows():
         pk = list(row[1].div(row[1].sum()))
-        if compare:
+        if compare is not None:
             compare_level = row[0][compare]
             KL.append(entropy(pk, KL_div[compare_level], base=2))
             KL_level.append(compare_level)
         ent.append(entropy(pk, base=2))
 
     data = {'heterogeneity': ent}
-    if compare:
+    if compare is not None:
         data['KL'] = KL
         data['level'] = KL_level
     roi_heterogeneity = pd.DataFrame(data=data, index=df.index)

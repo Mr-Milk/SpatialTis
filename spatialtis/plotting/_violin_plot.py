@@ -190,7 +190,7 @@ def _set_figure_config(title=None, size=None, direction="vertical"):
 
 
 def _set_colors(palette, mapper=False):
-    default_palette = "Set3"
+    default_palette = ["Set3"]
     if palette is None:
         palette = default_palette
     if not mapper:

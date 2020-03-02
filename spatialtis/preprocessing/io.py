@@ -8,7 +8,7 @@ from typing import Optional, Sequence, Union
 import anndata as ad
 import numpy as np
 import pandas as pd
-import ray
+
 from skimage.external import tifffile
 from skimage.io import imread
 
@@ -65,10 +65,10 @@ class read_all_ROIs:
     """
 
     def __init__(
-        self,
-        entry: Union[Path, str],
-        conditions: Sequence,
-        mask_pattern: str = "*mask*",
+            self,
+            entry: Union[Path, str],
+            conditions: Sequence,
+            mask_pattern: str = "*mask*",
     ):
         self.__mask_pattern = mask_pattern
         self._channels = list()
@@ -84,7 +84,7 @@ class read_all_ROIs:
 
     # walk through the directory, until there is no directory
     def __exhaust_dir(
-        self, path: Union[Path, str],
+            self, path: Union[Path, str],
     ):
         d = [f for f in Path(path).iterdir() if f.is_dir()]
         for f in d:
@@ -102,11 +102,11 @@ class read_all_ROIs:
         return self._var
 
     def config_file(
-        self,
-        metadata: Union[Path, str],
-        channel_col: Optional[str] = None,
-        marker_col: Optional[str] = None,
-        sep: str = ",",
+            self,
+            metadata: Union[Path, str],
+            channel_col: Optional[str] = None,
+            marker_col: Optional[str] = None,
+            sep: str = ",",
     ):
         """config with file
 
@@ -155,6 +155,10 @@ class read_all_ROIs:
         eccentricities = []
 
         if mp:
+            try:
+                import ray
+            except ImportError:
+                raise ImportError("You don't have ray installed or your OS don't support ray. Please use `mp=False`")
 
             @ray.remote
             def _get_roi(t, channels, markers, pg, mt, obsi):
