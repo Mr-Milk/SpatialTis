@@ -17,6 +17,15 @@ def type_counter(
         type_col: Optional[str] = None,
         selected_types: Optional[Sequence] = None,
 ) -> pd.DataFrame:
+    """(private) To count how many type of value in a col
+
+    Args:
+        adata: anndata object to perform analysis
+        groupby: how your experiments grouped, (Default: read from spatialtis.CONFIG.EXP_OBS)
+        type_col: the key name of cell type in anndata.obs (Default: read from spatialtis.CONFIG.CELL_TYPE_COL)
+        selected_types: selected cell types you want to count
+
+    """
     if groupby is None:
         groupby = CONFIG.EXP_OBS
     else:
@@ -62,6 +71,23 @@ def cell_components(
         return_df: bool = False,
         overwrite: bool = False,
 ):
+    """the proportion of different type of cells
+
+    Args:
+        adata: anndata object to perform analysis
+        groupby: how your experiments grouped, (Default: read from spatialtis.CONFIG.EXP_OBS)
+        type_col: the key name of cell type in anndata.obs (Default: read from spatialtis.CONFIG.CELL_TYPE_COL)
+        selected_types: selected cell types you want to count
+        export: whether to export to anndata.uns field
+        export_key: the key name that used to record the results in anndata.uns field (Default: "cell_components")
+        return_df: whether to return an pandas.DataFrame
+        overwrite: whether to overwrite if the key existed
+
+    Return:
+        pandas.DataFrame
+
+    """
+
     counter = type_counter(adata, groupby, type_col, selected_types)
 
     if export:
@@ -82,6 +108,23 @@ def cell_co_occurrence(
         return_df: bool = False,
         overwrite: bool = False,
 ):
+    """The probability of two type of cells occur simultaneously
+
+        Args:
+            adata: anndata object to perform analysis
+            groupby: how your experiments grouped, (Default: read from spatialtis.CONFIG.EXP_OBS)
+            type_col: the key name of cell type in anndata.obs (Default: read from spatialtis.CONFIG.CELL_TYPE_COL)
+            selected_types: selected cell types you want to count
+            export: whether to export to anndata.uns field
+            export_key: the key name that used to record the results in anndata.uns field (Default: "cell_co_occurrence")
+            threshold: this value determines the presence/absence of a cell type in ROI
+            return_df: whether to return an pandas.DataFrame
+            overwrite: whether to overwrite if the key existed
+
+        Return:
+            pandas.DataFrame
+
+        """
     counter = type_counter(adata, groupby, type_col, selected_types)
 
     occurrence = counter.gt(threshold)
@@ -108,17 +151,20 @@ def cell_density(
     """Calculating cell density in each ROI
 
     Args:
-        adata:
-        size:
+        adata: anndata object to perform analysis
+        size: the size of each ROI, if some ROI is different, please specific each ROI size in a list, the order must
+        follow the index order in anndata object.
         ratio: the ratio between pixel and real size, default is 1.0
-        groupby:
-        type_col:
-        selected_types:
-        export:
-        export_key:
-        return_df:
-        overwrite:
+        groupby: how your experiments grouped, (Default: read from spatialtis.CONFIG.EXP_OBS)
+        type_col: the key name of cell type in anndata.obs (Default: read from spatialtis.CONFIG.CELL_TYPE_COL)
+        selected_types: selected cell types you want to count
+        export: whether to export to anndata.uns field
+        export_key: the key name that used to record the results in anndata.uns field (Default: "cell_density")
+        return_df: whether to return an pandas.DataFrame
+        overwrite: whether to overwrite if the key existed
 
+    Return:
+            pandas.DataFrame
 
     """
     counter = type_counter(adata, groupby, type_col, selected_types=selected_types)
@@ -150,6 +196,25 @@ def cell_morphology(
         return_df: bool = False,
         overwrite: bool = False,
 ):
+    """Cell morphology variation between different groups
+
+        Args:
+            adata: anndata object to perform analysis
+            metrics_col: which col was used to measure cell morphology
+            (Default: "eccentricity", Options: "eccentricity", "area")
+            groupby: how your experiments grouped, (Default: read from spatialtis.CONFIG.EXP_OBS)
+            type_col: the key name of cell type in anndata.obs (Default: read from spatialtis.CONFIG.CELL_TYPE_COL)
+            selected_types: selected cell types you want to count
+            export: whether to export to anndata.uns field
+            export_key: the key name that used to record the results in anndata.uns field (Default: "cell_morphology")
+            return_df: whether to return an pandas.DataFrame
+            overwrite: whether to overwrite if the key existed
+
+        Return:
+                pandas.DataFrame
+
+    """
+
     if groupby is None:
         groupby = CONFIG.EXP_OBS
     else:

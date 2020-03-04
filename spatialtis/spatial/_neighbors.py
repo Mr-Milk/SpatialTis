@@ -16,8 +16,18 @@ from spatialtis.utils import col2adata_obs
 
 
 class Neighbors(object):
+    """Storage object for cell relationship
+
+    Args:
+        adata: anndata object to perform analysis
+        groupby: how your experiments grouped, (Default: read from spatialtis.CONFIG.EXP_OBS)
+        type_col: the key name of cell type in anndata.obs (Default: read from spatialtis.CONFIG.CELL_TYPE_COL)
+        shape_col: the key name of cell shape in anndata.obs (Default: "cell_shape")
+        centroid_col: anndata.obs key that store cell centroid info (Default: "centroid")
+
+    """
     def __init__(self,
-                 data: AnnData,
+                 adata: AnnData,
                  groupby: Union[Sequence, str, None] = None,
                  type_col: Optional[str] = None,
                  shape_col: Optional[str] = 'cell_shape',
@@ -42,8 +52,8 @@ class Neighbors(object):
         if type_col is not None:
             keys.append(type_col)
 
-        self.__adata = data
-        self.__data = data.obs[keys]
+        self.__adata = adata
+        self.__data = adata.obs[keys]
         self.__typecol = type_col
         self.__shapecol = shape_col
         self.__centcol = centroid_col
@@ -109,6 +119,13 @@ class Neighbors(object):
                        scale: float = 1,
                        expand: float = 0,
                        ):
+        """To find the neighbors of each cell
+
+        Args:
+            scale: how much to scale each cell, (Default: 1, not scale)
+            expand: how much units to expand each cell, (Default: 0, not expand)
+
+        """
         # define how to enlarge cells based on user input
         use_scale = False
         use_expand = False
@@ -203,6 +220,12 @@ class Neighbors(object):
             return 'Cannot write to incomplete anndata because "selected_types" are used.'
 
     def read_neighbors(self, read_key: str = 'cell_neighbors'):
+        """Read computed neighbors from anndata
+
+            Args:
+                read_key: the key name to read
+
+        """
         if read_key not in self.__adata.uns.keys():
             raise KeyError(f'{read_key} not exists.')
         self.__neighborsdb = eval(self.__adata.uns[read_key]['data'])
@@ -254,6 +277,7 @@ class Neighbors(object):
 
     @property
     def neighbors(self):
+        """Return the computed neighbors relationship"""
         return self.__neighborsdb
 
     @property

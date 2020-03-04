@@ -146,16 +146,18 @@ def spatial_distribution(
     """Cell distribution pattern
 
     There are three type of distribution pattern (0 if no cells)
-    - random (1)
-    - regular (2)
-    - clumped (3)
+
+     - random (1)
+     - regular (2)
+     - clumped (3)
 
     Three methods are provided
-    - Index of Dispersion (ID)
-    - Morisita’s index of dispersion (MID)
-    - Clark and Evans aggregation index (CE)
 
-    +-------------------------------------------------------------------+
+     - Index of Dispersion (ID)
+     - Morisita’s index of dispersion (MID)
+     - Clark and Evans aggregation index (CE)
+
+    +--------------------------------------+--------+---------+---------+
     |                                      | Random | Regular | Clumped |
     +======================================+========+=========+=========+
     | Index of dispersion: ID              | ID = 1 | ID < 1  | ID > 1  |
@@ -165,32 +167,25 @@ def spatial_distribution(
     | Clark and Evans aggregation index: R | R = 1  |  R < 1  |  R > 1  |
     +--------------------------------------+--------+---------+---------+
 
-    Index of Dispersion:
-    :math: `ID = \frac{s^2}{\overline{x}}`
-    :math: `\chi^2` test
-
-    Morisita’s index of dispersion
-    .. TODO: add equation
-
-
     Args:
         adata: anndata object to perform analysis
-        groupby: list of names describes your experiments
-        type_col: name of the cell types column
-        centroid_col: name of the cell's centroid column
-        selected_types: which cell type to select
-        method: Use 'ID', 'MID', or 'CE'
+        groupby: how your experiments grouped, (Default: read from spatialtis.CONFIG.EXP_OBS)
+        type_col: the key name of cell type in anndata.obs (Default: read from spatialtis.CONFIG.CELL_TYPE_COL)
+        centroid_col: anndata.obs key that store cell centroid info
+        selected_types: selected cell types you want to count
+        method: Options are 'ID', 'MID', or 'CE'
         pval: if smaller than pval, reject null hypothesis (random distribute)
         r: only use when method='ID', diameter of sample window
         resample: only use when method='ID', the number of random permutations to perform
         quad: only use when method='MID', how to perform rectangle tessellation
-        export: whether export to anndata object uns field
-        export_key: the key name to store info, exported to anndata.uns field
-        return_df: whether to return a pandas DataFrame object
-        overwrite: whether to overwrite your previous results (if existed)
+        export: whether to export to anndata.uns field
+        export_key: the key name that used to record the results in anndata.uns field (Default: "spatial_distribution")
+        return_df: whether to return an pandas.DataFrame
+        overwrite: whether to overwrite if the key existed
 
     MID is quadratic statistic, it cuts a ROI into few rectangles, quad=(10,10) means the ROI will have 10*10 grid,
     if you don't know what to choose, let us choose for you, the default is 'auto'
+
     """
     if groupby is None:
         groupby = CONFIG.EXP_OBS

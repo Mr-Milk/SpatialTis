@@ -44,7 +44,7 @@ def hotspot(
     hotcells = pd.Series(hotcells, index=df.index)
     adata.obs[export_key] = hotcells
 
-    return hotcells
+    # return hotcells
 
 
 def _hotspot(cells, grid_size, level, pval):

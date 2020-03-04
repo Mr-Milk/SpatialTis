@@ -179,3 +179,17 @@ def spatial_distribution(
 
     p = heatmap(df, **plot_kwargs)
     return p
+
+
+def spatial_heterogeneity(
+        adata: AnnData,
+        groupby: Sequence[str],
+        key: str = "spatial_heterogeneity",
+        metric: str = "heterogeneity",
+        **kwargs
+):
+    df = adata_uns2df(adata, key)
+
+    p = violin_plot(df, groupby, metric)
+
+    return p

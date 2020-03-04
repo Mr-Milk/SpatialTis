@@ -9,8 +9,27 @@ import shutil
 
 from spatialtis.config import CONFIG
 
-def df2adata_uns(df, adata, key, overwrite=False):
-    """preserve all info in pd.DataFrame as dict, and write to anndata.uns
+
+def df2adata_uns(
+        df: pd.DataFrame,
+        adata: AnnData,
+        key: str,
+        overwrite: bool = False,
+):
+    """Preserve all info in pd.DataFrame as dict, and write to anndata.uns
+    The anndata object haven't fully support read/write of a pandas.Dataframe object,
+    this is an solution to store all the information in a dicts
+
+    The meaning of each key:
+    'df' The dataframe itself
+    'iname' The name of index/MultiIndex
+    'colname' The name of columns/MultiIndex
+
+    Args:
+        df: the pandas.DataFrame object you want to write to the anndata.uns field
+        adata: the anndata object to work with
+        key: which anndata.uns key you want to write to
+        overwrite: whether to overwrite if the key existed
 
     """
     container = dict(
@@ -32,9 +51,19 @@ def df2adata_uns(df, adata, key, overwrite=False):
     )
 
 
-def col2adata_obs(col: Sequence,
-                  adata, key, overwrite=False):
-    """preserve all info in pd.DataFrame as dict, and write to anndata.uns
+def col2adata_obs(
+        col: Sequence,
+        adata: AnnData,
+        key: str,
+        overwrite: bool = False,
+):
+    """Write a Sequence to anndata.obs
+
+    Args:
+        col: the Sequence object
+        adata: the anndata object to work with
+        key: which anndata.obs key you want to write to
+        overwrite: whether to overwrite if the key existed
 
     """
     keys = adata.uns.keys()
@@ -50,7 +79,17 @@ def col2adata_obs(col: Sequence,
     )
 
 
-def adata_uns2df(adata, key):
+def adata_uns2df(
+        adata: AnnData,
+        key: str,
+):
+    """Read pandas.DataFrame object from anndata.uns if written by df2adata_uns
+
+    Args:
+        adata: the anndata object to work with
+        key: which anndata.uns key you want to read from
+
+    """
 
     container = adata.uns[key]
     df = pd.DataFrame(eval(container["df"]))
@@ -61,6 +100,8 @@ def adata_uns2df(adata, key):
 
 
 def filter_adata(adata, groupby, type_col, *keys, selected_types=None, reset_index=True):
+    """(Private) Filter anndata.obs (pandas.DataFrame)
+    """
 
     keys = [k for k in keys if k is not None]
     df = adata.obs[groupby+keys+[type_col]]
@@ -73,6 +114,8 @@ def filter_adata(adata, groupby, type_col, *keys, selected_types=None, reset_ind
 
 
 def plot_polygons(polygons):
+    """(Private) Visualize shapely polygons
+    """
     fig = plt.figure()
     ax = fig.add_subplot(111)
     for i in polygons:
@@ -97,7 +140,10 @@ def prepare_svca(
         entry_folder: str = 'svca_data',
         overwrite: bool = True,
 ):
-    """export anndata to SVAC analysis input formats
+    """export anndata to SVCA analysis input formats
+
+    Spatial Variance Components Analysis: `SVCA on Github <https://github.com/damienArnol/svca>`_
+    The input format is separated folder for each ROI with `expressions.txt` and `positions.txt`.
 
     Args:
         adata: AnnData object
@@ -105,6 +151,7 @@ def prepare_svca(
         marker_col: which key in anndata var is used in the header of the expressions.txt
         groupby:
         centroid_col:
+        entry_folder:
         overwrite: whether overwrite the export folder when already exists
 
     """

@@ -112,6 +112,7 @@ def neighborhood_analysis(
     """Python implementation of histocat's neighborhood analysis
 
     Neighborhood analysis tells you the relationship between different type of cells
+
     There are two type of relationship, association (1) or avoidance (-1), no relationship (0).
 
     Args:
@@ -149,6 +150,7 @@ def spatial_enrichment_analysis(
     """An alternative neighborhood analysis
 
         Neighborhood analysis tells you the relationship between different type of cells
+
         This method is purposed in MIBI's paper, the major difference is that this method used z-score for relationships
 
         To be noticed, when there is no cells, this will cause NaN, those value will be replaced with 0
