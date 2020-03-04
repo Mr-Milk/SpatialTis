@@ -25,4 +25,6 @@ Quick Start
 
    installation
    tutorial
-   api
+   api_index
+   implementation
+   QA

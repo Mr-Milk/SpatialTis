@@ -41,7 +41,7 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx_rtd_theme",
 ]
-autodoc_typehints = "signature"
+autodoc_typehints = "none"
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 
