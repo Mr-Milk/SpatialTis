@@ -7,10 +7,9 @@ from pointpats import PointPattern
 from pointpats.quadrat_statistics import QStatistic
 from scipy.spatial import cKDTree
 from scipy.stats import chi2, chisquare, norm
-from shapely.geometry import Point, box
 
-from ..utils import df2adata_uns, filter_adata
 from spatialtis.config import CONFIG
+from ..utils import df2adata_uns, filter_adata
 
 
 def _index_of_dispersion(groups, types, type_col, centroid_col, resample, r, pval):

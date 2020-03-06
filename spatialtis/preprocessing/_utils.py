@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 from skimage.io import imread
 
+from ._io import read_ROI
+
 
 def mask2cells(mask_img: Union[Path, str], ignore_bg: bool = True) -> Sequence:
     """
@@ -58,7 +60,7 @@ def config(cls, channels=None, markers=None, callback=None):
             print("Unmatched input")
             return cls
         markers_map = dict(zip(channels, markers))
-        cls._markers = OrderedDict((c, markers_map[c]) for c in channels)
+        cls.markers = OrderedDict((c, markers_map[c]) for c in channels)
 
     if callback is not None:
         try:
@@ -100,3 +102,22 @@ def filter_channels(cls, channels=None):
             not_found_channels.append(i)
             print(f"{c} not found")
     return selected_channels
+
+
+def set_info(cls):
+    lc = len(cls.channels)
+    lm = len(cls.markers)
+
+    if lc == 0:
+        try:
+            cls.channels = read_ROI(cls.tree[0]).channels
+        finally:
+            cls._var = pd.DataFrame({"Channels": cls.channels})
+    elif (lc > 0) & (lm > 0):
+        cls.var = pd.DataFrame(
+            {"Channels": cls.channels, "Markers": list(cls.markers.values())}
+        )
+    elif (lc > 0) & (lm == 0):
+        cls.var = pd.DataFrame({"Channels": cls.channels})
+    # anndata require str index, hard set everything to str
+    cls.var.index = [str(i) for i in range(0, len(cls.channels))]

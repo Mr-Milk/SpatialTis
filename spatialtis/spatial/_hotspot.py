@@ -1,18 +1,15 @@
-from collections import OrderedDict, Counter
+from collections import OrderedDict
 from typing import Optional, Sequence, Union
 
 import numpy as np
 import pandas as pd
 from anndata import AnnData
-from pointpats import PointPattern
-from pointpats.quadrat_statistics import QStatistic
 from scipy.spatial import cKDTree
 from scipy.stats import norm
 from shapely.geometry import MultiPoint
 
-from ..utils import filter_adata
-from ._util import quad_tessellation
 from spatialtis.config import CONFIG
+from ..utils import filter_adata
 
 
 def hotspot(

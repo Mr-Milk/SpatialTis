@@ -4,6 +4,7 @@
 import re
 from pathlib import Path
 from typing import Optional, Sequence, Union
+import warnings
 
 import anndata as ad
 import numpy as np
@@ -15,11 +16,11 @@ from skimage.io import imread
 from spatialtis.config import ISOTOPES_MASS_NUMBER_MAP, ISOTOPES_NAME
 
 from ._utils import (config, config_file, filter_channels, get_cell_exp_stack,
-                     mask2cells)
-from .geom import geom_cells
+                     mask2cells, set_info)
+from ._geom import geom_cells
 
 
-class read_all_ROIs:
+class read_ROIs:
     """read all rois, one roi one folder
 
     Organize your folder as your experiment conditions.
@@ -30,6 +31,12 @@ class read_all_ROIs:
         entry: the entry of your folders
         conditions: names for each level of your folders
         mask_pattern: name pattern for mask image
+
+    Attributes:
+        channels:
+        markers:
+        obs:
+        var:
 
     Example:
         Let's say your file structure look like this::
@@ -69,37 +76,35 @@ class read_all_ROIs:
             entry: Union[Path, str],
             conditions: Sequence,
             mask_pattern: str = "*mask*",
+            stacked: bool = False,
     ):
+        self.channels = list()
+        self.markers = dict()
+
+        self.__stacked = stacked,
         self.__mask_pattern = mask_pattern
-        self._channels = list()
-        self._markers = dict()
         self.__channels_files = dict()
 
-        self.__tree = []
+        self.tree = []
         self.__obs_name = conditions
         self.__depth = len(conditions)
+
         self.__exhaust_dir(entry)
-        self.__obs = [p.parts[-self.__depth:] for p in self.__tree]
-        self._var = None
+        self.obs = [p.parts[-self.__depth:] for p in self.tree]
+
+        self.var = None
 
     # walk through the directory, until there is no directory
     def __exhaust_dir(
-            self, path: Union[Path, str],
+            self,
+            path: Union[Path, str],
     ):
         d = [f for f in Path(path).iterdir() if f.is_dir()]
         for f in d:
-            self.__tree.append(f)
-            if f.parent in self.__tree:
-                self.__tree.remove(f.parent)
+            self.tree.append(f)
+            if f.parent in self.tree:
+                self.tree.remove(f.parent)
             self.__exhaust_dir(f)
-
-    @property
-    def tree(self):
-        return self.__obs
-
-    @property
-    def vars(self):
-        return self._var
 
     def config_file(
             self,
@@ -136,15 +141,7 @@ class read_all_ROIs:
         # we use callback function to set modify some info after config
         return config(self, channels=channels, markers=markers, callback=set_info)
 
-    @property
-    def channels(self):
-        return self._channels
-
-    @property
-    def markers(self):
-        return self._markers
-
-    def to_anndata(self, polygonize=True, method="mean", mp=False):
+    def to_anndata(self, method="mean", polygonize="convex", alpha=0, mp=False):
 
         X = []
         ann_obs = []
@@ -153,6 +150,15 @@ class read_all_ROIs:
         shapes = []
         centroids = []
         eccentricities = []
+
+        if polygonize == "concave":
+            if alpha == 0:
+                raise ValueError("If using concave method, alpha value should > 0, please set argument `alpha`")
+            warnings.warn("Running alphashape is very slow", RuntimeWarning)
+        elif polygonize == "convex":
+            pass
+        else:
+            raise ValueError("Polygonize options are 'convex' or 'concave'")
 
         if mp:
             try:
@@ -175,15 +181,15 @@ class read_all_ROIs:
                 return [exp, list(obs), cells]
 
             results = []
-            for i, d in enumerate(self.__tree):
+            for i, d in enumerate(self.tree):
                 results.append(
                     _get_roi.remote(
                         d,
-                        self._channels,
-                        self._markers,
+                        self.channels,
+                        self.markers,
                         polygonize,
                         method,
-                        self.__obs[i],
+                        self.obs[i],
                     )
                 )
 
@@ -199,19 +205,19 @@ class read_all_ROIs:
                 eccentricities += cells[3]
 
         else:
-            for i, d in enumerate(self.__tree):
+            for i, d in enumerate(self.tree):
 
-                if len(self._markers) >= 1:
+                if len(self.markers) >= 1:
                     roi = read_ROI(d).config(
-                        channels=self._channels, markers=self._markers
+                        channels=self.channels, markers=self.markers
                     )
                 else:
-                    roi = read_ROI(d).config(channels=self._channels)
+                    roi = read_ROI(d).config(channels=self.channels)
 
                 exp, cells = roi.exp_matrix(polygonize=polygonize, method=method)
 
                 cell_count = len(cells[0])
-                obs = np.repeat(np.array([self.__obs[i]]), cell_count, axis=0)
+                obs = np.repeat(np.array([self.obs[i]]), cell_count, axis=0)
 
                 X += exp
                 ann_obs += list(obs)
@@ -234,26 +240,7 @@ class read_all_ROIs:
 
         X = np.asarray(X, dtype=float)
 
-        return ad.AnnData(X, obs=ann_obs, var=self._var, dtype="float")
-
-
-def set_info(cls):
-    lc = len(cls._channels)
-    lm = len(cls._markers)
-
-    if lc == 0:
-        try:
-            cls._channels = read_ROI(cls._tree[0]).channels
-        finally:
-            cls._var = pd.DataFrame({"Channels": cls._channels})
-    elif (lc > 0) & (lm > 0):
-        cls._var = pd.DataFrame(
-            {"Channels": cls._channels, "Markers": list(cls._markers.values())}
-        )
-    elif (lc > 0) & (lm == 0):
-        cls._var = pd.DataFrame({"Channels": cls._channels})
-    # anndata require str index, hard set everything to str
-    cls._var.index = [str(i) for i in range(0, len(cls._channels))]
+        return ad.AnnData(X, obs=ann_obs, var=self.var, dtype="float")
 
 
 class read_ROI:
@@ -262,7 +249,7 @@ class read_ROI:
     or you can specific channel name in 'page_name' field.
     """
 
-    def __init__(self, folder, mask_pattern="*mask*"):
+    def __init__(self, folder, mask_pattern="*mask*", stacked=False):
         """
         Specific the mask image, or automatically select the img name contain "mask".
         """
@@ -271,59 +258,59 @@ class read_ROI:
         # try to find mask
         mask = [i for i in self._work_dir.glob(mask_pattern)]
         if len(mask) == 0:
-            raise FileNotFoundError("No mask found")
+            raise FileNotFoundError(f"Mask not found in {str(folder)}")
         elif len(mask) > 1:
-            print(f"Found more than one mask, use {mask[0].name}")
+            raise ValueError(f"Found more than one mask in {str(folder)}")
         self.__mask_img = mask[0]
 
         # get channels info
-        self._channels = list()
-        self._markers = dict()
+        self.channels = list()
+        self.markers = dict()
         self.__channels_files = dict()
-        for img in Path(folder).iterdir():
-            if img not in mask:
-                with tifffile.TiffFile(str(img)) as tif:
-                    col_name = tif.pages[0].tags["page_name"].value.decode()
-                    pattern = re.compile(r"([a-zA-Z]+)([0-9]{2,})")
-                    col = re.findall(pattern, col_name)
-                    correct_isotopes = False
-                    for c in col:
-                        if c[0] in ISOTOPES_NAME:
-                            if int(c[1]) in ISOTOPES_MASS_NUMBER_MAP[c[0]]:
-                                cname = c[0] + c[1]
-                                self._channels.append(cname)
-                                self.__channels_files[cname] = img
-                                correct_isotopes = True
-                                break
-                    if not correct_isotopes:
-                        print(f"Your channel isotope not exists. File: {img}")
+        self.__stacks = 0
 
-    def config_file(self, metadata, channel_col=None, marker_col=None, sep=","):
-        return config_file(
-            self, metadata, channel_col=channel_col, marker_col=marker_col, sep=sep
-        )
+        if stacked:
+            stacks_count = 0
+            for img in Path(folder).iterdir():
+                if img not in mask:
+                    self.__stacks = imread(str(img))
+                    stacks_count += 1
+
+            if stacks_count == 0:
+                raise FileNotFoundError(f"ROI image not found in {str(folder)}")
+            elif stacks_count > 1:
+                raise ValueError(f"Found more than one ROI image in {str(folder)}")
+
+        else:
+            for img in Path(folder).iterdir():
+                if img not in mask:
+                    with tifffile.TiffFile(str(img)) as tif:
+                        col_name = tif.pages[0].tags["page_name"].value.decode()
+                        pattern = re.compile(r"([a-zA-Z]+)([0-9]{2,})")
+                        col = re.findall(pattern, col_name)
+                        correct_isotopes = False
+                        for c in col:
+                            if c[0] in ISOTOPES_NAME:
+                                if int(c[1]) in ISOTOPES_MASS_NUMBER_MAP[c[0]]:
+                                    cname = c[0] + c[1]
+                                    self.channels.append(cname)
+                                    self.__channels_files[cname] = img
+                                    correct_isotopes = True
+                                    break
+                        if not correct_isotopes:
+                            print(f"Your channel isotope not exists. File: {str(img)}")
 
     def config(self, channels=None, markers=None):
         selected_channels = filter_channels(self, channels=channels)
-        return config(self, channels=selected_channels, markers=markers)
+        config(self, channels=selected_channels, markers=markers)
+        self.__stacks = np.asarray([imread(str(self.__channels_files[c])) for c in self.channels])
+        return self
 
-    @property
-    def channels(self):
-        return self._channels
-
-    @property
-    def markers(self):
-        return self._markers
-
-    def exp_matrix(self, polygonize=True, method="mean"):
-        if len(self._markers) == 0:
+    def exp_matrix(self, method="mean", polygonize="convex", alpha=0):
+        if len(self.markers) == 0:
             print("ATTENTION: NO marker specific, using channels' name instead.")
         cells = mask2cells(self.__mask_img)
-
-        stacks = np.asarray([imread(self.__channels_files[c]) for c in self._channels])
-        data = get_cell_exp_stack(stacks, cells, method=method)
+        data = get_cell_exp_stack(self.__stacks, cells, method=method)
         print(f"Detected {len(data)} cells.")
-        if polygonize:
-            return data, geom_cells(cells)
-        else:
-            return data, cells
+
+        return data, geom_cells(cells, method=polygonize, alpha=alpha)

@@ -1,10 +1,7 @@
-from collections import OrderedDict
 from typing import Optional, Sequence, Union
 
 import igraph as ig
-
 import numpy as np
-import pandas as pd
 from anndata import AnnData
 from scipy.spatial.distance import euclidean
 from shapely.affinity import scale as sscale

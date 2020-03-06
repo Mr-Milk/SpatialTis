@@ -5,20 +5,6 @@ spatialtis uses [`annData`](https://icb-anndata.readthedocs-hosted.com/en/stable
 
 
 
-### Requirements
-
-- numpy
-- pandas
-- scipy
-- scikit-image
-- shapely (Geometry library)
-- anndata
-- diffxpy (DE analysis for scRNA-seq)
-- ray (multiprocessing library, not available for windows)
-- matplotlib
-- seaborn
-- bokeh (For interactive visualization)
-
 
 
 ## Preprocessing
@@ -26,15 +12,6 @@ spatialtis uses [`annData`](https://icb-anndata.readthedocs-hosted.com/en/stable
 ### Recommended preprocessing pipeline
 
 spatialtis will extract shape info from mask image and single cell expression info from multiplexed data. You can then use scanpy for cell filtering and identify cell type, other single cell analysis can also be done in scanpy. Afterwards, you can conduct other analysis in spatialtis.
-
-
-```mermaid
-graph LR
-A(Masks) --> B[Shape Info] --> E{SpatialTis}
-C(Tissue Images) --> D[Expression Info] --> E
-E --> F[Scanpy] --> G{SpatialTis}
-
-```
 
 
 
@@ -62,7 +39,7 @@ Data
 You only need to specific the entry level, and then name the condition name as you like.
 
 ```python
-from spatialtis import read_all_ROIs
+from spatialtis import read_ROIs
 
 entry_folder = './data'
 conditions = ['Patients','Sample','ROI']
@@ -94,11 +71,7 @@ adata = data.to_anndata(mp=True)
 
 ## Statistic
 
-The API design of analysis part is similar to scanpy.
-
 #### Cell Components
-
-- Statistic of portion of cell types
 
 
 
@@ -108,7 +81,7 @@ The API design of analysis part is similar to scanpy.
 
 #### Morphology
 
-- Size, diameter, eccentricity, etc...
+
 
 
 
@@ -154,15 +127,9 @@ communites(n)
 
 
 
-
-
-
-
 #### Find neighbors
 
 Find neighbors for each cells
-
-
 
 
 
@@ -286,28 +253,6 @@ Example: https://www.nature.com/articles/modpathol201537
 
 In each ROI, cells' spatial network are computed based on finding neighbors. Leiden alogirithm (Extension of louvain algorithm) are used to detect communities.
 
-
-
-#### Network Centralities [[link](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3101653/#__sec11title)]
-
-Possible Usage:
-
-**Closeness Centrality** indicates important nodes that can communicate quickly with other nodes
-
-If a type of cell can exert more influence to others
-
-
-
-#### Clustering of cell community
-
-eg. How well immune cell function in these small region?
-
-Detection of micro-events (events among few cells)
-
-Cuzick–Edwards test
-
-https://www.biomedware.com/files/documentation/clusterseer/C&E/CE_Statistic.htm
-
 https://github.com/vtraag/leidenalg
 
 
@@ -321,59 +266,8 @@ https://github.com/vtraag/leidenalg
 
 
 
-
-
-## Timeline
-
-```mermaid
-gantt
-title SpatialTis Timeline
-dateFormat MM-DD
-
-section Coding
-Preprocessing:done, po, 01-08,10d
-Statistic :sta, 01-27, 10d
-Morphology analysis: ma, 02-07, 12d
-Spatial analysis: cci, 02-20, 14d
-SpatialDE: spde, 03-06, 10d
-
-section Documentation
-Doc Setup :doc, 01-23, 2d
-add doc: after sta, 1d
-add doc: after ma, 1d
-add doc: after cci, 1d
-Writing Doc:after spde, 10d
-
-section Test
-Playing Scanpy :active, 01-18, 7d
-CI Setup :after doc, 2d
-add test: after sta, 1d
-add test: after ma, 1d
-add test: after cci, 1d
-
-```
-
 ## Docs
 
 - All plotting function will return a `bokeh.plotting.figure.Figure` object, user can change the figure with bokeh's setting options.
 - The number of colors in a palette is limited, it will reuse colors when the provided colors are not sufficient. You can provide multiple palette at the same time, `palette = ['Set3','Spectral']` or `palette = ['#A35E47','#F596AA']` (The name of the palettes are usually capitalized, if 'cividis' not work, try 'Cividis'.)
 - For heatmap palettes: Cividis, Gray, Inferno, Magma, Viridis
-
-
-
-
-
-
-
-## Q&A
-
-- spatialtis.spatial and PySAL library?
-
-Actually part of spatial module is based on pointpat in PySAL
-
-
-
-Something to share
-
-Most of the coding of spatialtis are finished during the coronavirus breakout in China, I had to stay at home to help the country control the transmission of virus. Gladly it work well.
-

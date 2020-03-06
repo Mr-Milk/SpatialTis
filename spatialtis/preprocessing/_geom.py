@@ -1,13 +1,21 @@
 import numpy as np
+import alphashape
 from shapely.geometry import MultiPoint
 
 
-def geom_cells(cells):
+def geom_cells(cells, method="convex", alpha=0):
     """
     return cell approximate borders, to save computation power
+
+    Args:
+        cells: points to describe cells
+        method: "convex" using shapely's convex_hull, "concave" using alphashape
+        alpha: alpha parameter
     """
-    # TODO: add concave method, alphashape algorithm in python
-    polycells = [MultiPoint(cell).convex_hull for cell in cells]
+    if method == "convex":
+        polycells = [MultiPoint(cell).convex_hull for cell in cells]
+    elif method == "concave":
+        polycells = [alphashape.alphashape(cell, alpha) for cell in cells]
 
     area = []
     borders = []

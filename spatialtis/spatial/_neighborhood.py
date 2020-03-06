@@ -1,14 +1,13 @@
 from collections import Counter
 from itertools import product
-from typing import Callable, Mapping, Sequence, Optional
+from typing import Callable, Mapping, Sequence
 
 import numpy as np
 import pandas as pd
 
+from spatialtis.utils import df2adata_uns
 from ._neighbors import Neighbors
 from ._util import check_neighbors
-from spatialtis.utils import df2adata_uns
-from spatialtis.config import CONFIG
 
 
 def _count_neighbors(
