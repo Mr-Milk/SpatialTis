@@ -11,9 +11,7 @@ There are few modules in spatialtis
 Preprocessing
 --------------
 
-.. autoclass:: spatialtis.read_ROI
-
-.. autoclass:: spatialtis.read_all_ROIs
+.. autoclass:: spatialtis.read_ROIs
 
     .. automethod:: spatialtis.read_all_ROIs.config
     .. automethod:: spatialtis.read_all_ROIs.config_file

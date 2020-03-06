@@ -1,23 +1,12 @@
-"""Convert images and masks to anndata object
-"""
-
-import re
+import warnings
 from pathlib import Path
 from typing import Optional, Sequence, Union
-import warnings
 
 import anndata as ad
 import numpy as np
 import pandas as pd
 
-from skimage.external import tifffile
-from skimage.io import imread
-
-from spatialtis.config import ISOTOPES_MASS_NUMBER_MAP, ISOTOPES_NAME
-
-from ._utils import (config, config_file, filter_channels, get_cell_exp_stack,
-                     mask2cells, set_info)
-from ._geom import geom_cells
+from ._utils import (config, config_file, set_info, read_ROI)
 
 
 class read_ROIs:
@@ -167,11 +156,11 @@ class read_ROIs:
                 raise ImportError("You don't have ray installed or your OS don't support ray. Please use `mp=False`")
 
             @ray.remote
-            def _get_roi(t, channels, markers, pg, mt, obsi):
+            def _get_roi(t, channels, markers, pg, mt, obsi, stacked):
                 if len(markers) >= 1:
-                    roi = read_ROI(t).config(channels=channels, markers=markers)
+                    roi = read_ROI(t, stacked=stacked).config(channels=channels, markers=markers)
                 else:
-                    roi = read_ROI(t).config(channels=channels)
+                    roi = read_ROI(t, stacked=stacked).config(channels=channels)
 
                 exp, cells = roi.exp_matrix(polygonize=pg, method=mt)
 
@@ -190,6 +179,7 @@ class read_ROIs:
                         polygonize,
                         method,
                         self.obs[i],
+                        self.__stacked,
                     )
                 )
 
@@ -208,11 +198,11 @@ class read_ROIs:
             for i, d in enumerate(self.tree):
 
                 if len(self.markers) >= 1:
-                    roi = read_ROI(d).config(
+                    roi = read_ROI(d, stacked=self.__stacked).config(
                         channels=self.channels, markers=self.markers
                     )
                 else:
-                    roi = read_ROI(d).config(channels=self.channels)
+                    roi = read_ROI(d, stacked=self.__stacked).config(channels=self.channels)
 
                 exp, cells = roi.exp_matrix(polygonize=polygonize, method=method)
 
@@ -241,76 +231,3 @@ class read_ROIs:
         X = np.asarray(X, dtype=float)
 
         return ad.AnnData(X, obs=ann_obs, var=self.var, dtype="float")
-
-
-class read_ROI:
-    """
-    Your .tif/.tiff file should be exported from MCD viewer
-    or you can specific channel name in 'page_name' field.
-    """
-
-    def __init__(self, folder, mask_pattern="*mask*", stacked=False):
-        """
-        Specific the mask image, or automatically select the img name contain "mask".
-        """
-        self._work_dir = Path(folder)
-
-        # try to find mask
-        mask = [i for i in self._work_dir.glob(mask_pattern)]
-        if len(mask) == 0:
-            raise FileNotFoundError(f"Mask not found in {str(folder)}")
-        elif len(mask) > 1:
-            raise ValueError(f"Found more than one mask in {str(folder)}")
-        self.__mask_img = mask[0]
-
-        # get channels info
-        self.channels = list()
-        self.markers = dict()
-        self.__channels_files = dict()
-        self.__stacks = 0
-
-        if stacked:
-            stacks_count = 0
-            for img in Path(folder).iterdir():
-                if img not in mask:
-                    self.__stacks = imread(str(img))
-                    stacks_count += 1
-
-            if stacks_count == 0:
-                raise FileNotFoundError(f"ROI image not found in {str(folder)}")
-            elif stacks_count > 1:
-                raise ValueError(f"Found more than one ROI image in {str(folder)}")
-
-        else:
-            for img in Path(folder).iterdir():
-                if img not in mask:
-                    with tifffile.TiffFile(str(img)) as tif:
-                        col_name = tif.pages[0].tags["page_name"].value.decode()
-                        pattern = re.compile(r"([a-zA-Z]+)([0-9]{2,})")
-                        col = re.findall(pattern, col_name)
-                        correct_isotopes = False
-                        for c in col:
-                            if c[0] in ISOTOPES_NAME:
-                                if int(c[1]) in ISOTOPES_MASS_NUMBER_MAP[c[0]]:
-                                    cname = c[0] + c[1]
-                                    self.channels.append(cname)
-                                    self.__channels_files[cname] = img
-                                    correct_isotopes = True
-                                    break
-                        if not correct_isotopes:
-                            print(f"Your channel isotope not exists. File: {str(img)}")
-
-    def config(self, channels=None, markers=None):
-        selected_channels = filter_channels(self, channels=channels)
-        config(self, channels=selected_channels, markers=markers)
-        self.__stacks = np.asarray([imread(str(self.__channels_files[c])) for c in self.channels])
-        return self
-
-    def exp_matrix(self, method="mean", polygonize="convex", alpha=0):
-        if len(self.markers) == 0:
-            print("ATTENTION: NO marker specific, using channels' name instead.")
-        cells = mask2cells(self.__mask_img)
-        data = get_cell_exp_stack(self.__stacks, cells, method=method)
-        print(f"Detected {len(data)} cells.")
-
-        return data, geom_cells(cells, method=polygonize, alpha=alpha)
