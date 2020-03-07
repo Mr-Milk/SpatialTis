@@ -1,3 +1,4 @@
+import pytest
 from spatialtis.preprocessing import read_ROIs
 
 DATA_ENTRY = "../data/shrink_data/Patients"
@@ -10,6 +11,11 @@ data = read_ROIs(DATA_ENTRY, conditions, stacked=True)
 data.config_file(METADATA, channel_col="channels", marker_col="markers")
 
 data.to_anndata()
-data.to_anndata(polygonize="concave", alpha=2.0)
+
+
+@pytest.mark.xfail
+def test_concave():
+    data.to_anndata(polygonize="concave", alpha=2.0)
+
 
 data.to_anndata(mp=True)

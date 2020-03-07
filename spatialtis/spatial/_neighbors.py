@@ -257,7 +257,6 @@ class Neighbors(object):
                         distance = euclidean(centroids[k], centroids[v])
                         graph_edges.append((str(k), str(v), distance))
                 else:
-                    print("single cell")
                     graph_edges.append((str(k), str(k), 0))
             g = ig.Graph.TupleList(graph_edges, weights=True).simplify()
             g.vs["type"] = self.__types

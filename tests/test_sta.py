@@ -2,10 +2,10 @@ from anndata import read_h5ad
 
 import spatialtis.plotting as sp
 import spatialtis.sta as st
-from spatialtis import _CONFIG
+from spatialtis import CONFIG
 
-_CONFIG.EXP_OBS = ["Patient", "Part", "ROI"]
-_CONFIG.CELL_TYPE_COL = "leiden"
+CONFIG.EXP_OBS = ["Patient", "Part", "ROI"]
+CONFIG.CELL_TYPE_COL = "leiden"
 
 data = read_h5ad("../tmp/small.h5ad")
 
