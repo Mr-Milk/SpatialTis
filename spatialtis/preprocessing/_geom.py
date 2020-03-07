@@ -1,5 +1,5 @@
-import numpy as np
 import alphashape
+import numpy as np
 from shapely.geometry import MultiPoint, Polygon
 
 
@@ -49,7 +49,6 @@ def geom_cells(cells, method="convex", alpha=0):
             ecct = (a / b) if a < b else (b / a)
             eccentricities.append(ecct)
 
-    for i in deleted_cells:
-        cells.pop(i)
+    cells = list(np.delete(np.asarray(cells), deleted_cells))
 
     return cells, [area, borders, centroids, eccentricities]

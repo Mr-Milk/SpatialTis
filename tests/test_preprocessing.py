@@ -1,12 +1,15 @@
 from spatialtis.preprocessing import read_ROIs
-import pytest
 
-DATA_ENTRY = "data/shrink_data/Patients"
-METADATA = "data/shrink_data/metadata.csv"
+DATA_ENTRY = "../data/shrink_data/Patients"
+METADATA = "../data/shrink_data/metadata.csv"
 
-conditions = ['Patients', 'Sample', 'ROI']
+conditions = ["Patients", "Sample", "ROI"]
 
-data = read_ROIs(DATA_ENTRY, conditions)
-data.config_file(METADATA, channel_col='channels', marker_col='markers')
+data = read_ROIs(DATA_ENTRY, conditions, stacked=True)
 
-adata = data.to_anndata(mp=True)
+data.config_file(METADATA, channel_col="channels", marker_col="markers")
+
+data.to_anndata()
+data.to_anndata(polygonize="concave", alpha=2.0)
+
+data.to_anndata(mp=True)

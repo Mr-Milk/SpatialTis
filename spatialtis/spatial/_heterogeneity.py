@@ -70,7 +70,7 @@ def spatial_heterogeneity(
     roi_heterogeneity = pd.DataFrame(data=data, index=df.index)
 
     # export to anndata
-    df2adata_uns(roi_heterogeneity, adata, export_key, overwrite='True')
+    df2adata_uns(roi_heterogeneity, adata, export_key, overwrite=True)
 
     if return_df:
         return roi_heterogeneity

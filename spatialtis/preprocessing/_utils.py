@@ -1,11 +1,10 @@
+import re
 from collections import OrderedDict
 from pathlib import Path
 from typing import Sequence, Union
-import re
 
 import numpy as np
 import pandas as pd
-
 from skimage.external import tifffile
 from skimage.io import imread
 
@@ -79,7 +78,9 @@ class read_ROI:
         # selected_channels = filter_channels(self, channels=channels)
         config(self, channels=channels, markers=markers)
         if not self.__stacked:
-            self.__stacks = np.asarray([imread(str(self.__channels_files[c])) for c in self.channels])
+            self.__stacks = np.asarray(
+                [imread(str(self.__channels_files[c])) for c in self.channels]
+            )
         return self
 
     def exp_matrix(self, method="mean", polygonize="convex", alpha=0):
@@ -112,20 +113,16 @@ def mask2cells(mask_img: Union[Path, str], ignore_bg: bool = True) -> Sequence:
     while not iter.finished:
         cells[mapper[int(iter[0])]].append(iter.multi_index)
         iter.iternext()
-    # if there is only one point in cells, we need to filter it out
-    cell_points = [len(c) for c in cells]
-    i = np.where(np.asarray(cell_points) == 1)
-    cells = list(np.delete(np.asarray(cells), i))
     # usually 0 for background
     # and if index 0 of cells didn't contain only one cell
-    if ignore_bg & (0 not in i):
+    if ignore_bg:
         return cells[1:]
     else:
         return cells
 
 
 def get_cell_exp_stack(
-        stack: Sequence, cells: Sequence, method: str = "mean"
+    stack: Sequence, cells: Sequence, method: str = "mean"
 ) -> Sequence:
     """
     Parameters
@@ -164,7 +161,7 @@ def config(cls, channels=None, markers=None, callback=None):
 
 
 def config_file(
-        cls, metadata, channel_col=None, marker_col=None, sep=",", callback=None
+    cls, metadata, channel_col=None, marker_col=None, sep=",", callback=None
 ):
     meta = pd.read_csv(metadata, sep=sep)
     channels = meta[channel_col].values
@@ -182,6 +179,7 @@ def config_file(
     return cls
 
 
+"""
 def filter_channels(cls, channels=None):
     # TODO: add type check
     selected_channels = []
@@ -194,6 +192,7 @@ def filter_channels(cls, channels=None):
             not_found_channels.append(i)
             print(f"{c} not found")
     return selected_channels
+"""
 
 
 def set_info(cls):

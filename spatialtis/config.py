@@ -1,10 +1,10 @@
 """
 Setting Global config for whole processing level
 """
-from typing import Mapping, Optional, Sequence, Union
+from typing import Mapping, Optional, Sequence
 
 
-class CONFIG(object):
+class _CONFIG(object):
     def __init__(self):
         self._EXP_OBS: Optional[Sequence[str]] = None
         self._ROI_KEY: Optional[str] = None
@@ -35,7 +35,7 @@ class CONFIG(object):
             raise ValueError
 
 
-CONFIG = CONFIG()
+CONFIG = _CONFIG()
 
 # can be override in plotting function
 # ['jupyter', 'zepplin', None]

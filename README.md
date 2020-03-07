@@ -272,3 +272,11 @@ https://github.com/vtraag/leidenalg
 - The number of colors in a palette is limited, it will reuse colors when the provided colors are not sufficient. You can provide multiple palette at the same time, `palette = ['Set3','Spectral']` or `palette = ['#A35E47','#F596AA']` (The name of the palettes are usually capitalized, if 'cividis' not work, try 'Cividis'.)
 - For heatmap palettes: Cividis, Gray, Inferno, Magma, Viridis
 - About multiprocessing with Ray, a overhead process is needed to start Ray, so small dataset might even slower than single process.
+
+
+
+Q&A
+
+Your igraph or leidenlg not working, eg. segmentation fault.?
+
+This is might have somthing to do with inproper installation of C-core. Try reinstall it. It's annoying I know, but be patient.

@@ -3,12 +3,11 @@ from typing import Optional, Sequence, Union
 import numpy as np
 import pandas as pd
 from anndata import AnnData
-from pointpats import PointPattern
-from pointpats.quadrat_statistics import QStatistic
 from scipy.spatial import cKDTree
 from scipy.stats import chi2, chisquare, norm
 
 from spatialtis.config import CONFIG
+
 from ..utils import df2adata_uns, filter_adata
 
 
@@ -55,6 +54,13 @@ def _index_of_dispersion(groups, types, type_col, centroid_col, resample, r, pva
 
 
 def _morisita(groups, types, type_col, centroid_col, quad, pval):
+
+    try:
+        from pointpats import PointPattern
+        from pointpats.quadrat_statistics import QStatistic
+    except ImportError:
+        raise ImportError("pointpats not installed, try `pip install pointpats`")
+
     names = [n for n, _ in groups]
     patterns = {n: {t: 0 for t in types} for n in names}
 
@@ -64,7 +70,9 @@ def _morisita(groups, types, type_col, centroid_col, quad, pval):
                 cells = [eval(c) for c in tg[centroid_col]]
 
                 pp = PointPattern(cells)
-                counts = QStatistic(pp, shape="rectangle", nx=quad[0], ny=quad[1]).mr.point_location_sta()
+                counts = QStatistic(
+                    pp, shape="rectangle", nx=quad[0], ny=quad[1]
+                ).mr.point_location_sta()
                 quad_count = list(counts.keys())
                 # index of dispersion
                 n = len(cells)
@@ -127,20 +135,20 @@ def _ce_aggindex(groups, types, type_col, centroid_col, pval):
 
 
 def spatial_distribution(
-        adata: AnnData,
-        groupby: Union[Sequence, str, None] = None,
-        type_col: Optional[str] = None,
-        centroid_col: str = 'centroid',
-        selected_types: Optional[Sequence] = None,
-        method: str = 'ID',
-        pval: float = 0.01,
-        r: Optional[float] = 10,
-        resample: int = 50,
-        quad: Sequence[int] = (10, 10),
-        export: bool = True,
-        export_key: str = 'spatial_distribution',
-        return_df: bool = False,
-        overwrite: bool = False,
+    adata: AnnData,
+    groupby: Union[Sequence, str, None] = None,
+    type_col: Optional[str] = None,
+    centroid_col: str = "centroid",
+    selected_types: Optional[Sequence] = None,
+    method: str = "ID",
+    pval: float = 0.01,
+    r: Optional[float] = 10,
+    resample: int = 50,
+    quad: Sequence[int] = (10, 10),
+    export: bool = True,
+    export_key: str = "spatial_distribution",
+    return_df: bool = False,
+    overwrite: bool = False,
 ):
     """Cell distribution pattern
 
@@ -190,21 +198,27 @@ def spatial_distribution(
         groupby = CONFIG.EXP_OBS
     if type_col is None:
         type_col = CONFIG.CELL_TYPE_COL
-    df = filter_adata(adata, groupby, type_col, centroid_col, selected_types=selected_types)
+    df = filter_adata(
+        adata, groupby, type_col, centroid_col, selected_types=selected_types
+    )
     types = pd.unique(df[type_col])
     groups = df.groupby(groupby)
 
-    if method == 'ID':
-        patterns = _index_of_dispersion(groups, types, type_col, centroid_col, resample, r, pval)
-    elif method == 'MID':
+    if method == "ID":
+        patterns = _index_of_dispersion(
+            groups, types, type_col, centroid_col, resample, r, pval
+        )
+    elif method == "MID":
         patterns = _morisita(groups, types, type_col, centroid_col, quad, pval)
-    elif method == 'CE':
+    elif method == "CE":
         patterns = _ce_aggindex(groups, types, type_col, centroid_col, pval)
     else:
-        raise ValueError(f"'{method}' No such method, available options are 'ID','MID','CE'.")
+        raise ValueError(
+            f"'{method}' No such method, available options are 'ID','MID','CE'."
+        )
 
     results = pd.DataFrame(patterns)
-    results = results.rename_axis(index=['Cell type'], columns=groupby).T
+    results = results.rename_axis(index=["Cell type"], columns=groupby).T
 
     if export:
         df2adata_uns(results, adata, export_key, overwrite)
