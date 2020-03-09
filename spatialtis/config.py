@@ -1,6 +1,7 @@
 """
 Setting Global config for whole processing level
 """
+import platform
 from typing import Mapping, Optional, Sequence
 
 
@@ -10,6 +11,7 @@ class _CONFIG(object):
         self._ROI_KEY: Optional[str] = None
         self._CELL_TYPE_COL: Optional[str] = None
         self.WORKING_ENV: Optional[str] = "jupyter"
+        self.OS = None
 
     @property
     def EXP_OBS(self):
@@ -36,10 +38,17 @@ class _CONFIG(object):
 
 
 CONFIG = _CONFIG()
+CONFIG.OS = platform.system()
+
+# auto run ray.init when running on Linux and MacOS
+if CONFIG.OS in ["Linux", "Darwin"]:
+    import logging
+    import ray
+
+    ray.init(logging_level=logging.FATAL, ignore_reinit_error=True)
 
 # can be override in plotting function
 # ['jupyter', 'zepplin', None]
-
 
 """
 If working in Jupyter Lab/Hub, please install the following dependencies
@@ -52,7 +61,7 @@ If working with Zeppelin, please install `bkzep` (Only PyPI)
     ```pip install bkzep```
 
 """
-
+# ==============SOME INFO==================
 ISOTOPES_NAME: Sequence = [
     "H",
     "He",

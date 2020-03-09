@@ -12,6 +12,61 @@ from spatialtis.config import CONFIG
 from spatialtis.utils import col2adata_obs
 
 
+def _polygonize_cells(shapecol, group):
+    shapes = group[shapecol]
+    polycells = []
+    for i, cell in enumerate(shapes):
+        c = asMultiPoint(eval(cell))
+        c.index = i
+        polycells.append(c)
+
+        return polycells
+
+
+def _neighborcells(polycells, scale, expand):
+    nbcells = {}
+    tree = STRtree(polycells)
+    for i, cell in enumerate(polycells):
+        if (scale != 1.0) & (expand == 0):
+            scaled_cell = sscale(cell, xfact=scale, yfact=scale)
+        elif (expand != 0) & (scale == 1.0):
+            bbox = cell.bounds
+            expanded_bbox = [
+                bbox[0] - expand,
+                bbox[1] - expand,
+                bbox[2] + expand,
+                bbox[3] + expand,
+            ]
+            scaled_cell = box(*expanded_bbox)
+        else:
+            scaled_cell = cell
+        result = tree.query(scaled_cell)
+        neighs = [n.index for n in result if n.index != i]
+        nbcells[i] = neighs
+
+    return nbcells
+
+
+if CONFIG.OS in ["Linux", "Darwin"]:
+    try:
+        import ray
+    except ImportError:
+        raise ImportError(
+            "You don't have ray installed or your OS don't support ray.",
+            "Try `pip install ray` or use `mp=False`"
+        )
+
+
+    @ray.remote()
+    def _polygonize_cells_mp(shapecol, group):
+        _polygonize_cells(shapecol, group)
+
+
+    @ray.remote()
+    def _neighborcells_mp(polycells, scale, expand):
+        _neighborcells(polycells, scale, expand)
+
+
 class Neighbors(object):
     """Storage object for cell relationship
 
@@ -25,13 +80,13 @@ class Neighbors(object):
     """
 
     def __init__(
-        self,
-        adata: AnnData,
-        groupby: Union[Sequence, str, None] = None,
-        type_col: Optional[str] = None,
-        shape_col: Optional[str] = "cell_shape",
-        selected_types: Optional[Sequence] = None,
-        centroid_col: str = "centroid",
+            self,
+            adata: AnnData,
+            groupby: Union[Sequence, str, None] = None,
+            type_col: Optional[str] = None,
+            shape_col: Optional[str] = "cell_shape",
+            selected_types: Optional[Sequence] = None,
+            centroid_col: str = "centroid",
     ):
 
         # keys for query info from anndata
@@ -84,51 +139,15 @@ class Neighbors(object):
         self._polycells = False
         self.__neighborsbuilt = False
 
-    def _polygonize_cells(self, name, group):
-        shapes = group[self.__shapecol]
-        polycells = []
-        for i, cell in enumerate(shapes):
-            c = asMultiPoint(eval(cell))
-            c.index = i
-            polycells.append(c)
-        self.__polycellsdb[name] = polycells
-
-        if self.__typecol is not None:
-            types = list(group[self.__typecol])
-            self.__types[name] = types
-
-    def _neighborcells(self, name, polycells, scale, expand):
-        nbcells = {}
-        tree = STRtree(polycells)
-        for i, cell in enumerate(polycells):
-            if (scale != 1.0) & (expand == 0):
-                scaled_cell = sscale(cell, xfact=scale, yfact=scale)
-            elif (expand != 0) & (scale == 1.0):
-                bbox = cell.bounds
-                expanded_bbox = [
-                    bbox[0] - expand,
-                    bbox[1] - expand,
-                    bbox[2] + expand,
-                    bbox[3] + expand,
-                ]
-                scaled_cell = box(*expanded_bbox)
-            else:
-                scaled_cell = cell
-            result = tree.query(scaled_cell)
-            neighs = [n.index for n in result if n.index != i]
-            # if len(neighs) > 0:
-            nbcells[i] = neighs
-
-        self.__neighborsdb[name] = nbcells
-
     def find_neighbors(
-        self, scale: float = 1, expand: float = 0,
+            self, scale: float = 1, expand: float = 0, mp: bool = False,
     ):
         """To find the neighbors of each cell
 
         Args:
             scale: how much to scale each cell, (Default: 1, not scale)
             expand: how much units to expand each cell, (Default: 0, not expand)
+            mp: whether enable parallel processing
 
         """
         # define how to enlarge cells based on user input
@@ -165,15 +184,56 @@ class Neighbors(object):
         if unchanged:
             self.__neighbors_param = {"method": "unchanged", "units": 0}
 
-        if not self._polycells:
-            for n, g in self.__groups:
-                self._polygonize_cells(n, g)
-            self._polycells = True
+        # parallel processing
+        if mp & CONFIG.OS in ["Linux", "Darwin"]:
+            if not self._polycells:
+                results = []
+                names = []
+                for n, g in self.__groups:
+                    results.append(_neighborcells_mp.remote(self.__shapecol, g))
+                    names.append(n)
 
-        if run_neighbors_search:
-            for n, polycells in self.__polycellsdb.items():
-                self._neighborcells(n, polycells, scale, expand)
-            self.__neighborsbuilt = True
+                    if self.__typecol is not None:
+                        types = list(g[self.__typecol])
+                        self.__types[n] = types
+
+                results = ray.get(results)
+
+                for i, n in enumerate(names):
+                    self.__polycellsdb[n] = results[i]
+
+                self._polycells = True
+
+            if run_neighbors_search:
+                results = []
+                names = []
+                for n, polycells in self.__polycellsdb.items():
+                    results.append(_neighborcells_mp.remote(polycells, scale, expand))
+                    names.append(n)
+
+                results = ray.get(results)
+
+                for i, n in enumerate(names):
+                    self.__neighborsdb[n] = results[i]
+                self.__neighborsbuilt = True
+
+        else:
+            if not self._polycells:
+                for n, g in self.__groups:
+                    polycells = _polygonize_cells(self.__shapecol, g)
+                    self.__polycellsdb[n] = polycells
+
+                    if self.__typecol is not None:
+                        types = list(g[self.__typecol])
+                        self.__types[n] = types
+
+                self._polycells = True
+
+            if run_neighbors_search:
+                for n, polycells in self.__polycellsdb.items():
+                    nbcells = _neighborcells(polycells, scale, expand)
+                    self.__neighborsdb[n] = nbcells
+                self.__neighborsbuilt = True
 
     def export_neighbors(self, export_key: str = "cell_neighbors"):
         """Export computed neighbors
@@ -199,7 +259,7 @@ class Neighbors(object):
         }
 
     def neighbors_count(
-        self, export_key: str = "neighbors_count", overwrite: bool = False
+            self, export_key: str = "neighbors_count", overwrite: bool = False
     ):
         """Get how many neighbors for each cell
 

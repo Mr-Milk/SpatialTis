@@ -7,6 +7,33 @@ import numpy as np
 import pandas as pd
 
 from ._utils import config, config_file, read_ROI, set_info
+from spatialtis.config import CONFIG
+
+if CONFIG.OS in ["Linux", "Darwin"]:
+    try:
+        import ray
+    except ImportError:
+        raise ImportError(
+            "You don't have ray installed or your OS don't support ray.",
+            "Try `pip install ray` or use `mp=False`"
+        )
+
+
+    @ray.remote
+    def _get_roi(t, channels, markers, pg, mt, obsi, stacked):
+        if len(markers) >= 1:
+            roi = read_ROI(t, stacked=stacked).config(
+                channels=channels, markers=markers
+            )
+        else:
+            roi = read_ROI(t, stacked=stacked).config(channels=channels)
+
+        exp, cells = roi.exp_matrix(polygonize=pg, method=mt)
+
+        cell_count = len(cells[0])
+        obs = np.repeat(np.array([obsi]), cell_count, axis=0)
+        print(f"Added: {' '.join(obsi)}")
+        return [exp, list(obs), cells]
 
 
 class read_ROIs:
@@ -150,32 +177,7 @@ class read_ROIs:
         else:
             raise ValueError("Polygonize options are 'convex' or 'concave'")
 
-        if mp:
-            try:
-                import ray
-                import logging
-
-                ray.init(logging_level=logging.FATAL, ignore_reinit_error=True)
-            except ImportError:
-                raise ImportError(
-                    "You don't have ray installed or your OS don't support ray. Please use `mp=False`"
-                )
-
-            @ray.remote
-            def _get_roi(t, channels, markers, pg, mt, obsi, stacked):
-                if len(markers) >= 1:
-                    roi = read_ROI(t, stacked=stacked).config(
-                        channels=channels, markers=markers
-                    )
-                else:
-                    roi = read_ROI(t, stacked=stacked).config(channels=channels)
-
-                exp, cells = roi.exp_matrix(polygonize=pg, method=mt)
-
-                cell_count = len(cells[0])
-                obs = np.repeat(np.array([obsi]), cell_count, axis=0)
-                print(f"Added: {' '.join(obsi)}")
-                return [exp, list(obs), cells]
+        if mp & CONFIG.OS in ["Linux", "Darwin"]:
 
             results = []
             for i, d in enumerate(self.tree):
