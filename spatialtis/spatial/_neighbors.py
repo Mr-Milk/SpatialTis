@@ -59,12 +59,12 @@ if CONFIG.OS in ["Linux", "Darwin"]:
 
     @ray.remote()
     def _polygonize_cells_mp(shapecol, group):
-        _polygonize_cells(shapecol, group)
+        return _polygonize_cells(shapecol, group)
 
 
     @ray.remote()
     def _neighborcells_mp(polycells, scale, expand):
-        _neighborcells(polycells, scale, expand)
+        return _neighborcells(polycells, scale, expand)
 
 
 class Neighbors(object):
