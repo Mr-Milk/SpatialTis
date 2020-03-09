@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.5, 3.6, 3.7, 3.8]
+        python-version: [3.6, 3.7]
 
     steps:
     - uses: actions/checkout@v2
@@ -38,7 +38,7 @@ jobs:
       run: |
         pip install pytest
         pip install pytest-cov
-        pytest
+        pytest tests
     - name: Codecov
       uses: codecov/codecov-action@v1.0.6
       with:
