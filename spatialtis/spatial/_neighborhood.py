@@ -6,8 +6,23 @@ import numpy as np
 import pandas as pd
 
 from spatialtis.utils import df2adata_uns
+from spatialtis.config import CONFIG
 from ._neighbors import Neighbors
 from ._util import check_neighbors
+
+if CONFIG.OS in ["Linux", "Darwin"]:
+    try:
+        import ray
+    except ImportError:
+        raise ImportError(
+            "You don't have ray installed or your OS don't support ray.",
+            "Try `pip install ray` or use `mp=False`"
+        )
+
+
+    @ray.remote(num_return_vals=2)
+    def _bootstrap_mp(cell_types, cell_neighbors, cell_interactions, resample):
+        return _bootstrap(cell_types, cell_neighbors, cell_interactions, resample)
 
 
 def _count_neighbors(
@@ -82,15 +97,30 @@ def _main(
         n: Neighbors,
         patch_func: Callable,
         resample: int = 50,
-        pval: float = 0.01
+        pval: float = 0.01,
+        mp: bool = False,
 ):
     check_neighbors(n)
     cell_interactions = [k for k in product(n.unitypes, repeat=2)]
     results = dict()
 
-    for name, value in n.neighbors.items():
-        perm_count, real_count = _bootstrap(n.types[name], value, cell_interactions, resample)
-        results[name] = patch_func(perm_count, real_count, resample, pval)
+    if mp & CONFIG.OS in ["Linux", "Darwin"]:
+        perm_counts = []
+        real_counts = []
+        names = []
+        for name, value in n.neighbors.items():
+            id1, id2 = _bootstrap_mp.remote(n.types[name], value, cell_interactions, resample)
+            perm_counts.append(id1)
+            real_counts.append(id2)
+            names.append(name)
+
+        for i, n in enumerate(names):
+            results[n] = patch_func(perm_counts[i], real_counts[i], resample, pval)
+
+    else:
+        for name, value in n.neighbors.items():
+            perm_count, real_count = _bootstrap(n.types[name], value, cell_interactions, resample)
+            results[name] = patch_func(perm_count, real_count, resample, pval)
 
     results_df = pd.DataFrame(results)
     results_df.index = pd.MultiIndex.from_tuples(results_df.index, names=('Cell type1', 'Cell type2'))
@@ -107,6 +137,7 @@ def neighborhood_analysis(
         export_key: str = "neighborhood_analysis",
         return_df: bool = False,
         overwrite: bool = False,
+        mp: bool = False,
 ):
     """Python implementation of histocat's neighborhood analysis
 
@@ -122,6 +153,7 @@ def neighborhood_analysis(
         export_key: which key used to export
         return_df: whether to return result dataframe
         overwrite: whether to overwrite your previous results (if existed)
+        mp: whether enable parallel processing
 
     .. sea also:: :function: `spatial_enrichment_analysis`
 
@@ -145,6 +177,7 @@ def spatial_enrichment_analysis(
         export_key: str = "spatial_enrichment_analysis",
         return_df: bool = False,
         overwrite: bool = False,
+        mp: bool = False,
 ):
     """An alternative neighborhood analysis
 
@@ -161,6 +194,7 @@ def spatial_enrichment_analysis(
             export_key: which key used to export
             return_df: whether to return result dataframe
             overwrite: whether to overwrite your previous results (if existed)
+            mp: whether enable parallel processing
 
         .. sea also:: :function: `neighborhood_analysis`
 
