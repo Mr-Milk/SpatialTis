@@ -11,17 +11,28 @@ from spatialtis import CONFIG
 
 from .palette import get_colors
 
-global gl, factors, q1, q2, q3, upper, lower, splits
+
+class Status(object):
+    gl = None
+    factors = None
+    g1 = None
+    g2 = None
+    g3 = None
+    upper = None
+    lower = None
+    splits = False
+
+
+s = Status()
 
 
 def _quantilefy(groups, target_col):
-    global q1, q2, q3, upper, lower
-    q1 = groups.quantile(q=0.25)
-    q2 = groups.quantile(q=0.5)
-    q3 = groups.quantile(q=0.75)
-    iqr = q3 - q1
-    upper = q3 + 1.5 * iqr
-    lower = q1 - 1.5 * iqr
+    s.q1 = groups.quantile(q=0.25)
+    s.q2 = groups.quantile(q=0.5)
+    s.q3 = groups.quantile(q=0.75)
+    iqr = s.q3 - s.q1
+    upper = s.q3 + 1.5 * iqr
+    lower = s.q1 - 1.5 * iqr
     qmin = groups.quantile(q=0.00)
     qmax = groups.quantile(q=1.00)
     upper[target_col] = [
@@ -38,11 +49,11 @@ def _kde_points(raw_data, plot_points):
 
 
 def _violin_patches(
-    groups: pd.core.groupby.DataFrameGroupBy, target_col: str, side: str = "both",
+        groups: pd.core.groupby.DataFrameGroupBy, target_col: str, side: str = "both",
 ):
     violins = list()
     padding = 0.5
-    for i, (n, g) in enumerate(groups):
+    for i, (_, g) in enumerate(groups):
         data = g[target_col].to_numpy()
         if not len(data) > 1:
             raise ValueError("Can't plot with only one point for each group")
@@ -52,9 +63,9 @@ def _violin_patches(
         curvepoint = _kde_points(data, points)
         # set endpoints to zero to close violin patches
         norm_curve = (
-            (curvepoint - np.min(curvepoint))
-            / (np.max(curvepoint) - np.min(curvepoint))
-        ) * 0.3
+                             (curvepoint - np.min(curvepoint))
+                             / (np.max(curvepoint) - np.min(curvepoint))
+                     ) * 0.3
         norm_curve[0] = 0
         norm_curve[-1] = 0
         if side == "both":
@@ -66,11 +77,11 @@ def _violin_patches(
             )
         elif side == "+":
             violins.append(
-                [np.hstack((norm_curve + i + padding,)), np.hstack((points,)),]
+                [np.hstack((norm_curve + i + padding,)), np.hstack((points,)), ]
             )
         elif side == "-":
             violins.append(
-                [np.hstack((-norm_curve + i + padding,)), np.hstack((points,)),]
+                [np.hstack((-norm_curve + i + padding,)), np.hstack((points,)), ]
             )
 
     return violins
@@ -100,7 +111,6 @@ def _violin_split(violins_a, violins_b, figure_config, colors, direction="vertic
 
 
 def _violin_main(violins, target_col, figure_config, colors, direction="vertical"):
-
     p = figure(**figure_config)
 
     for i, v in enumerate(violins):
@@ -119,17 +129,17 @@ def _violin_main(violins, target_col, figure_config, colors, direction="vertical
         else:
             p.patch(x, y, fill_color=colors[factors[i]], line_color=colors[factors[i]])
 
-    q23 = q2[target_col] - q3[target_col]
-    q12 = q1[target_col] - q2[target_col]
+    q23 = s.q2[target_col] - s.q3[target_col]
+    q12 = s.q1[target_col] - s.q2[target_col]
 
     if direction == "vertical":
         p.segment(
-            factors, upper[target_col], factors, lower[target_col], line_color="black"
+            factors, s.upper[target_col], factors, s.lower[target_col], line_color="black"
         )
 
         p.rect(
             factors,
-            q3[target_col] + q23 / 2,
+            s.q3[target_col] + q23 / 2,
             0.05,
             q23,
             fill_color="#E08E79",
@@ -137,7 +147,7 @@ def _violin_main(violins, target_col, figure_config, colors, direction="vertical
         )
         p.rect(
             factors,
-            q2[target_col] + q12 / 2,
+            s.q2[target_col] + q12 / 2,
             0.05,
             q12,
             fill_color="#3B8686",
@@ -145,11 +155,11 @@ def _violin_main(violins, target_col, figure_config, colors, direction="vertical
         )
     elif direction == "horizontal":
         p.segment(
-            upper[target_col], factors, lower[target_col], factors, line_color="black"
+            s.upper[target_col], factors, s.lower[target_col], factors, line_color="black"
         )
 
         p.rect(
-            q3[target_col] + q23 / 2,
+            s.q3[target_col] + q23 / 2,
             factors,
             q23,
             0.05,
@@ -157,7 +167,7 @@ def _violin_main(violins, target_col, figure_config, colors, direction="vertical
             line_color="black",
         )
         p.rect(
-            q2[target_col] + q12 / 2,
+            s.q2[target_col] + q12 / 2,
             factors,
             q12,
             0.05,
@@ -205,18 +215,18 @@ def _set_colors(palette, mapper=False):
 
 
 def violin_plot(
-    df: pd.DataFrame,
-    group_by: list,
-    target_col: str,
-    split: Optional[str] = None,
-    direction: Union[str] = "vertical",
-    display: bool = True,
-    title: Optional[str] = None,
-    size: Optional[Sequence[int]] = None,
-    save_svg: Optional[str] = None,
-    save_html: Optional[str] = None,
-    palette: Union[Sequence[str], str, None] = None,
-    return_plot: bool = False,
+        df: pd.DataFrame,
+        group_by: list,
+        target_col: str,
+        split: Optional[str] = None,
+        direction: Union[str] = "vertical",
+        display: bool = True,
+        title: Optional[str] = None,
+        size: Optional[Sequence[int]] = None,
+        save_svg: Optional[str] = None,
+        save_html: Optional[str] = None,
+        palette: Union[Sequence[str], str, None] = None,
+        return_plot: bool = False,
 ):
     if direction not in ["vertical", "horizontal"]:
         raise ValueError(f"Unrecognized direction '{direction}'")
