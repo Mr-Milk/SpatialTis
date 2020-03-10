@@ -1,13 +1,15 @@
 from anndata import read_h5ad
+from pathlib import Path
 
 import spatialtis.plotting as sp
 import spatialtis.spatial as ss
 from spatialtis import CONFIG, Neighbors
 
+
 CONFIG.EXP_OBS = ["Patient", "Part", "ROI"]
 CONFIG.CELL_TYPE_COL = "leiden"
-
-data = read_h5ad("tests/data/small.h5ad")
+DATA_DIR = str(Path("tests/data/small.h5ad").absolute())
+data = read_h5ad(DATA_DIR)
 
 
 def test_spatial_dist():
