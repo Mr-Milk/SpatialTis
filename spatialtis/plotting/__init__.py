@@ -1,4 +1,6 @@
 from bokeh.io import output_notebook
+# enable retina mode for all devices
+from IPython.display import set_matplotlib_formats
 
 from spatialtis.config import CONFIG
 
@@ -10,7 +12,7 @@ from ._violin_plot import violin_plot
 from .palette import colorcycle, get_colors, get_linear_colors, view_palette
 from .wrapper import (cell_co_occurrence, cell_components, cell_density,
                       cell_morphology, neighborhood_analysis,
-                      spatial_enrichment_analysis, spatial_distribution,
+                      spatial_distribution, spatial_enrichment_analysis,
                       spatial_heterogeneity)
 
 if CONFIG.WORKING_ENV == "jupyter":
@@ -18,6 +20,5 @@ if CONFIG.WORKING_ENV == "jupyter":
 elif CONFIG.WORKING_ENV == "zeppelin":
     output_notebook(hide_banner=True, notebook_type="zepplin")
 
-# enable retina mode for all devices
-from IPython.display import set_matplotlib_formats
-set_matplotlib_formats('retina')
+
+set_matplotlib_formats("retina")

@@ -12,17 +12,17 @@ class NeighborsNotFoundError(Exception):
 
 def check_neighbors(n: Neighbors):
     if not n.neighborsbuilt:
-        raise NeighborsNotFoundError("Please run .find_neighbors() before further analysis.")
+        raise NeighborsNotFoundError(
+            "Please run .find_neighbors() before further analysis."
+        )
     if n.unitypes is None:
         raise ValueError("The types are not specific.")
 
 
 def quad_tessellation(
-        rect: tuple,
-        quad: Union[tuple, str] = 'auto',
-        grid_size: float = 150,
+    rect: tuple, quad: Union[tuple, str] = "auto", grid_size: float = 150,
 ):
-    if quad == 'auto':
+    if quad == "auto":
         nx = int((rect[2] - rect[0]) / grid_size)
         ny = int((rect[3] - rect[1]) / grid_size)
         quad = (nx, ny)

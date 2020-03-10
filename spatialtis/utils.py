@@ -1,20 +1,16 @@
+import shutil
+from pathlib import Path
+from typing import Optional, Sequence, Union
+
 import matplotlib.pyplot as plt
 import pandas as pd
-
 from anndata import AnnData
-
-from typing import Sequence, Optional, Union
-from pathlib import Path
-import shutil
 
 from spatialtis.config import CONFIG
 
 
 def df2adata_uns(
-        df: pd.DataFrame,
-        adata: AnnData,
-        key: str,
-        overwrite: bool = False,
+    df: pd.DataFrame, adata: AnnData, key: str, overwrite: bool = False,
 ):
     """Preserve all info in pd.DataFrame as dict, and write to anndata.uns
     The anndata object haven't fully support read/write of a pandas.Dataframe object,
@@ -33,14 +29,14 @@ def df2adata_uns(
 
     """
     container = dict(
-        df=str(df.to_dict()),
-        iname=df.index.names,
-        colname=list(df.columns.names),
+        df=str(df.to_dict()), iname=df.index.names, colname=list(df.columns.names),
     )
 
     keys = adata.uns.keys()
     if (key in keys) & (not overwrite):
-        raise KeyError(f"{key} already exists, if you want to rewrite, set overwrite=True")
+        raise KeyError(
+            f"{key} already exists, if you want to rewrite, set overwrite=True"
+        )
 
     adata.uns[key] = container
 
@@ -52,10 +48,7 @@ def df2adata_uns(
 
 
 def col2adata_obs(
-        col: Sequence,
-        adata: AnnData,
-        key: str,
-        overwrite: bool = False,
+    col: Sequence, adata: AnnData, key: str, overwrite: bool = False,
 ):
     """Write a Sequence to anndata.obs
 
@@ -68,7 +61,9 @@ def col2adata_obs(
     """
     keys = adata.uns.keys()
     if (key in keys) & (not overwrite):
-        raise KeyError(f"{key} already exists, if you want to rewrite, set overwrite=True")
+        raise KeyError(
+            f"{key} already exists, if you want to rewrite, set overwrite=True"
+        )
 
     adata.obs[key] = col
 
@@ -80,8 +75,7 @@ def col2adata_obs(
 
 
 def adata_uns2df(
-        adata: AnnData,
-        key: str,
+    adata: AnnData, key: str,
 ):
     """Read pandas.DataFrame object from anndata.uns if written by df2adata_uns
 
@@ -99,12 +93,14 @@ def adata_uns2df(
     return df
 
 
-def filter_adata(adata, groupby, type_col, *keys, selected_types=None, reset_index=True):
+def filter_adata(
+    adata, groupby, type_col, *keys, selected_types=None, reset_index=True
+):
     """(Private) Filter anndata.obs (pandas.DataFrame)
     """
 
     keys = [k for k in keys if k is not None]
-    df = adata.obs[groupby+keys+[type_col]]
+    df = adata.obs[groupby + keys + [type_col]]
     if selected_types is not None:
         df = df[df[type_col].isin(selected_types)]
     if reset_index:
@@ -131,14 +127,14 @@ def plot_polygons(polygons):
 
 
 def prepare_svca(
-        adata: AnnData,
-        export: Union[Path, str] = '/',
-        marker_col: str = 'Markers',
-        *,
-        groupby: Union[Sequence, str, None] = None,
-        centroid_col: str = 'centroid',
-        entry_folder: str = 'svca_data',
-        overwrite: bool = True,
+    adata: AnnData,
+    export: Union[Path, str] = "/",
+    marker_col: str = "Markers",
+    *,
+    groupby: Union[Sequence, str, None] = None,
+    centroid_col: str = "centroid",
+    entry_folder: str = "svca_data",
+    overwrite: bool = True,
 ):
     """export anndata to SVCA analysis input formats
 
@@ -182,19 +178,17 @@ def prepare_svca(
         folder_path = p / folder_name
         folder_path.mkdir()
 
-        expression_path = folder_path / 'expressions.txt'
-        position_path = folder_path / 'positions.txt'
+        expression_path = folder_path / "expressions.txt"
+        position_path = folder_path / "positions.txt"
 
         # export to expressions.txt
-        pd.DataFrame(adata.X[[int(i) for i in g.index]], columns=marker_info)\
-            .to_csv(expression_path, sep='\t', index=False)
+        pd.DataFrame(adata.X[[int(i) for i in g.index]], columns=marker_info).to_csv(
+            expression_path, sep="\t", index=False
+        )
 
         # export to positions.txt
         cents = []
         for c in g[centroid_col]:
             c = eval(c)
             cents.append([c[0], c[1]])
-        pd.DataFrame(cents).to_csv(position_path, sep='\t', index=False, header=False)
-
-
-
+        pd.DataFrame(cents).to_csv(position_path, sep="\t", index=False, header=False)

@@ -5,22 +5,22 @@ from typing import Callable, Mapping, Sequence
 import numpy as np
 import pandas as pd
 
-from spatialtis.utils import df2adata_uns
 from spatialtis.config import CONFIG
+from spatialtis.utils import df2adata_uns
+
 from ._neighbors import Neighbors
 from ._util import check_neighbors
 
 
-def _count_neighbors(
-        types: Sequence,
-        relationships: Mapping,
-        storage_object: Mapping
-):
+def _count_neighbors(types: Sequence, relationships: Mapping, storage_object: Mapping):
     if len(relationships) > 0:
         for k, v in relationships.items():
             if len(v) > 0:
                 for t, count in Counter([types[i] for i in v]).items():
-                    select = (types[k], t,)
+                    select = (
+                        types[k],
+                        t,
+                    )
                     storage_object[select].append(count)
 
     itr = storage_object.keys()
@@ -29,10 +29,10 @@ def _count_neighbors(
 
 
 def _bootstrap(
-        cell_types: list,
-        cell_neighbors: Mapping,
-        cell_interactions: Sequence,
-        resample: int,
+    cell_types: list,
+    cell_neighbors: Mapping,
+    cell_interactions: Sequence,
+    resample: int,
 ):
     tmp_storage = {k: [] for k in cell_interactions}
     real_count = _count_neighbors(cell_types, cell_neighbors, tmp_storage)
@@ -56,9 +56,8 @@ if CONFIG.OS in ["Linux", "Darwin"]:
     except ImportError:
         raise ImportError(
             "You don't have ray installed or your OS don't support ray.",
-            "Try `pip install ray` or use `mp=False`"
+            "Try `pip install ray` or use `mp=False`",
         )
-
 
     @ray.remote
     def _bootstrap_mp(cell_types, cell_neighbors, cell_interactions, resample):
@@ -66,10 +65,7 @@ if CONFIG.OS in ["Linux", "Darwin"]:
 
 
 def _patch_neighborhood(
-        perm_count: pd.DataFrame,
-        real_count: pd.DataFrame,
-        resample: int,
-        pval: float
+    perm_count: pd.DataFrame, real_count: pd.DataFrame, resample: int, pval: float
 ):
     p_gt = (perm_count >= real_count.to_numpy()).sum() / (resample + 1)
     p_lt = (perm_count <= real_count.to_numpy()).sum() / (resample + 1)
@@ -81,9 +77,7 @@ def _patch_neighborhood(
 
 
 def _patch_spatial_enrichment(
-        perm_count: pd.DataFrame,
-        real_count: pd.DataFrame,
-        *args
+    perm_count: pd.DataFrame, real_count: pd.DataFrame, *args
 ):
     z_score = (real_count.to_numpy()[0] - perm_count.mean()) / perm_count.std()
     # inf ---> NaN, and then NaN ---> 0
@@ -93,11 +87,11 @@ def _patch_spatial_enrichment(
 
 
 def _main(
-        n: Neighbors,
-        patch_func: Callable,
-        resample: int = 50,
-        pval: float = 0.01,
-        mp: bool = False,
+    n: Neighbors,
+    patch_func: Callable,
+    resample: int = 50,
+    pval: float = 0.01,
+    mp: bool = False,
 ):
     check_neighbors(n)
     cell_interactions = [k for k in product(n.unitypes, repeat=2)]
@@ -107,7 +101,9 @@ def _main(
         counts = []
         names = []
         for name, value in n.neighbors.items():
-            id1 = _bootstrap_mp.remote(n.types[name], value, cell_interactions, resample)
+            id1 = _bootstrap_mp.remote(
+                n.types[name], value, cell_interactions, resample
+            )
             counts.append(id1)
             names.append(name)
 
@@ -118,25 +114,29 @@ def _main(
 
     else:
         for name, value in n.neighbors.items():
-            [perm_count, real_count] = _bootstrap(n.types[name], value, cell_interactions, resample)
+            [perm_count, real_count] = _bootstrap(
+                n.types[name], value, cell_interactions, resample
+            )
             results[name] = patch_func(perm_count, real_count, resample, pval)
 
     results_df = pd.DataFrame(results)
-    results_df.index = pd.MultiIndex.from_tuples(results_df.index, names=('Cell type1', 'Cell type2'))
+    results_df.index = pd.MultiIndex.from_tuples(
+        results_df.index, names=("Cell type1", "Cell type2")
+    )
     results_df.rename_axis(columns=n.expobs, inplace=True)
 
     return results_df
 
 
 def neighborhood_analysis(
-        n: Neighbors,
-        resample: int = 50,
-        pval: float = 0.01,
-        export: bool = True,
-        export_key: str = "neighborhood_analysis",
-        return_df: bool = False,
-        overwrite: bool = False,
-        mp: bool = False,
+    n: Neighbors,
+    resample: int = 50,
+    pval: float = 0.01,
+    export: bool = True,
+    export_key: str = "neighborhood_analysis",
+    return_df: bool = False,
+    overwrite: bool = False,
+    mp: bool = False,
 ):
     """Python implementation of histocat's neighborhood analysis
 
@@ -170,13 +170,13 @@ def neighborhood_analysis(
 
 
 def spatial_enrichment_analysis(
-        n: Neighbors,
-        resample: int = 50,
-        export: bool = True,
-        export_key: str = "spatial_enrichment_analysis",
-        return_df: bool = False,
-        overwrite: bool = False,
-        mp: bool = False,
+    n: Neighbors,
+    resample: int = 50,
+    export: bool = True,
+    export_key: str = "spatial_enrichment_analysis",
+    return_df: bool = False,
+    overwrite: bool = False,
+    mp: bool = False,
 ):
     """An alternative neighborhood analysis
 

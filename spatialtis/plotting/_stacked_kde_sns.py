@@ -9,12 +9,12 @@ from .palette import get_colors, get_linear_colors
 
 
 def stacked_kde(
-        df: pd.DataFrame,
-        col: str,
-        row: str,
-        palette: Union[Sequence[str], str, None] = None,
+    df: pd.DataFrame,
+    col: str,
+    row: str,
+    palette: Union[Sequence[str], str, None] = None,
 ):
-    new_df = pd.DataFrame(df.stack(), columns=['value']).reset_index()
+    new_df = pd.DataFrame(df.stack(), columns=["value"]).reset_index()
 
     # handle colors
     default_palette = get_colors(9, ["Set1"])

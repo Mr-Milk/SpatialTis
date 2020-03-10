@@ -1,6 +1,6 @@
 import pytest
-from spatialtis.preprocessing import read_ROIs
 
+from spatialtis.preprocessing import read_ROIs
 
 DATA_ENTRY = "tests/data/Patients"
 METADATA = "tests/data/metadata.csv"
@@ -21,4 +21,3 @@ def test_concave():
 
 def test_read_rois_mp():
     data.to_anndata(mp=True)
-
