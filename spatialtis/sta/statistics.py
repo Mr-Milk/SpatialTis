@@ -12,10 +12,10 @@ Num = Union[int, float]
 
 
 def type_counter(
-        adata: AnnData,
-        groupby: Union[Sequence, str, None] = None,
-        type_col: Optional[str] = None,
-        selected_types: Optional[Sequence] = None,
+    adata: AnnData,
+    groupby: Union[Sequence, str, None] = None,
+    type_col: Optional[str] = None,
+    selected_types: Optional[Sequence] = None,
 ) -> pd.DataFrame:
     """(private) To count how many type of value in a col
 
@@ -62,14 +62,14 @@ def type_counter(
 
 
 def cell_components(
-        adata: AnnData,
-        groupby: Union[Sequence, str, None] = None,
-        type_col: Optional[str] = None,
-        selected_types: Optional[Sequence] = None,
-        export: bool = True,
-        export_key: str = "cell_components",
-        return_df: bool = False,
-        overwrite: bool = False,
+    adata: AnnData,
+    groupby: Union[Sequence, str, None] = None,
+    type_col: Optional[str] = None,
+    selected_types: Optional[Sequence] = None,
+    export: bool = True,
+    export_key: str = "cell_components",
+    return_df: bool = False,
+    overwrite: bool = False,
 ):
     """the proportion of different type of cells
 
@@ -98,15 +98,15 @@ def cell_components(
 
 
 def cell_co_occurrence(
-        adata: AnnData,
-        groupby: Union[Sequence, str, None] = None,
-        type_col: Optional[str] = None,
-        selected_types: Optional[Sequence] = None,
-        export: bool = True,
-        export_key: str = "cell_co_occurrence",
-        threshold: int = 50,
-        return_df: bool = False,
-        overwrite: bool = False,
+    adata: AnnData,
+    groupby: Union[Sequence, str, None] = None,
+    type_col: Optional[str] = None,
+    selected_types: Optional[Sequence] = None,
+    export: bool = True,
+    export_key: str = "cell_co_occurrence",
+    threshold: int = 50,
+    return_df: bool = False,
+    overwrite: bool = False,
 ):
     """The probability of two type of cells occur simultaneously
 
@@ -137,16 +137,16 @@ def cell_co_occurrence(
 
 
 def cell_density(
-        adata: AnnData,
-        size: Union[Sequence[Sequence[Num]], Sequence[Num]],
-        ratio: float = 1.0,
-        groupby: Union[Sequence, str, None] = None,
-        type_col: Optional[str] = None,
-        selected_types: Optional[Sequence] = None,
-        export: bool = True,
-        export_key: str = "cell_density",
-        return_df: bool = False,
-        overwrite: bool = False,
+    adata: AnnData,
+    size: Union[Sequence[Sequence[Num]], Sequence[Num]],
+    ratio: float = 1.0,
+    groupby: Union[Sequence, str, None] = None,
+    type_col: Optional[str] = None,
+    selected_types: Optional[Sequence] = None,
+    export: bool = True,
+    export_key: str = "cell_density",
+    return_df: bool = False,
+    overwrite: bool = False,
 ):
     """Calculating cell density in each ROI
 
@@ -186,15 +186,15 @@ def cell_density(
 
 
 def cell_morphology(
-        adata: AnnData,
-        metrics_col: str = "eccentricity",
-        groupby: Union[Sequence, str, None] = None,
-        type_col: Optional[str] = None,
-        selected_types: Optional[Sequence] = None,
-        export: bool = True,
-        export_key: str = "cell_morphology",
-        return_df: bool = False,
-        overwrite: bool = False,
+    adata: AnnData,
+    metrics_col: str = "eccentricity",
+    groupby: Union[Sequence, str, None] = None,
+    type_col: Optional[str] = None,
+    selected_types: Optional[Sequence] = None,
+    export: bool = True,
+    export_key: str = "cell_morphology",
+    return_df: bool = False,
+    overwrite: bool = False,
 ):
     """Cell morphology variation between different groups
 

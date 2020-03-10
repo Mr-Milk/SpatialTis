@@ -10,18 +10,18 @@ from .palette import get_colors, get_linear_colors
 
 
 def heatmap(
-        df: pd.DataFrame,
-        row_label: Optional[str] = None,
-        col_label: Optional[str] = None,
-        row_colors: Union[Sequence[str], str, None] = None,
-        col_colors: Union[Sequence[str], str, None] = None,
-        palette: Union[Sequence[str], str, None] = None,
-        colorbar_type: str = 'bar',
-        categorical_colorbar_text: Union[Sequence[str], str, None] = None,
-        row_colors_legend_bbox: Optional[Sequence[float]] = None,
-        col_colors_legend_bbox: Optional[Sequence[float]] = None,
-        colorbar_bbox: Optional[Sequence[float]] = None,
-        **kwargs,
+    df: pd.DataFrame,
+    row_label: Optional[str] = None,
+    col_label: Optional[str] = None,
+    row_colors: Union[Sequence[str], str, None] = None,
+    col_colors: Union[Sequence[str], str, None] = None,
+    palette: Union[Sequence[str], str, None] = None,
+    colorbar_type: str = "bar",
+    categorical_colorbar_text: Union[Sequence[str], str, None] = None,
+    row_colors_legend_bbox: Optional[Sequence[float]] = None,
+    col_colors_legend_bbox: Optional[Sequence[float]] = None,
+    colorbar_bbox: Optional[Sequence[float]] = None,
+    **kwargs,
 ):
     """a higher wrapper for seaborn's clustermap
 
@@ -60,7 +60,9 @@ def heatmap(
     if row_colors is not None:
         row_colors_legend = []
         row_index = df.index.to_frame(index=False)
-        row_index_items = [array for name, array in row_index.iteritems() if name in row_colors]
+        row_index_items = [
+            array for name, array in row_index.iteritems() if name in row_colors
+        ]
         for array in row_index_items:
             row_colors_legend += list(pd.unique(array))
         row_colors_legend = list(pd.unique(row_colors_legend))
@@ -69,7 +71,9 @@ def heatmap(
     if col_colors is not None:
         col_colors_legend = []
         col_index = df.columns.to_frame(index=False)
-        col_index_items = [array for name, array in col_index.iteritems() if name in col_colors]
+        col_index_items = [
+            array for name, array in col_index.iteritems() if name in col_colors
+        ]
         for array in col_index_items:
             col_colors_legend += list(pd.unique(array))
         col_colors_legend = list(pd.unique(col_colors_legend))
@@ -79,12 +83,16 @@ def heatmap(
     colors_bar_mapper = dict(zip(uni_bars, colors))
 
     if row_colors is not None:
-        row_annos = pd.concat([c.map(colors_bar_mapper) for c in row_index_items], axis=1)
-        plot_kwargs['row_colors'] = row_annos
+        row_annos = pd.concat(
+            [c.map(colors_bar_mapper) for c in row_index_items], axis=1
+        )
+        plot_kwargs["row_colors"] = row_annos
 
     if col_colors is not None:
-        col_annos = pd.concat([c.map(colors_bar_mapper) for c in col_index_items], axis=1)
-        plot_kwargs['col_colors'] = col_annos
+        col_annos = pd.concat(
+            [c.map(colors_bar_mapper) for c in col_index_items], axis=1
+        )
+        plot_kwargs["col_colors"] = col_annos
 
     # handle the colors
     if palette is not None:
@@ -94,11 +102,11 @@ def heatmap(
 
     # handle legend bbox
 
-    default_cbar_bbox = (1.05, .1, .03, .15)
+    default_cbar_bbox = (1.05, 0.1, 0.03, 0.15)
 
-    default_col_legend_bbox = (-.25, 0.85)
-    default_row_legend_bbox = (-.25, 0.5)
-    default_cbar_legend_bbox = (-.25, 0.15)
+    default_col_legend_bbox = (-0.25, 0.85)
+    default_row_legend_bbox = (-0.25, 0.5)
+    default_cbar_legend_bbox = (-0.25, 0.15)
     if row_colors_legend_bbox is not None:
         default_row_legend_bbox = row_colors_legend_bbox
     if col_colors_legend_bbox is not None:
@@ -107,25 +115,29 @@ def heatmap(
         default_cbar_bbox = colorbar_bbox
         default_cbar_legend_bbox = colorbar_bbox
 
-    if 'cmap' not in plot_kwargs.keys():
-        plot_kwargs['cmap'] = cmap
+    if "cmap" not in plot_kwargs.keys():
+        plot_kwargs["cmap"] = cmap
 
     # change cbar location
-    if 'cbar_pos' not in plot_kwargs.keys():
-        plot_kwargs['cbar_pos'] = default_cbar_bbox
+    if "cbar_pos" not in plot_kwargs.keys():
+        plot_kwargs["cbar_pos"] = default_cbar_bbox
 
     # shrink dendrogram, so that i can place the legend
-    if 'dendrogram_ratio' not in plot_kwargs.keys():
-        plot_kwargs['dendrogram_ratio'] = 0.035
+    if "dendrogram_ratio" not in plot_kwargs.keys():
+        plot_kwargs["dendrogram_ratio"] = 0.035
 
     # add categorical color bar
-    if colorbar_type is 'categorical':
-        plot_kwargs['cbar_pos'] = None
+    if colorbar_type == "categorical":
+        plot_kwargs["cbar_pos"] = None
         if categorical_colorbar_text is None:
-            raise ValueError("'categorical_colorbar_text' should be set if use categorical colorbar")
+            raise ValueError(
+                "'categorical_colorbar_text' should be set if use categorical colorbar"
+            )
         else:
             texts = list(categorical_colorbar_text)
-            cbar_mapper = zip(texts, [cmap[int(i)] for i in np.linspace(0, len(cmap) - 1, len(texts))])
+            cbar_mapper = zip(
+                texts, [cmap[int(i)] for i in np.linspace(0, len(cmap) - 1, len(texts))]
+            )
             cbar_legends = [mpatches.Patch(label=l, color=c) for l, c in cbar_mapper]
 
     # return a ax_heatmap instance
@@ -135,29 +147,41 @@ def heatmap(
     # add legends for color annotations
 
     if row_colors is not None:
-        row_legends = [mpatches.Patch(label=l, color=colors_bar_mapper[l]) for l in row_colors_legend]
-        add_row_legend = ax.legend(loc="center left",
-                                   bbox_to_anchor=default_row_legend_bbox,
-                                   handlelength=0.8,
-                                   handles=row_legends,
-                                   frameon=False)
+        row_legends = [
+            mpatches.Patch(label=l, color=colors_bar_mapper[l])
+            for l in row_colors_legend
+        ]
+        add_row_legend = ax.legend(
+            loc="center left",
+            bbox_to_anchor=default_row_legend_bbox,
+            handlelength=0.8,
+            handles=row_legends,
+            frameon=False,
+        )
         ax.add_artist(add_row_legend)
 
     if col_colors is not None:
-        col_legends = [mpatches.Patch(label=l, color=colors_bar_mapper[l]) for l in col_colors_legend]
-        add_col_legend = ax.legend(loc="center left",
-                                   bbox_to_anchor=default_col_legend_bbox,
-                                   handlelength=0.8,
-                                   handles=col_legends,
-                                   frameon=False)
+        col_legends = [
+            mpatches.Patch(label=l, color=colors_bar_mapper[l])
+            for l in col_colors_legend
+        ]
+        add_col_legend = ax.legend(
+            loc="center left",
+            bbox_to_anchor=default_col_legend_bbox,
+            handlelength=0.8,
+            handles=col_legends,
+            frameon=False,
+        )
         ax.add_artist(add_col_legend)
 
-    if colorbar_type is 'categorical':
-        add_cbar_legend = ax.legend(loc="center left",
-                                    bbox_to_anchor=default_cbar_legend_bbox,
-                                    handlelength=0.8,
-                                    handles=cbar_legends,
-                                    frameon=False)
+    if colorbar_type == "categorical":
+        add_cbar_legend = ax.legend(
+            loc="center left",
+            bbox_to_anchor=default_cbar_legend_bbox,
+            handlelength=0.8,
+            handles=cbar_legends,
+            frameon=False,
+        )
 
     if row_label is None:
         remove_ytlabel = ax.set_yticklabels("")

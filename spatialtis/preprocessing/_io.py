@@ -6,8 +6,9 @@ import anndata as ad
 import numpy as np
 import pandas as pd
 
-from ._utils import config, config_file, read_ROI, set_info
 from spatialtis.config import CONFIG
+
+from ._utils import config, config_file, read_ROI, set_info
 
 if CONFIG.OS in ["Linux", "Darwin"]:
     try:
@@ -15,9 +16,8 @@ if CONFIG.OS in ["Linux", "Darwin"]:
     except ImportError:
         raise ImportError(
             "You don't have ray installed or your OS don't support ray.",
-            "Try `pip install ray` or use `mp=False`"
+            "Try `pip install ray` or use `mp=False`",
         )
-
 
     @ray.remote
     def _get_roi(t, channels, markers, pg, mt, obsi, stacked):

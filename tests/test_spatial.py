@@ -32,12 +32,20 @@ def test_neighbors():
     n.read_neighbors()
 
 
-def test_neighanalysis():
+def test_neighbor_analysis():
     n = Neighbors(data)
     n.find_neighbors(expand=5)
     ss.communities(n)
     ss.neighborhood_analysis(n, resample=50)
     ss.spatial_enrichment_analysis(n, resample=50)
+
+
+def test_spatial_mp():
+    n = Neighbors(data)
+    n.find_neighbors(scale=1.1, mp=True)
+    ss.neighborhood_analysis(n, resample=50, mp=True, overwrite=True)
+    ss.spatial_enrichment_analysis(n, resample=50, mp=True, overwrite=True)
+    ss.hotspot(data, grid_size=10, selected_types=["4", "6", "10", "2"], mp=True)
 
 
 def test_plot_wrapper():

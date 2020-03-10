@@ -4,19 +4,20 @@ import pandas as pd
 from anndata import AnnData
 from scipy.stats import entropy
 
+from spatialtis.config import CONFIG
+
 from ..sta.statistics import type_counter
 from ..utils import df2adata_uns
-from spatialtis.config import CONFIG
 
 
 def spatial_heterogeneity(
-        adata: AnnData,
-        groupby: Union[Sequence, str, None] = None,
-        type_col: Optional[str] = None,
-        compare: Optional[int] = None,
-        selected_types: Optional[Sequence] = None,
-        export_key: str = 'spatial_heterogeneity',
-        return_df: bool = False,
+    adata: AnnData,
+    groupby: Union[Sequence, str, None] = None,
+    type_col: Optional[str] = None,
+    compare: Optional[int] = None,
+    selected_types: Optional[Sequence] = None,
+    export_key: str = "spatial_heterogeneity",
+    return_df: bool = False,
 ) -> Optional[pd.DataFrame]:
     """compute spatial heterogeneity
     Here we use entropy for spatial heterogeneity, which describes the amount of information.
@@ -63,10 +64,10 @@ def spatial_heterogeneity(
             KL_level.append(compare_level)
         ent.append(entropy(pk, base=2))
 
-    data = {'heterogeneity': ent}
+    data = {"heterogeneity": ent}
     if compare is not None:
-        data['KL'] = KL
-        data['level'] = KL_level
+        data["KL"] = KL
+        data["level"] = KL_level
     roi_heterogeneity = pd.DataFrame(data=data, index=df.index)
 
     # export to anndata

@@ -58,16 +58,14 @@ if CONFIG.OS in ["Linux", "Darwin"]:
     except ImportError:
         raise ImportError(
             "You don't have ray installed or your OS don't support ray.",
-            "Try `pip install ray` or use `mp=False`"
+            "Try `pip install ray` or use `mp=False`",
         )
-
 
     @ray.remote
     def _polygonize_cells_mp(shapecol, group):
         pcells = _polygonize_cells(shapecol, group)
 
         return pcells
-
 
     @ray.remote
     def _neighborcells_mp(polycells, scale, expand):
@@ -88,13 +86,13 @@ class Neighbors(object):
     """
 
     def __init__(
-            self,
-            adata: AnnData,
-            groupby: Union[Sequence, str, None] = None,
-            type_col: Optional[str] = None,
-            shape_col: Optional[str] = "cell_shape",
-            selected_types: Optional[Sequence] = None,
-            centroid_col: str = "centroid",
+        self,
+        adata: AnnData,
+        groupby: Union[Sequence, str, None] = None,
+        type_col: Optional[str] = None,
+        shape_col: Optional[str] = "cell_shape",
+        selected_types: Optional[Sequence] = None,
+        centroid_col: str = "centroid",
     ):
 
         # keys for query info from anndata
@@ -148,7 +146,7 @@ class Neighbors(object):
         self.__neighborsbuilt = False
 
     def find_neighbors(
-            self, scale: float = 1, expand: float = 0, mp: bool = False,
+        self, scale: float = 1, expand: float = 0, mp: bool = False,
     ):
         """To find the neighbors of each cell
 
@@ -267,7 +265,7 @@ class Neighbors(object):
         }
 
     def neighbors_count(
-            self, export_key: str = "neighbors_count", overwrite: bool = False
+        self, export_key: str = "neighbors_count", overwrite: bool = False
     ):
         """Get how many neighbors for each cell
 

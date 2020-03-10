@@ -17,10 +17,7 @@ from ._violin_plot import violin_plot
 
 
 def cell_components(
-        adata: AnnData,
-        groupby: Sequence[str],
-        key: str = "cell_components",
-        **kwargs
+    adata: AnnData, groupby: Sequence[str], key: str = "cell_components", **kwargs
 ):
     df = adata_uns2df(adata, key)
     p = stacked_bar(df, groupby, **kwargs)
@@ -29,10 +26,7 @@ def cell_components(
 
 
 def cell_density(
-        adata: AnnData,
-        groupby: Sequence[str],
-        key: str = "cell_density",
-        **kwargs
+    adata: AnnData, groupby: Sequence[str], key: str = "cell_density", **kwargs
 ):
     df = adata_uns2df(adata, key)
     df = pd.DataFrame(df.stack(), columns=["density"])
@@ -43,11 +37,11 @@ def cell_density(
 
 
 def cell_co_occurrence(
-        adata: AnnData,
-        groupby: Sequence[str],
-        key: str = "cell_co_occurrence",
-        pval: float = 0.01,
-        **kwargs
+    adata: AnnData,
+    groupby: Sequence[str],
+    key: str = "cell_co_occurrence",
+    pval: float = 0.01,
+    **kwargs
 ):
     df = adata_uns2df(adata, key)
     tdf = df.astype(int).groupby(level=groupby)
@@ -63,18 +57,22 @@ def cell_co_occurrence(
             data.append(p)
         X.append(data)
     pdf = (pd.DataFrame(X) > (1 - pval)).astype(int)
-    pdf.index = pd.MultiIndex.from_frame(df.index.to_frame(index=False)[groupby].drop_duplicates())
-    pdf.columns = pd.MultiIndex.from_arrays(np.asarray([i for i in combinations(df.columns, 2)]).T,
-                                            names=['Cell type1', 'Cell type2'])
+    pdf.index = pd.MultiIndex.from_frame(
+        df.index.to_frame(index=False)[groupby].drop_duplicates()
+    )
+    pdf.columns = pd.MultiIndex.from_arrays(
+        np.asarray([i for i in combinations(df.columns, 2)]).T,
+        names=["Cell type1", "Cell type2"],
+    )
 
     plot_kwargs = dict(
         row_colors=groupby,
-        col_colors=['Cell type1', 'Cell type2'],
-        colorbar_type='categorical',
-        categorical_colorbar_text=['Absent', 'Presence'],
+        col_colors=["Cell type1", "Cell type2"],
+        colorbar_type="categorical",
+        categorical_colorbar_text=["Absent", "Presence"],
         col_colors_legend_bbox=(1.05, 0.5),
-        row_colors_legend_bbox=(-.25, 0.5),
-        colorbar_bbox=(-.25, 0.15),
+        row_colors_legend_bbox=(-0.25, 0.5),
+        colorbar_bbox=(-0.25, 0.15),
         row_cluster=None,
         col_cluster=True,
     )
@@ -87,13 +85,13 @@ def cell_co_occurrence(
 
 
 def cell_morphology(
-        adata: AnnData,
-        row: Optional[str] = None,
-        col: Optional[str] = None,
-        cell_type: Optional[str] = None,
-        *,
-        key: str = "cell_morphology",
-        **kwargs
+    adata: AnnData,
+    row: Optional[str] = None,
+    col: Optional[str] = None,
+    cell_type: Optional[str] = None,
+    *,
+    key: str = "cell_morphology",
+    **kwargs
 ):
     df = adata_uns2df(adata, key)
     type_col = CONFIG.CELL_TYPE_COL
@@ -103,22 +101,19 @@ def cell_morphology(
 
 
 def neighborhood_analysis(
-        adata: AnnData,
-        groupby: Sequence[str],
-        key: str = "neighborhood_analysis",
-        **kwargs
+    adata: AnnData, groupby: Sequence[str], key: str = "neighborhood_analysis", **kwargs
 ):
     df = adata_uns2df(adata, key)
 
     plot_kwargs = dict(
         row_colors=groupby,
-        col_colors=['Cell type1', 'Cell type2'],
-        palette=['#2f71ab', '#f7f7f7', '#ba262b'],
-        colorbar_type='categorical',
-        categorical_colorbar_text=['Avoidance', 'Association'],
+        col_colors=["Cell type1", "Cell type2"],
+        palette=["#2f71ab", "#f7f7f7", "#ba262b"],
+        colorbar_type="categorical",
+        categorical_colorbar_text=["Avoidance", "Association"],
         col_colors_legend_bbox=(1.05, 0.5),
-        row_colors_legend_bbox=(-.25, 0.5),
-        colorbar_bbox=(-.25, 0.15),
+        row_colors_legend_bbox=(-0.25, 0.5),
+        colorbar_bbox=(-0.25, 0.15),
         row_cluster=None,
         col_cluster=True,
     )
@@ -131,18 +126,18 @@ def neighborhood_analysis(
 
 
 def spatial_enrichment_analysis(
-        adata: AnnData,
-        groupby: Sequence[str],
-        key: str = "spatial_enrichment_analysis",
-        **kwargs
+    adata: AnnData,
+    groupby: Sequence[str],
+    key: str = "spatial_enrichment_analysis",
+    **kwargs
 ):
     df = adata_uns2df(adata, key)
 
     plot_kwargs = dict(
         row_colors=groupby,
-        col_colors=['Cell type1', 'Cell type2'],
+        col_colors=["Cell type1", "Cell type2"],
         col_colors_legend_bbox=(1.05, 0.5),
-        row_colors_legend_bbox=(-.25, 0.15),
+        row_colors_legend_bbox=(-0.25, 0.15),
         row_cluster=None,
         col_cluster=True,
     )
@@ -155,21 +150,18 @@ def spatial_enrichment_analysis(
 
 
 def spatial_distribution(
-        adata: AnnData,
-        groupby: Sequence[str],
-        key: str = "spatial_distribution",
-        **kwargs
+    adata: AnnData, groupby: Sequence[str], key: str = "spatial_distribution", **kwargs
 ):
     df = adata_uns2df(adata, key)
 
     plot_kwargs = dict(
         row_colors=groupby,
-        col_colors=['Cell type'],
-        palette=['#fffec6', '#c54a52', '#4a89b9', '#5a539d'],
-        colorbar_type='categorical',
-        categorical_colorbar_text=['Blank', 'Random', 'Regular', 'Clumped'],
+        col_colors=["Cell type"],
+        palette=["#fffec6", "#c54a52", "#4a89b9", "#5a539d"],
+        colorbar_type="categorical",
+        categorical_colorbar_text=["Blank", "Random", "Regular", "Clumped"],
         col_colors_legend_bbox=(1.05, 0.5),
-        row_colors_legend_bbox=(-.25, 0.5),
+        row_colors_legend_bbox=(-0.25, 0.5),
         row_cluster=None,
         col_cluster=True,
     )
@@ -182,11 +174,11 @@ def spatial_distribution(
 
 
 def spatial_heterogeneity(
-        adata: AnnData,
-        groupby: Sequence[str],
-        key: str = "spatial_heterogeneity",
-        metric: str = "heterogeneity",
-        **kwargs
+    adata: AnnData,
+    groupby: Sequence[str],
+    key: str = "spatial_heterogeneity",
+    metric: str = "heterogeneity",
+    **kwargs
 ):
     df = adata_uns2df(adata, key)
 
