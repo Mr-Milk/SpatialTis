@@ -29,6 +29,9 @@ jobs:
         pip install -r requirements.txt
         # install spatialtis
         pip install -e .
+        # uninstall igraph just in case
+        pip uninstall igraph
+        pip install python-igraph
     - name: Lint with flake8
       run: |
         pip install flake8
