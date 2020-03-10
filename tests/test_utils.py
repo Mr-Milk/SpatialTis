@@ -6,6 +6,6 @@ CONFIG.EXP_OBS = ["Patient", "Part", "ROI"]
 CONFIG.CELL_TYPE_COL = "leiden"
 
 
-def test_svca(shared_datadir):
+def test_svca(shared_datadir, tmpdir):
     data = read_h5ad(shared_datadir / 'small.h5ad')
-    prepare_svca(data, "tmp/")
+    prepare_svca(data, tmpdir)
