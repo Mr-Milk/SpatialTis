@@ -1,13 +1,11 @@
 from typing import Optional, Sequence, Union
 
-import numpy as np
 import pandas as pd
 from bokeh.io import export_svgs, output_file, output_notebook, save, show
 from bokeh.models import Legend, LegendItem
 from bokeh.plotting import figure
 
 from spatialtis import CONFIG
-
 from .palette import get_colors
 
 

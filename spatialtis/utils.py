@@ -1,6 +1,6 @@
 import shutil
 from pathlib import Path
-from typing import Optional, Sequence, Union
+from typing import Sequence, Union
 
 import matplotlib.pyplot as plt
 import pandas as pd
