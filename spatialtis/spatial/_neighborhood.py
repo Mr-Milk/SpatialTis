@@ -10,20 +10,6 @@ from spatialtis.config import CONFIG
 from ._neighbors import Neighbors
 from ._util import check_neighbors
 
-if CONFIG.OS in ["Linux", "Darwin"]:
-    try:
-        import ray
-    except ImportError:
-        raise ImportError(
-            "You don't have ray installed or your OS don't support ray.",
-            "Try `pip install ray` or use `mp=False`"
-        )
-
-
-    @ray.remote(num_return_vals=2)
-    def _bootstrap_mp(cell_types, cell_neighbors, cell_interactions, resample):
-        return _bootstrap(cell_types, cell_neighbors, cell_interactions, resample)
-
 
 def _count_neighbors(
         types: Sequence,
@@ -61,8 +47,22 @@ def _bootstrap(
             perm_count[itr].append(m)
     perm_count = pd.DataFrame(perm_count, columns=cell_interactions)
     real_count = pd.DataFrame(real_count, index=[0], columns=cell_interactions)
+    return [perm_count, real_count]
 
-    return perm_count, real_count
+
+if CONFIG.OS in ["Linux", "Darwin"]:
+    try:
+        import ray
+    except ImportError:
+        raise ImportError(
+            "You don't have ray installed or your OS don't support ray.",
+            "Try `pip install ray` or use `mp=False`"
+        )
+
+
+    @ray.remote
+    def _bootstrap_mp(cell_types, cell_neighbors, cell_interactions, resample):
+        return _bootstrap(cell_types, cell_neighbors, cell_interactions, resample)
 
 
 def _patch_neighborhood(
@@ -85,7 +85,6 @@ def _patch_spatial_enrichment(
         real_count: pd.DataFrame,
         *args
 ):
-
     z_score = (real_count.to_numpy()[0] - perm_count.mean()) / perm_count.std()
     # inf ---> NaN, and then NaN ---> 0
     z_score = z_score.replace([np.inf, -np.inf], np.nan).fillna(0)
@@ -104,22 +103,22 @@ def _main(
     cell_interactions = [k for k in product(n.unitypes, repeat=2)]
     results = dict()
 
-    if mp & CONFIG.OS in ["Linux", "Darwin"]:
-        perm_counts = []
-        real_counts = []
+    if mp & (CONFIG.OS in ["Linux", "Darwin"]):
+        counts = []
         names = []
         for name, value in n.neighbors.items():
-            id1, id2 = _bootstrap_mp.remote(n.types[name], value, cell_interactions, resample)
-            perm_counts.append(id1)
-            real_counts.append(id2)
+            id1 = _bootstrap_mp.remote(n.types[name], value, cell_interactions, resample)
+            counts.append(id1)
             names.append(name)
 
-        for i, n in enumerate(names):
-            results[n] = patch_func(perm_counts[i], real_counts[i], resample, pval)
+        counts = ray.get(counts)
+
+        for i, name in enumerate(names):
+            results[name] = patch_func(counts[i][0], counts[i][1], resample, pval)
 
     else:
         for name, value in n.neighbors.items():
-            perm_count, real_count = _bootstrap(n.types[name], value, cell_interactions, resample)
+            [perm_count, real_count] = _bootstrap(n.types[name], value, cell_interactions, resample)
             results[name] = patch_func(perm_count, real_count, resample, pval)
 
     results_df = pd.DataFrame(results)
@@ -159,7 +158,7 @@ def neighborhood_analysis(
 
 
     """
-    df = _main(n, _patch_neighborhood, resample=resample, pval=pval)
+    df = _main(n, _patch_neighborhood, resample=resample, pval=pval, mp=mp)
 
     df = df.T.astype(int)
 
@@ -199,7 +198,7 @@ def spatial_enrichment_analysis(
         .. sea also:: :function: `neighborhood_analysis`
 
         """
-    df = _main(n, _patch_spatial_enrichment, resample=resample)
+    df = _main(n, _patch_spatial_enrichment, resample=resample, mp=mp)
 
     df = df.T
 

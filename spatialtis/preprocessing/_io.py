@@ -177,7 +177,7 @@ class read_ROIs:
         else:
             raise ValueError("Polygonize options are 'convex' or 'concave'")
 
-        if mp & CONFIG.OS in ["Linux", "Darwin"]:
+        if mp & (CONFIG.OS in ["Linux", "Darwin"]):
 
             results = []
             for i, d in enumerate(self.tree):
