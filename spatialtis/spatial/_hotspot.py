@@ -12,38 +12,6 @@ from spatialtis.config import CONFIG
 from ..utils import filter_adata
 
 
-def hotspot(
-        adata: AnnData,
-        groupby: Union[Sequence, str, None] = None,
-        type_col: Optional[str] = None,
-        centroid_col: str = 'centroid',
-        selected_types: Optional[Sequence] = None,
-        search_level: int = 1,
-        grid_size: int = 50,
-        pval: float = 0.01,
-        export_key: str = 'hotspot'
-):
-    if groupby is None:
-        groupby = CONFIG.EXP_OBS
-    if type_col is None:
-        type_col = CONFIG.CELL_TYPE_COL
-    df = filter_adata(adata, groupby, type_col, centroid_col, selected_types=selected_types, reset_index=False)
-    groups = df.groupby(groupby)
-    hotcells = []
-    for name, group in groups:
-        for t, tg in group.groupby(type_col):
-            if len(tg) > 1:
-                cells = [eval(c) for c in tg[centroid_col]]
-                hotcells += _hotspot(cells, grid_size, search_level, pval)
-            else:
-                hotcells += ['cold' for i in range(0, len(tg))]
-
-    hotcells = pd.Series(hotcells, index=df.index)
-    adata.obs[export_key] = hotcells
-
-    # return hotcells
-
-
 def _hotspot(cells, grid_size, level, pval):
     bbox = MultiPoint(cells).bounds
     width = bbox[2] - bbox[0]
@@ -112,7 +80,7 @@ def _hotspot(cells, grid_size, level, pval):
                     hotsquad.append(hot)
 
             marker_hot = []
-            #print(cells_grid_id)
+            # print(cells_grid_id)
             for i in cells_grid_id:
                 if hotsquad[i]:
                     marker_hot.append('hot')
@@ -120,3 +88,72 @@ def _hotspot(cells, grid_size, level, pval):
                     marker_hot.append('cold')
 
         return marker_hot
+
+
+if CONFIG.OS in ["Linux", "Darwin"]:
+    try:
+        import ray
+    except ImportError:
+        raise ImportError(
+            "You don't have ray installed or your OS don't support ray.",
+            "Try `pip install ray` or use `mp=False`"
+        )
+
+
+    @ray.remote
+    def _hotspot_mp(cells, grid_size, level, pval):
+        return _hotspot(cells, grid_size, level, pval)
+
+
+def hotspot(
+        adata: AnnData,
+        groupby: Union[Sequence, str, None] = None,
+        type_col: Optional[str] = None,
+        centroid_col: str = 'centroid',
+        selected_types: Optional[Sequence] = None,
+        search_level: int = 1,
+        grid_size: int = 50,
+        pval: float = 0.01,
+        export_key: str = 'hotspot',
+        mp: bool = False,
+):
+    if groupby is None:
+        groupby = CONFIG.EXP_OBS
+    if type_col is None:
+        type_col = CONFIG.CELL_TYPE_COL
+
+    df = filter_adata(adata, groupby, type_col, centroid_col, selected_types=selected_types, reset_index=False)
+    groups = df.groupby(groupby)
+
+    if mp & (CONFIG.OS in ["Linux", "Darwin"]):
+        results = []
+        indexs = []
+        hotcells = []
+        for name, group in groups:
+            for t, tg in group.groupby(type_col):
+                if len(tg) > 1:
+                    cells = [eval(c) for c in tg[centroid_col]]
+                    results.append(_hotspot_mp.remote(cells, grid_size, search_level, pval))
+                    indexs.append(tg.index)
+                else:
+                    hotcells.append(pd.Series(['cold' for i in range(0, len(tg))], index=tg.index))
+
+        results = ray.get(results)
+        for i, hots in enumerate(results):
+            hotcells.append(pd.Series(hots, index=indexs[i]))
+
+    else:
+        hotcells = []
+        for name, group in groups:
+            for t, tg in group.groupby(type_col):
+                if len(tg) > 1:
+                    cells = [eval(c) for c in tg[centroid_col]]
+                    hots = _hotspot(cells, grid_size, search_level, pval)
+                    hotcells.append(pd.Series(hots, index=tg.index))
+                else:
+                    hotcells.append(pd.Series(['cold' for i in range(0, len(tg))], index=tg.index))
+
+    hotcells = pd.concat(hotcells)
+    adata.obs[export_key] = hotcells
+    # Cell map will leave blank if fill with None value
+    adata.obs[export_key].fillna("other")

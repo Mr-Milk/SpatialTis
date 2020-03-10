@@ -7,6 +7,7 @@ from scipy.spatial.distance import euclidean
 from shapely.affinity import scale as sscale
 from shapely.geometry import asMultiPoint, box
 from shapely.strtree import STRtree
+from shapely.wkt import dumps, loads
 
 from spatialtis.config import CONFIG
 from spatialtis.utils import col2adata_obs
@@ -15,16 +16,18 @@ from spatialtis.utils import col2adata_obs
 def _polygonize_cells(shapecol, group):
     shapes = group[shapecol]
     polycells = []
-    for i, cell in enumerate(shapes):
+    for cell in shapes:
         c = asMultiPoint(eval(cell))
-        c.index = i
         polycells.append(c)
-
-        return polycells
+    polycells = [dumps(c) for c in polycells]
+    return polycells
 
 
 def _neighborcells(polycells, scale, expand):
     nbcells = {}
+    polycells = [loads(c) for c in polycells]
+    for i, c in enumerate(polycells):
+        c.index = i
     tree = STRtree(polycells)
     for i, cell in enumerate(polycells):
         if (scale != 1.0) & (expand == 0):
@@ -50,6 +53,8 @@ def _neighborcells(polycells, scale, expand):
 if CONFIG.OS in ["Linux", "Darwin"]:
     try:
         import ray
+        import time
+        import pickle
     except ImportError:
         raise ImportError(
             "You don't have ray installed or your OS don't support ray.",
@@ -57,14 +62,17 @@ if CONFIG.OS in ["Linux", "Darwin"]:
         )
 
 
-    @ray.remote()
+    @ray.remote
     def _polygonize_cells_mp(shapecol, group):
-        return _polygonize_cells(shapecol, group)
+        pcells = _polygonize_cells(shapecol, group)
+
+        return pcells
 
 
-    @ray.remote()
+    @ray.remote
     def _neighborcells_mp(polycells, scale, expand):
-        return _neighborcells(polycells, scale, expand)
+        nbcells = _neighborcells(polycells, scale, expand)
+        return nbcells
 
 
 class Neighbors(object):
@@ -185,12 +193,12 @@ class Neighbors(object):
             self.__neighbors_param = {"method": "unchanged", "units": 0}
 
         # parallel processing
-        if mp & CONFIG.OS in ["Linux", "Darwin"]:
+        if mp & (CONFIG.OS in ["Linux", "Darwin"]):
             if not self._polycells:
                 results = []
                 names = []
                 for n, g in self.__groups:
-                    results.append(_neighborcells_mp.remote(self.__shapecol, g))
+                    results.append(_polygonize_cells_mp.remote(self.__shapecol, g))
                     names.append(n)
 
                     if self.__typecol is not None:
