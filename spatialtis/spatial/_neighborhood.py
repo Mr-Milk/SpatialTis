@@ -154,7 +154,7 @@ def neighborhood_analysis(
         overwrite: whether to overwrite your previous results (if existed)
         mp: whether enable parallel processing
 
-    .. sea also:: :function: `spatial_enrichment_analysis`
+    .. seealso:: `spatial_enrichment_analysis <#spatialtis.spatial.spatial_enrichment_analysis>`_
 
 
     """
@@ -195,7 +195,7 @@ def spatial_enrichment_analysis(
             overwrite: whether to overwrite your previous results (if existed)
             mp: whether enable parallel processing
 
-        .. sea also:: :function: `neighborhood_analysis`
+        .. seealso:: `neighborhood_analysis <#spatialtis.spatial.neighborhood_analysis>`_
 
         """
     df = _main(n, _patch_spatial_enrichment, resample=resample, mp=mp)

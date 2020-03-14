@@ -8,6 +8,7 @@ from scipy.stats import chisquare
 
 from spatialtis.config import CONFIG
 from spatialtis.utils import adata_uns2df
+
 from ._bar_plot import stacked_bar
 from ._heatmap_sns import heatmap
 from ._stacked_kde_sns import stacked_kde
@@ -28,7 +29,7 @@ def cell_density(
 ):
     df = adata_uns2df(adata, key)
     df = pd.DataFrame(df.stack(), columns=["density"])
-    groupby = groupby + ["type"]
+    groupby = list(groupby) + ["type"]
     p = violin_plot(df, groupby, "density", **kwargs)
 
     return p

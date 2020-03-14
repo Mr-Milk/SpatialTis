@@ -1,8 +1,8 @@
 from anndata import read_h5ad
+
 import spatialtis.plotting as sp
 import spatialtis.sta as st
 from spatialtis import CONFIG
-
 
 CONFIG.EXP_OBS = ["Patient", "Part", "ROI"]
 CONFIG.CELL_TYPE_COL = "leiden"

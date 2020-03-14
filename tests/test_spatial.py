@@ -1,4 +1,5 @@
 from anndata import read_h5ad
+
 import spatialtis.plotting as sp
 import spatialtis.spatial as ss
 from spatialtis import CONFIG, Neighbors
@@ -53,4 +54,3 @@ def test_spatial_mp(shared_datadir):
     ss.neighborhood_analysis(n, resample=50, mp=True, overwrite=True)
     ss.spatial_enrichment_analysis(n, resample=50, mp=True, overwrite=True)
     ss.hotspot(data, grid_size=10, selected_types=["4", "6", "10", "2"], mp=True)
-

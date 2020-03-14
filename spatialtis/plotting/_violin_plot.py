@@ -13,14 +13,14 @@ from .palette import get_colors
 
 
 class Status(object):
-    gl = None
-    factors = None
-    q1 = None
-    q2 = None
-    q3 = None
-    upper = None
-    lower = None
-    splits = None
+    gl: Optional[float] = None
+    factors: Optional[Sequence] = None
+    q1: pd.DataFrame = None
+    q2: pd.DataFrame = None
+    q3: pd.DataFrame = None
+    upper: pd.DataFrame = None
+    lower: pd.DataFrame = None
+    splits: Optional[list] = None
 
 
 s = Status()
@@ -228,7 +228,7 @@ def _set_colors(palette, mapper=False):
 
 def violin_plot(
     df: pd.DataFrame,
-    group_by: list,
+    groupby: Sequence,
     target_col: str,
     split: Optional[str] = None,
     direction: Union[str] = "vertical",
@@ -241,18 +241,20 @@ def violin_plot(
     return_plot: bool = False,
 ):
     if direction not in ["vertical", "horizontal"]:
-        raise ValueError(f"Unrecognized direction '{direction}'")
+        raise ValueError(
+            f"Unrecognized direction '{direction}', available options are `vertical` and `horizontal`."
+        )
 
-    s.gl = len(group_by)
+    s.gl = len(groupby)
 
     if isinstance(split, str):
-        if split in group_by:
+        if split in groupby:
             s.splits = np.unique(dict(zip(df.index.names, df.index.levels))[split])
             if len(s.splits) != 2:
                 raise ValueError(
                     f"Can't split more than 2 distinct elements in column '{split}'"
                 )
-            group_by.remove(split)
+            groupby.remove(split)
             s.gl = s.gl - 1
 
             if s.gl > 3:
@@ -262,10 +264,10 @@ def violin_plot(
 
             groups = df.loc[:, [target_col]].groupby(level=split)
 
-            subg_a = groups.get_group(s.splits[0]).groupby(level=group_by)
+            subg_a = groups.get_group(s.splits[0]).groupby(level=groupby)
             violins_a = _violin_patches(subg_a, target_col, side="-")
 
-            subg_b = groups.get_group(s.splits[1]).groupby(level=group_by)
+            subg_b = groups.get_group(s.splits[1]).groupby(level=groupby)
             violins_b = _violin_patches(subg_b, target_col, side="+")
 
             s.factors = [n for n, _ in subg_a]
@@ -284,7 +286,7 @@ def violin_plot(
         if s.gl > 3:
             raise Exception("Only support 3 levels depth categorical data")
 
-        groups = df.loc[:, [target_col]].groupby(level=group_by)
+        groups = df.loc[:, [target_col]].groupby(level=groupby)
         _quantilefy(groups, target_col)
 
         violins = _violin_patches(groups, target_col)

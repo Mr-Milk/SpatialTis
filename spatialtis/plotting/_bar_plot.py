@@ -1,4 +1,4 @@
-from typing import Optional, Sequence, Union
+from typing import Any, Dict, Optional, Sequence, Union
 
 import pandas as pd
 from bokeh.io import export_svgs, output_file, output_notebook, save
@@ -54,7 +54,7 @@ def stacked_bar(
     types_count = len(types)
 
     # config for figure
-    figure_config = dict(
+    figure_config: Dict[str, Any] = dict(
         tools="save,hover",
         toolbar_location=None,
         tooltips="$name @$name%" if percentage else "$name @$name",

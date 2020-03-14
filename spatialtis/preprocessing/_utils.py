@@ -89,7 +89,7 @@ class read_ROI:
         cells = mask2cells(self.__mask_img)
         cells, geom_info = geom_cells(cells, method=polygonize, alpha=alpha)
         data = get_cell_exp_stack(self.__stacks, cells, method=method)
-        print(f"Detected {len(data)} cells.")
+        # print(f"Detected {len(data)} cells.")
 
         return data, geom_info
 
