@@ -27,7 +27,13 @@ def type_counter(
 
     """
     if groupby is None:
-        groupby = CONFIG.EXP_OBS
+        if CONFIG.EXP_OBS is not None:
+            groupby = CONFIG.EXP_OBS
+        else:
+            raise ValueError(
+                "Experiment observation unclear, set `spatialtis.CONFIG.EXP_OBS` or use argument "
+                "`groupby=`"
+            )
     else:
         groupby = list(groupby)
 

@@ -13,8 +13,6 @@
 import os
 import sys
 
-import sphinx_rtd_theme
-
 sys.path.insert(0, os.path.abspath("../.."))
 
 
@@ -36,10 +34,12 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "sphinx_autodoc_typehints",
+    "sphinx.ext.autosectionlabel",
     #'sphinx_autodoc_napoleon_typehints',
     "sphinx.ext.mathjax",
     "sphinx.ext.viewcode",
     "sphinx_rtd_theme",
+    "nbsphinx",
 ]
 autodoc_typehints = "none"
 # Add any paths that contain templates here, relative to this directory.

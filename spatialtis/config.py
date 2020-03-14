@@ -50,17 +50,6 @@ if CONFIG.OS in ["Linux", "Darwin"]:
 # can be override in plotting function
 # ['jupyter', 'zepplin', None]
 
-"""
-If working in Jupyter Lab/Hub, please install the following dependencies
-It should be included in the virtual environment for spatialTis
-
-    ```jupyter labextension install @bokeh/jupyter_bokeh```
-
-If working with Zeppelin, please install `bkzep` (Only PyPI)
-
-    ```pip install bkzep```
-
-"""
 # ==============SOME INFO==================
 ISOTOPES_NAME: Sequence = [
     "H",

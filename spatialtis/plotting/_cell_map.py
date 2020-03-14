@@ -1,4 +1,4 @@
-from typing import Optional, Sequence, Union
+from typing import List, Optional, Sequence, Union
 
 import pandas as pd
 from bokeh.io import export_svgs, output_file, output_notebook, save, show
@@ -6,6 +6,7 @@ from bokeh.models import Legend, LegendItem
 from bokeh.plotting import figure
 
 from spatialtis import CONFIG
+
 from .palette import get_colors
 
 
@@ -43,7 +44,7 @@ def cell_map(
     )
 
     legends = list()
-    legends_name = list()
+    legends_name: List[str] = list()
 
     def add_patches(name, fill_color=None, fill_alpha=None):
         x = [[c[0] for c in eval(cell)] for cell in data[shape_key]]

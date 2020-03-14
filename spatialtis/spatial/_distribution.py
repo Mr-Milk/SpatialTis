@@ -11,7 +11,7 @@ from spatialtis.config import CONFIG
 from ..utils import df2adata_uns, filter_adata
 
 
-def _index_of_dispersion(groups, types, type_col, centroid_col, resample, r, pval):
+def _index_of_dispersion(groups, types, type_col, centroid_col, resample, r):
     names = [n for n, _ in groups]
     patterns = {n: {t: 0 for t in types} for n in names}
 
@@ -32,18 +32,15 @@ def _index_of_dispersion(groups, types, type_col, centroid_col, resample, r, pva
                     query_point = [x[0], y[0]]
                     neighbor_points = tree.query_ball_point(query_point, r)
                     counts.append(len(neighbor_points))
-                # p-value
-                p = chisquare(counts, [1 for i in range(0, len(counts))]).pvalue
 
                 # index of dispersion
                 counts = np.array(counts)
                 if np.mean(counts) != 0:
                     ID = np.var(counts) / np.mean(counts)
-                    accept_null = p > pval
 
-                    if accept_null:
+                    if ID == 1:
                         pattern = 1  # random
-                    elif (not accept_null) & (ID > 1):
+                    elif ID > 1:
                         pattern = 3  # clustered
                     else:
                         pattern = 2  # regular
@@ -156,7 +153,7 @@ def spatial_distribution(
 
      - random (1)
      - regular (2)
-     - clumped (3)
+     - cluster (3)
 
     Three methods are provided
 
@@ -165,7 +162,7 @@ def spatial_distribution(
      - Clark and Evans aggregation index (CE)
 
     +--------------------------------------+--------+---------+---------+
-    |                                      | Random | Regular | Clumped |
+    |                                      | Random | Regular | Cluster |
     +======================================+========+=========+=========+
     | Index of dispersion: ID              | ID = 1 | ID < 1  | ID > 1  |
     +--------------------------------------+--------+---------+---------+
@@ -206,7 +203,7 @@ def spatial_distribution(
 
     if method == "ID":
         patterns = _index_of_dispersion(
-            groups, types, type_col, centroid_col, resample, r, pval
+            groups, types, type_col, centroid_col, resample, r
         )
     elif method == "MID":
         patterns = _morisita(groups, types, type_col, centroid_col, quad, pval)

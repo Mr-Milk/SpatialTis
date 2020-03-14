@@ -32,7 +32,7 @@ if CONFIG.OS in ["Linux", "Darwin"]:
 
         cell_count = len(cells[0])
         obs = np.repeat(np.array([obsi]), cell_count, axis=0)
-        print(f"Added: {' '.join(obsi)}")
+        # print(f"Added: {' '.join(obsi)}")
         return [exp, list(obs), cells]
 
 
@@ -47,43 +47,13 @@ class read_ROIs:
         entry: the entry of your folders
         conditions: names for each level of your folders
         mask_pattern: name pattern for mask image
+        stacked: whether your input images are stacked
 
     Attributes:
-        channels:
-        markers:
-        obs:
-        var:
-
-    Example:
-        Let's say your file structure look like this::
-
-            Data
-            ├── Patient1
-            │   ├── Sample1
-            │   │   ├── ROI1
-            │   │   ├── ROI2
-            │   ├──Sample2
-            │   │   ├── ROI1
-            │   │   ├── ROI2
-            │   └──Sample3
-            │       ├── ROI1
-            │       └── ROI2
-            ├── Patient2
-            ├── Patient3
-            └── ...
-
-
-    Read all your data::
-
-        entry = '.\\Data'
-        condition_name = ['Patient', 'Sample', 'ROI']
-        metadata = '.\\metadata.csv'
-
-        data = read_all_ROIs(entry, condition_name)
-                .config_file(metadata, channel_col='channels', marker_col='markers')
-
-        # set mp=True for parallelism
-        data = data.to_anndata(mp=True)
+        channels: the channels of your data
+        markers: the markers of your data
+        obs: the name of your observations
+        var: the name of your variables
 
     """
 
@@ -141,6 +111,9 @@ class read_ROIs:
         Returns:
             self
 
+        .. note::
+            If you use stacked .tiff, the order of channels and markers will match to layers of .tiff
+
         """
         # we use callback function to set modify some info after config
         return config_file(
@@ -152,11 +125,50 @@ class read_ROIs:
             callback=set_info,
         )
 
-    def config(self, channels=None, markers=None):
+    def config(self, channels: Sequence = None, markers: Sequence = None):
+        """config with python list
+
+        Args:
+            channels: a list of channels' name
+            markers: a list of markers' name
+
+        Returns:
+            self
+
+        .. note::
+            If you use stacked .tiff, the order of channels and markers will match to layers of .tiff
+
+        """
         # we use callback function to set modify some info after config
         return config(self, channels=channels, markers=markers, callback=set_info)
 
-    def to_anndata(self, method="mean", polygonize="convex", alpha=0, mp=False):
+    def to_anndata(
+        self,
+        method: str = "mean",
+        polygonize: str = "convex",
+        alpha: float = 0,
+        mp: bool = False,
+    ):
+        """get anndata object
+
+        Args:
+            method: how to compute the expression level. ("mean", "sum", "median")
+            polygonize: how to compute the cell shape.("convex", "concave")
+            alpha: the alpha value for polygonize="concave"
+            mp: whether enable parallel processing
+
+        .. note:: "convex" or "concave"
+
+        The cell shape is represent by the border points to simplify the following analysis process.
+
+        "convex" will apply the convex hull algorithm to each cell, this is much faster
+        than "concave", but less accurate.
+
+        "concave" uses alphashape algorithm to get as close to the cell shape in mask image as possible,
+        but it's slower, the accuracy depends on the user-defined alpha value.
+
+
+        """
 
         X = []
         ann_obs = []

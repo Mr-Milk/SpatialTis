@@ -109,23 +109,6 @@ def filter_adata(
     return df
 
 
-def plot_polygons(polygons):
-    """(Private) Visualize shapely polygons
-    """
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    for i in polygons:
-        ax.plot(
-            *i.exterior.xy,
-            color="#6699cc",
-            alpha=0.7,
-            linewidth=3,
-            solid_capstyle="round",
-            zorder=2,
-        )
-    ax.set_title("Polygons")
-
-
 def prepare_svca(
     adata: AnnData,
     export: Union[Path, str] = "/",
