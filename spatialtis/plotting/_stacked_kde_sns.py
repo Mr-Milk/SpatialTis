@@ -13,6 +13,8 @@ def stacked_kde(
     col: str,
     row: str,
     palette: Union[Sequence[str], str, None] = None,
+    display: bool = True,
+    return_plot: bool = False,
 ):
     new_df = pd.DataFrame(df.stack(), columns=["value"]).reset_index()
 
@@ -40,3 +42,9 @@ def stacked_kde(
         ax.set_ylabel("")
 
     g.set_titles(col_template="{col_name}", row_template="{row_name}")
+
+    if not display:
+        plt.close()
+
+    if return_plot:
+        return g

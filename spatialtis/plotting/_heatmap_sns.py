@@ -1,5 +1,6 @@
 from typing import Optional, Sequence, Union
 
+import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import numpy as np
 import pandas as pd
@@ -20,6 +21,8 @@ def heatmap(
     row_colors_legend_bbox: Optional[Sequence[float]] = None,
     col_colors_legend_bbox: Optional[Sequence[float]] = None,
     colorbar_bbox: Optional[Sequence[float]] = None,
+    display: bool = True,
+    return_plot: bool = False,
     **kwargs,
 ):
     """a higher wrapper for seaborn's clustermap
@@ -36,6 +39,8 @@ def heatmap(
         row_colors_legend_bbox: adjust the locations of row colors legend
         col_colors_legend_bbox: adjust the locations of col colors legend
         colorbar_bbox: adjust the locations of colorbar
+        display: whether to show the plot
+        return_plot: whether to return the plot
 
     the order of cateforical_colorbar_text match to the order of palette
 
@@ -191,3 +196,9 @@ def heatmap(
         remove_xtlabel = ax.set_xticklabels("")
         remove_xlabel = ax.set_xlabel("")
         remove_xticks = ax.set_xticks([])
+
+    if not display:
+        plt.close()
+
+    if return_plot:
+        return h

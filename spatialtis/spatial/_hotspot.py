@@ -102,9 +102,7 @@ if CONFIG.OS in ["Linux", "Darwin"]:
             "Try `pip install ray` or use `mp=False`",
         )
 
-    @ray.remote
-    def _hotspot_mp(cells, grid_size, level, pval):
-        return _hotspot(cells, grid_size, level, pval)
+    _hotspot_mp = ray.remote(_hotspot)
 
 
 def hotspot(

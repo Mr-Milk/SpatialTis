@@ -61,16 +61,8 @@ if CONFIG.OS in ["Linux", "Darwin"]:
             "Try `pip install ray` or use `mp=False`",
         )
 
-    @ray.remote
-    def _polygonize_cells_mp(shapecol, group):
-        pcells = _polygonize_cells(shapecol, group)
-
-        return pcells
-
-    @ray.remote
-    def _neighborcells_mp(polycells, scale, expand):
-        nbcells = _neighborcells(polycells, scale, expand)
-        return nbcells
+    _polygonize_cells_mp = ray.remote(_polygonize_cells)
+    _neighborcells_mp = ray.remote(_neighborcells)
 
 
 class Neighbors(object):

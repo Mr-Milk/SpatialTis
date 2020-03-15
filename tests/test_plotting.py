@@ -37,7 +37,8 @@ def test_cell_map(shared_datadir):
 
 
 def test_violin():
-    sp.violin_plot(df, ['Manager', 'Year', 'Sales'], 'apple', split='Sales')
+    sp.violin_plot(df, ['Manager', 'Year', 'Sales'], 'apple', split='Sales', size=(400, 400))
+    sp.violin_plot(df, ['Manager', 'Year', 'Sales'], 'apple', split='Sales', direction="horizontal")
 
 
 def test_bar():
