@@ -46,6 +46,9 @@ def test_neighbor_analysis(shared_datadir):
     ss.neighborhood_analysis(n, resample=50)
     ss.spatial_enrichment_analysis(n, resample=50)
 
+    sp.neighborhood_analysis(data, ["Patient", "Part"])
+    sp.spatial_enrichment_analysis(data, ["Patient", "Part"])
+
 
 def test_spatial_mp(shared_datadir):
     data = read_h5ad(shared_datadir / 'small.h5ad')

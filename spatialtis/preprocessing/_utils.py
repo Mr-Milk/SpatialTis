@@ -46,6 +46,7 @@ class read_ROI:
                 if img not in mask:
                     # From skimage doc: The different color bands/channels are stored in the third dimension
                     # so we need to transpose it
+                    print(img)
                     self.__stacks = np.transpose(imread(str(img)), (2, 1, 0))
                     stacks_count += 1
 
@@ -79,7 +80,7 @@ class read_ROI:
         config(self, channels=channels, markers=markers)
         if not self.__stacked:
             self.__stacks = np.asarray(
-                [imread(str(self.__channels_files[c])) for c in self.channels]
+                [tifffile.TiffFile(str(self.__channels_files[c])).pages[0].asarray() for c in self.channels]
             )
         return self
 
