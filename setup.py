@@ -8,4 +8,4 @@ setup(name="spatialtis",
       install_requires=['ray', 'anndata', 'numpy', 'pandas',
                         'scikit-image', 'pointpats', 'scipy', 'shapely',
                         'python-igraph', 'leidenalg', 'alphashape', 'bokeh',
-                        'seaborn', 'colour', 'IPython', 'matplotlib'])
+                        'seaborn', 'colour', 'IPython', 'matplotlib', 'tqdm'])

@@ -1,6 +1,5 @@
-import pandas as pd
 import numpy as np
-
+import pandas as pd
 from anndata import read_h5ad
 
 import spatialtis.plotting as sp
