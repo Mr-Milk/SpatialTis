@@ -5,6 +5,7 @@ from typing import Optional, Sequence, Union
 import anndata as ad
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 
 from spatialtis.config import CONFIG
 
@@ -192,19 +193,20 @@ class read_ROIs:
 
         if mp & (CONFIG.OS in ["Linux", "Darwin"]):
 
+            def exec_iterator(obj_ids):
+                while obj_ids:
+                    done, obj_ids = ray.wait(obj_ids)
+                    yield ray.get(done[0])
+
             results = []
+
             for i, d in enumerate(self.tree):
                 results.append(
-                    _get_roi.remote(
-                        d,
-                        self.channels,
-                        self.markers,
-                        polygonize,
-                        method,
-                        self.obs[i],
-                        self.__stacked,
-                    )
+                    _get_roi.remote(d, self.channels, self.markers, polygonize, method, self.obs[i], self.__stacked, )
                 )
+
+            for i in tqdm(exec_iterator(results), total=len(results)):
+                pass
 
             results = ray.get(results)
 
@@ -218,7 +220,7 @@ class read_ROIs:
                 eccentricities += cells[3]
 
         else:
-            for i, d in enumerate(self.tree):
+            for i, d in tqdm(enumerate(self.tree), total=len(self.tree), unit='ROI'):
 
                 if len(self.markers) >= 1:
                     roi = read_ROI(d, stacked=self.__stacked).config(

@@ -59,9 +59,7 @@ if CONFIG.OS in ["Linux", "Darwin"]:
             "Try `pip install ray` or use `mp=False`",
         )
 
-    @ray.remote
-    def _bootstrap_mp(cell_types, cell_neighbors, cell_interactions, resample):
-        return _bootstrap(cell_types, cell_neighbors, cell_interactions, resample)
+    _bootstrap_mp = ray.remote(_bootstrap)
 
 
 def _patch_neighborhood(
