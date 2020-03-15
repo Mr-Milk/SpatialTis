@@ -1,6 +1,6 @@
 alphashape==1.0.2
 anndata==0.7.1
-bokeh==2.0.0
+bokeh==1.4.0
 colour==0.1.5
 Ipython==7.13.0
 ipykernel==5.1.4
@@ -15,6 +15,7 @@ pointpats==2.1.0
 python-igraph==0.8.0
 ray==0.8.2
 scikit-image==0.16.2
+selenium==3.141.0
 scikit-learn==0.22.1
 scipy==1.4.1
 seaborn==0.10.0

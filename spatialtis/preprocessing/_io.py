@@ -19,6 +19,7 @@ if CONFIG.OS in ["Linux", "Darwin"]:
             "Try `pip install ray` or use `mp=False`",
         )
 
+
     @ray.remote
     def _get_roi(t, channels, markers, pg, mt, obsi, stacked):
         if len(markers) >= 1:
@@ -58,16 +59,16 @@ class read_ROIs:
     """
 
     def __init__(
-        self,
-        entry: Union[Path, str],
-        conditions: Sequence,
-        mask_pattern: str = "*mask*",
-        stacked: bool = False,
+            self,
+            entry: Union[Path, str],
+            conditions: Sequence,
+            mask_pattern: str = "*mask*",
+            stacked: bool = False,
     ):
         self.channels = list()
         self.markers = dict()
 
-        self.__stacked = (stacked,)
+        self.__stacked = stacked
         self.__mask_pattern = mask_pattern
         self.__channels_files = dict()
 
@@ -76,13 +77,13 @@ class read_ROIs:
         self.__depth = len(conditions)
 
         self.__exhaust_dir(entry)
-        self.obs = [p.parts[-self.__depth :] for p in self.tree]
+        self.obs = [p.parts[-self.__depth:] for p in self.tree]
 
         self.var = None
 
     # walk through the directory, until there is no directory
     def __exhaust_dir(
-        self, path: Union[Path, str],
+            self, path: Union[Path, str],
     ):
         d = [f for f in Path(path).iterdir() if f.is_dir()]
         for f in d:
@@ -92,11 +93,11 @@ class read_ROIs:
             self.__exhaust_dir(f)
 
     def config_file(
-        self,
-        metadata: Union[Path, str],
-        channel_col: Optional[str] = None,
-        marker_col: Optional[str] = None,
-        sep: str = ",",
+            self,
+            metadata: Union[Path, str],
+            channel_col: Optional[str] = None,
+            marker_col: Optional[str] = None,
+            sep: str = ",",
     ):
         """config with file
 
@@ -143,11 +144,11 @@ class read_ROIs:
         return config(self, channels=channels, markers=markers, callback=set_info)
 
     def to_anndata(
-        self,
-        method: str = "mean",
-        polygonize: str = "convex",
-        alpha: float = 0,
-        mp: bool = False,
+            self,
+            method: str = "mean",
+            polygonize: str = "convex",
+            alpha: float = 0,
+            mp: bool = False,
     ):
         """get anndata object
 
