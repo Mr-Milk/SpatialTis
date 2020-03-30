@@ -1,30 +1,35 @@
-from typing import List, Optional, Sequence, Union
+from typing import List, Optional, Sequence, Mapping
 
 import pandas as pd
-from bokeh.io import export_svgs, output_file, output_notebook, save, show
+from anndata import AnnData
+from bokeh.io import output_notebook, show
 from bokeh.models import Legend, LegendItem
 from bokeh.plotting import figure
 
 from spatialtis import CONFIG
 
 from .palette import get_colors
+from ._save import save_bokeh
 
 
 def cell_map(
-    df: pd.DataFrame,
+    adata: AnnData,
+    query: Mapping,
     type_col: Optional[str] = None,
     selected_types: Optional[Sequence] = None,
-    shape_key: Optional[str] = "cell_shape",
+    shape_col: Optional[str] = None,
     display: bool = True,
     title: Optional[str] = None,
-    save_svg: Optional[str] = None,
-    save_html: Optional[str] = None,
-    palette: Union[Sequence[str], str, None] = None,
+    save: Optional[str] = None,
+    palette: Optional[Sequence] = None,
     return_plot: bool = False,
 ):
     if type_col is None:
         type_col = CONFIG.CELL_TYPE_COL
+    if shape_col is None:
+        shape_col = CONFIG.SHAPE_COL
 
+    df = adata.obs.query("&".join([f"({k}=={v})" for k, v in query.items()]))
     groups = df.groupby(type_col)
 
     default_palette = ["Spectral", "Category20"]
@@ -41,14 +46,15 @@ def cell_map(
         y_axis_location=None,
         toolbar_location="above",
         tooltips="@name",
+        plot_width=700
     )
 
     legends = list()
     legends_name: List[str] = list()
 
     def add_patches(name, fill_color=None, fill_alpha=None):
-        x = [[c[0] for c in eval(cell)] for cell in data[shape_key]]
-        y = [[c[1] for c in eval(cell)] for cell in data[shape_key]]
+        x = [[c[0] for c in eval(cell)] for cell in data[shape_col]]
+        y = [[c[1] for c in eval(cell)] for cell in data[shape_col]]
         plot_data = dict(x=x, y=y, name=[name for i in range(0, len(x))])
         b = p.patches(
             "x",
@@ -73,7 +79,15 @@ def cell_map(
             else:
                 add_patches("other", fill_color="grey", fill_alpha=0.5)
 
-    p.add_layout(Legend(items=legends, location="center_right"), "right")
+    if len(legends) >= 16:
+        cut = int(len(legends) // 2)
+        legends1 = legends[0:cut]
+        legends2 = legends[cut::]
+        p.add_layout(Legend(items=legends1, location="center_right"), "right")
+        p.add_layout(Legend(items=legends2, location="center_right"), "right")
+
+    else:
+        p.add_layout(Legend(items=legends, location="center_right"), "right")
 
     p.grid.grid_line_color = None
     p.hover.point_policy = "follow_mouse"
@@ -85,13 +99,8 @@ def cell_map(
     p.legend.spacing = 1
 
     # save something
-    if save_html:
-        output_file(save_html)
-        save(p)
-
-    if save_svg:
-        p.output_backend = "svg"
-        export_svgs(p, filename=save_svg)
+    if save is not None:
+        save_bokeh(p, save)
 
     # solve env here
     if (CONFIG.WORKING_ENV is not None) & display:

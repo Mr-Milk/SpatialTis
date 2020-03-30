@@ -4,10 +4,9 @@ import numpy as np
 import pandas as pd
 from anndata import AnnData
 from scipy.spatial import cKDTree
-from scipy.stats import chi2, chisquare, norm
+from scipy.stats import chi2, norm
 
 from spatialtis.config import CONFIG
-
 from ..utils import df2adata_uns, filter_adata
 
 
@@ -135,7 +134,7 @@ def spatial_distribution(
     adata: AnnData,
     groupby: Union[Sequence, str, None] = None,
     type_col: Optional[str] = None,
-    centroid_col: str = "centroid",
+    centroid_col: Optional[str] = None,
     selected_types: Optional[Sequence] = None,
     method: str = "ID",
     pval: float = 0.01,
@@ -195,6 +194,9 @@ def spatial_distribution(
         groupby = CONFIG.EXP_OBS
     if type_col is None:
         type_col = CONFIG.CELL_TYPE_COL
+    if centroid_col is None:
+        centroid_col = CONFIG.CENTROID_COL
+
     df = filter_adata(
         adata, groupby, type_col, centroid_col, selected_types=selected_types
     )

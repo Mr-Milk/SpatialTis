@@ -13,10 +13,12 @@ from ._bar_plot import stacked_bar
 from ._heatmap_sns import heatmap
 from ._stacked_kde_sns import stacked_kde
 from ._violin_plot import violin_plot
+from ._cell_cell_interaction import cc_interactions
+from ._grouped_pie import grouped_pie
 
 
 def cell_components(
-    adata: AnnData, groupby: Sequence[str], key: str = "cell_components", **kwargs
+        adata: AnnData, groupby: Sequence[str], key: str = "cell_components", **kwargs
 ):
     df = adata_uns2df(adata, key)
     p = stacked_bar(df, groupby, **kwargs)
@@ -25,7 +27,7 @@ def cell_components(
 
 
 def cell_density(
-    adata: AnnData, groupby: Sequence[str], key: str = "cell_density", **kwargs
+        adata: AnnData, groupby: Sequence[str], key: str = "cell_density", **kwargs
 ):
     df = adata_uns2df(adata, key)
     df = pd.DataFrame(df.stack(), columns=["density"])
@@ -36,11 +38,11 @@ def cell_density(
 
 
 def cell_co_occurrence(
-    adata: AnnData,
-    groupby: Sequence[str],
-    key: str = "cell_co_occurrence",
-    pval: float = 0.01,
-    **kwargs
+        adata: AnnData,
+        groupby: Sequence[str],
+        key: str = "cell_co_occurrence",
+        pval: float = 0.01,
+        **kwargs
 ):
     df = adata_uns2df(adata, key)
     tdf = df.astype(int).groupby(level=groupby)
@@ -84,13 +86,13 @@ def cell_co_occurrence(
 
 
 def cell_morphology(
-    adata: AnnData,
-    row: Optional[str] = None,
-    col: Optional[str] = None,
-    cell_type: Optional[str] = None,
-    *,
-    key: str = "cell_morphology",
-    **kwargs
+        adata: AnnData,
+        row: Optional[str] = None,
+        col: Optional[str] = None,
+        cell_type: Optional[str] = None,
+        *,
+        key: str = "cell_morphology",
+        **kwargs
 ):
     df = adata_uns2df(adata, key)
     type_col = CONFIG.CELL_TYPE_COL
@@ -99,36 +101,42 @@ def cell_morphology(
     return p
 
 
-def neighborhood_analysis(
-    adata: AnnData, groupby: Sequence[str], key: str = "neighborhood_analysis", **kwargs
-):
+def neighborhood_analysis(adata: AnnData,
+                          groupby: Sequence[str],
+                          key: str = "neighborhood_analysis",
+                          method: str = "graph",  # graph, heatmap
+                          **kwargs
+                          ):
     df = adata_uns2df(adata, key)
 
-    plot_kwargs = dict(
-        row_colors=groupby,
-        col_colors=["Cell type1", "Cell type2"],
-        palette=["#2f71ab", "#f7f7f7", "#ba262b"],
-        colorbar_type="categorical",
-        categorical_colorbar_text=["Avoidance", "Association"],
-        col_colors_legend_bbox=(1.05, 0.5),
-        row_colors_legend_bbox=(-0.25, 0.5),
-        colorbar_bbox=(-0.25, 0.15),
-        row_cluster=None,
-        col_cluster=True,
-    )
-    # allow user to overwrite the default plot config
-    for k, v in kwargs.items():
-        plot_kwargs[k] = v
+    if method == 'graph':
+        p = cc_interactions(df, {-1: "Avoidance", 1: "Association"}, order=[-1, 1], **kwargs)
+    elif method == 'heatmap':
+        plot_kwargs = dict(
+            row_colors=groupby,
+            col_colors=["Cell type1", "Cell type2"],
+            palette=["#2f71ab", "#f7f7f7", "#ba262b"],
+            colorbar_type="categorical",
+            categorical_colorbar_text=["Avoidance", "Association"],
+            col_colors_legend_bbox=(1.05, 0.5),
+            row_colors_legend_bbox=(-0.25, 0.5),
+            colorbar_bbox=(-0.25, 0.15),
+            row_cluster=None,
+            col_cluster=True,
+        )
+        # allow user to overwrite the default plot config
+        for k, v in kwargs.items():
+            plot_kwargs[k] = v
 
-    p = heatmap(df, **plot_kwargs)
+        p = heatmap(df, **plot_kwargs)
     return p
 
 
 def spatial_enrichment_analysis(
-    adata: AnnData,
-    groupby: Sequence[str],
-    key: str = "spatial_enrichment_analysis",
-    **kwargs
+        adata: AnnData,
+        groupby: Sequence[str],
+        key: str = "spatial_enrichment_analysis",
+        **kwargs
 ):
     df = adata_uns2df(adata, key)
 
@@ -148,36 +156,42 @@ def spatial_enrichment_analysis(
     return p
 
 
-def spatial_distribution(
-    adata: AnnData, groupby: Sequence[str], key: str = "spatial_distribution", **kwargs
+def spatial_distribution(adata: AnnData,
+                         groupby: Sequence[str],
+                         key: str = "spatial_distribution",
+                         method: str = 'pie',  # pie, heatmap
+                         **kwargs
 ):
     df = adata_uns2df(adata, key)
 
-    plot_kwargs = dict(
-        row_colors=groupby,
-        col_colors=["Cell type"],
-        palette=["#fffec6", "#c54a52", "#4a89b9", "#5a539d"],
-        colorbar_type="categorical",
-        categorical_colorbar_text=["Blank", "Random", "Regular", "Clumped"],
-        col_colors_legend_bbox=(1.05, 0.5),
-        row_colors_legend_bbox=(-0.25, 0.5),
-        row_cluster=None,
-        col_cluster=True,
-    )
-    # allow user to overwrite the default plot config
-    for k, v in kwargs.items():
-        plot_kwargs[k] = v
+    if method == 'pie':
+        p = grouped_pie(df, **kwargs)
+    elif method == 'heatmap':
+        plot_kwargs = dict(
+            row_colors=groupby,
+            col_colors=["Cell type"],
+            palette=["#fffec6", "#c54a52", "#4a89b9", "#5a539d"],
+            colorbar_type="categorical",
+            categorical_colorbar_text=["Blank", "Random", "Regular", "Clumped"],
+            col_colors_legend_bbox=(1.05, 0.5),
+            row_colors_legend_bbox=(-0.25, 0.5),
+            row_cluster=None,
+            col_cluster=True,
+        )
+        # allow user to overwrite the default plot config
+        for k, v in kwargs.items():
+            plot_kwargs[k] = v
 
-    p = heatmap(df, **plot_kwargs)
+        p = heatmap(df, **plot_kwargs)
     return p
 
 
 def spatial_heterogeneity(
-    adata: AnnData,
-    groupby: Sequence[str],
-    key: str = "spatial_heterogeneity",
-    metric: str = "heterogeneity",
-    **kwargs
+        adata: AnnData,
+        groupby: Sequence[str],
+        key: str = "spatial_heterogeneity",
+        metric: str = "heterogeneity",
+        **kwargs
 ):
     df = adata_uns2df(adata, key)
 

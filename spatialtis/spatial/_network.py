@@ -5,7 +5,9 @@ from ._neighbors import Neighbors
 from ._util import check_neighbors
 
 
-def communities(n: Neighbors, export_key: str = "communities"):
+def communities(n: Neighbors,
+                export_key: str = "communities",
+                ):
     """leidenalg algorithm for communities detection
 
     Args:
@@ -25,4 +27,5 @@ def communities(n: Neighbors, export_key: str = "communities"):
 
     sub_comm = pd.Series(sub_comm, index=n.data.index)
     # n.data[export_key] = sub_comm
-    # n.adata.obs[export_key] = sub_comm# n.data[export_key]
+    n.adata.obs[export_key] = sub_comm
+    # n.data[export_key]
