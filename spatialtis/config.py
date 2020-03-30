@@ -11,7 +11,18 @@ class _CONFIG(object):
         self._ROI_KEY: Optional[str] = None
         self._CELL_TYPE_COL: Optional[str] = None
         self.WORKING_ENV: Optional[str] = "jupyter"
-        self.OS = None
+        self.OS: Optional[str] = None
+
+        # used key name to store info in anndata
+        self.CENTROID_COL: str = 'centroid'
+        self.COMMUNITY_COL: str = 'communities'
+        self.NEIGHBORS_COL: str = 'cell_neighbors'
+        self.NEIGHBORS_COUNT_COL: str = 'neighbors_count'
+        self.AREA_COL: str = 'area'
+        self.SHAPE_COL: str = 'cell_shape'
+        self.ECCENTRICITY_COL: str = 'eccentricity'
+        self.MARKER_COL: str = 'markers'
+        self.CHANNEL_COL: str = 'channels'
 
     @property
     def EXP_OBS(self):

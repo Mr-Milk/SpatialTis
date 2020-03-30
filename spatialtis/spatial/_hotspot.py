@@ -109,7 +109,7 @@ def hotspot(
     adata: AnnData,
     groupby: Union[Sequence, str, None] = None,
     type_col: Optional[str] = None,
-    centroid_col: str = "centroid",
+    centroid_col: Optional[str] = None,
     selected_types: Optional[Sequence] = None,
     search_level: int = 1,
     grid_size: int = 50,
@@ -121,6 +121,8 @@ def hotspot(
         groupby = CONFIG.EXP_OBS
     if type_col is None:
         type_col = CONFIG.CELL_TYPE_COL
+    if centroid_col is None:
+        centroid_col = CONFIG.CENTROID_COL
 
     df = filter_adata(
         adata,

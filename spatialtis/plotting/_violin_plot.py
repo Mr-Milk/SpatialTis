@@ -10,6 +10,7 @@ from scipy.stats import gaussian_kde as kde
 from spatialtis import CONFIG
 
 from .palette import get_colors
+from ._save import save_bokeh
 
 
 class Status(object):
@@ -235,8 +236,7 @@ def violin_plot(
     display: bool = True,
     title: Optional[str] = None,
     size: Optional[Sequence[int]] = None,
-    save_svg: Optional[str] = None,
-    save_html: Optional[str] = None,
+    save: Optional[str] = None,
     palette: Union[Sequence[str], str, None] = None,
     return_plot: bool = False,
 ):
@@ -306,13 +306,8 @@ def violin_plot(
         p.xgrid.grid_line_alpha = 0.7
 
     # save something
-    if save_html:
-        output_file(save_html)
-        save(p)
-
-    if save_svg:
-        p.output_backend = "svg"
-        export_svgs(p, filename=save_svg)
+    if save is not None:
+        save_bokeh(p, save)
 
     if (CONFIG.WORKING_ENV is not None) & display:
         output_notebook(hide_banner=True, notebook_type=CONFIG.WORKING_ENV)

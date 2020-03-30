@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from spatialtis.config import CONFIG
+from ..config import CONFIG
 
 from ._utils import config, config_file, read_ROI, set_info
 

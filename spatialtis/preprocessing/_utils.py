@@ -11,6 +11,7 @@ from skimage.io import imread
 from spatialtis.config import ISOTOPES_MASS_NUMBER_MAP, ISOTOPES_NAME
 
 from ._geom import geom_cells
+from ..config import CONFIG
 
 
 class read_ROI:
@@ -183,36 +184,22 @@ def config_file(
     return cls
 
 
-"""
-def filter_channels(cls, channels=None):
-    # TODO: add type check
-    selected_channels = []
-    not_found_channels = []
-    for i, c in enumerate(channels):
-        if c in cls.channels:
-            if c not in selected_channels:
-                selected_channels.append(c)
-        else:
-            not_found_channels.append(i)
-            print(f"{c} not found")
-    return selected_channels
-"""
-
-
 def set_info(cls):
     lc = len(cls.channels)
     lm = len(cls.markers)
+    channel_key = CONFIG.CHANNEL_COL
+    marker_key = CONFIG.MARKER_COL
 
     if lc == 0:
         try:
             cls.channels = read_ROI(cls.tree[0]).channels
         finally:
-            cls._var = pd.DataFrame({"Channels": cls.channels})
+            cls._var = pd.DataFrame({channel_key: cls.channels})
     elif (lc > 0) & (lm > 0):
         cls.var = pd.DataFrame(
-            {"Channels": cls.channels, "Markers": list(cls.markers.values())}
+            {channel_key: cls.channels, marker_key: list(cls.markers.values())}
         )
     elif (lc > 0) & (lm == 0):
-        cls.var = pd.DataFrame({"Channels": cls.channels})
+        cls.var = pd.DataFrame({marker_key: cls.channels})
     # anndata require str index, hard set everything to str
     cls.var.index = [str(i) for i in range(0, len(cls.channels))]

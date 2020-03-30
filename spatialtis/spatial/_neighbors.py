@@ -53,8 +53,6 @@ def _neighborcells(polycells, scale, expand):
 if CONFIG.OS in ["Linux", "Darwin"]:
     try:
         import ray
-        import time
-        import pickle
     except ImportError:
         raise ImportError(
             "You don't have ray installed or your OS don't support ray.",
@@ -93,19 +91,8 @@ class Neighbors(object):
         if type_col is None:
             type_col = CONFIG.CELL_TYPE_COL
 
-        keys = []
-        if isinstance(groupby, str):
-            keys.append(groupby)
-        else:
-            keys += groupby
-        keys.append(shape_col)
-        keys.append(centroid_col)
-
-        if type_col is not None:
-            keys.append(type_col)
-
         self.__adata = adata
-        self.__data = adata.obs[keys]
+        self.__data = adata.obs
         self.__typecol = type_col
         self.__shapecol = shape_col
         self.__centcol = centroid_col
@@ -120,7 +107,8 @@ class Neighbors(object):
             ].reset_index()
             self.__adata_integrity = False
 
-        self.__groups = self.__data.groupby(groupby)
+        self.__groupby = groupby
+        self.__groups = self.__data.groupby(groupby, sort=False)
 
         # define vars for storage
         self.__names = [n for n, _ in self.__groups]
@@ -233,7 +221,7 @@ class Neighbors(object):
                     self.__neighborsdb[n] = nbcells
                 self.__neighborsbuilt = True
 
-    def export_neighbors(self, export_key: str = "cell_neighbors"):
+    def export_neighbors(self, export_key: str = "cell_neighbors", overwrite: bool = False):
         """Export computed neighbors
 
         The neighbors relationship are stored in dict, number is index of cell in each ROI
@@ -243,6 +231,7 @@ class Neighbors(object):
 
         Args:
             export_key: the key name to export
+            overwrite: if to overwrite existed key
 
         """
         if not self.__neighborsbuilt:
@@ -251,10 +240,21 @@ class Neighbors(object):
         if export_key in self.__adata.obs.keys():
             raise KeyError(f'export key "{export_key}" exists')
 
-        self.__adata.uns[export_key] = {
-            "data": str(self.__neighborsdb),
-            "param": self.__neighbors_param,
-        }
+        if self.__adata_integrity:
+            neighbors = []
+            for n, g in self.__groups:
+                neighdict = self.__neighborsdb[n]
+                for i in range(0, len(g)):
+                    try:
+                        neighs = neighdict[i]
+                    except KeyError:
+                        neighs = []
+                    neighbors.append(neighs)
+            col2adata_obs(neighbors, self.__adata, export_key, overwrite)
+        else:
+            return (
+                'Cannot write to incomplete anndata because "selected_types" are used.'
+            )
 
     def neighbors_count(
         self, export_key: str = "neighbors_count", overwrite: bool = False
@@ -296,10 +296,15 @@ class Neighbors(object):
                 read_key: the key name to read
 
         """
-        if read_key not in self.__adata.uns.keys():
+        if read_key not in self.__adata.obs.keys():
             raise KeyError(f"{read_key} not exists.")
-        self.__neighborsdb = eval(self.__adata.uns[read_key]["data"])
-        self.__neighbors_param = self.__adata.uns[read_key]["param"]
+
+        self.__groups = self.__data.groupby(self.__groupby)
+        neighborsdb = {}
+        for n, g in self.__groups:
+            neighborsdb[n] = dict(zip(range(len(g)), g[read_key]))
+        self.__neighborsdb = neighborsdb
+        self.__neighborsbuilt = True
 
     def to_graphs(self):
         if not self.__neighborsbuilt:

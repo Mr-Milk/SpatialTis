@@ -82,8 +82,17 @@ Or you can directly pass in python list, but make sure the channels and markers 
 
 Finally, we can start processing your images into anndata::
 
-    # set mp=True for parallel processing, (Linux and MacOS only)
+    data = data.to_anndata()
+
+If you have a large dataset, you can set `mp=True` to enable parallel processing, (Linux and MacOS only)::
+
     data = data.to_anndata(mp=True)
+
+The default methods to determine the cell shape is "convex hull", another option is "concave hull"
+(`Determine cell shape <about/implementation.html#determine-cell-shape>`_), if you want to get more accurate shape information,
+you can use `polygonize="concave"`, but you need to determine the alpha value::
+
+    data = data.to_anndata(polygonize="concave", alpha=2.0)
 
 .. note::
     The default method

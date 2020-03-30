@@ -10,9 +10,9 @@ from spatialtis.plotting.palette import get_colors
 
 
 def _regroup_df(
-    df: pd.DataFrame, group_by: Sequence[str], percentage: bool = True,
+    df: pd.DataFrame, groupby: Sequence[str], percentage: bool = True,
 ):
-    groups = df.groupby(level=group_by).sum()
+    groups = df.groupby(level=groupby).sum()
 
     if percentage:
         groups = groups.div(groups.sum(axis=1), axis=0) * 100
@@ -22,7 +22,7 @@ def _regroup_df(
 
 def stacked_bar(
     df: pd.DataFrame,
-    group_by: Sequence[str],
+    groupby: Sequence[str],
     percentage: bool = True,
     direction: Union[str] = "vertical",
     display: bool = True,
@@ -36,13 +36,13 @@ def stacked_bar(
     if direction not in ["vertical", "horizontal"]:
         raise ValueError(f"Unrecognized direction '{direction}'")
 
-    gl = len(group_by)
+    gl = len(groupby)
 
     if gl > 3:
         print("Only support 3 levels depth categorical data")
         return None
 
-    df = _regroup_df(df, group_by, percentage=percentage)
+    df = _regroup_df(df, groupby, percentage=percentage)
 
     factors = list(df.index)
     types = list(df.columns)
