@@ -10,7 +10,7 @@ from spatialtis.config import CONFIG
 
 
 def df2adata_uns(
-    df: pd.DataFrame, adata: AnnData, key: str, overwrite: bool = False,
+    df: pd.DataFrame, adata: AnnData, key: str
 ):
     """Preserve all info in pd.DataFrame as dict, and write to anndata.uns
     The anndata object haven't fully support read/write of a pandas.Dataframe object,
@@ -31,12 +31,6 @@ def df2adata_uns(
     container = dict(
         df=str(df.to_dict()), iname=df.index.names, colname=list(df.columns.names),
     )
-
-    keys = adata.uns.keys()
-    if (key in keys) & (not overwrite):
-        raise KeyError(
-            f"{key} already exists, if you want to rewrite, set overwrite=True"
-        )
 
     adata.uns[key] = container
 

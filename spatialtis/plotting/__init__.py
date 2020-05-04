@@ -20,6 +20,9 @@ from .wrapper import (
     spatial_distribution,
     spatial_enrichment_analysis,
     spatial_heterogeneity,
+    cell_communities_graph,
+    cell_type_graph,
+    cc_interactions
 )
 
 if CONFIG.WORKING_ENV == "jupyter":

@@ -1,5 +1,5 @@
 from collections import Counter
-from typing import Optional, Union, Sequence
+from typing import Optional, Union, Sequence, Mapping
 from pathlib import Path
 
 import pandas as pd
@@ -24,7 +24,9 @@ def get_grid(counts, min_ncol=8):
 
 
 def grouped_pie(df: pd.DataFrame,
+                mapper: Mapping,
                 order: Optional[Sequence] = None,
+                selected_types: Optional[Sequence] = None,
                 pie_size: float = 0.8,
                 round_size: float = 0.7,
                 size: Sequence = (900, 500),
@@ -38,6 +40,9 @@ def grouped_pie(df: pd.DataFrame,
                 ):
     if palette is not None:
         palette = get_linear_colors(palette)
+
+    if selected_types is not None:
+        df = df[selected_types]
 
     c = Pie(
         init_opts=opts.InitOpts(width=f"{size[0]}px",
@@ -53,13 +58,13 @@ def grouped_pie(df: pd.DataFrame,
     (nrow, ncol) = get_grid(df.shape[1])
 
     grid_width = width / ncol
-    grid_height = height / nrow
+    grid_height = height*0.95 / nrow
 
     step_w = grid_width / width * 100
     start_w = step_w / 2
 
     step_h = grid_height / height * 100
-    start_h = step_h / 2
+    start_h = step_h / 2 + 5
 
     center_w = [str(start_w + step_w * i) + '%' for i in range(ncol)]
     center_h = [str(start_h + step_h * i) + '%' for i in range(nrow)]
@@ -76,14 +81,19 @@ def grouped_pie(df: pd.DataFrame,
     inner_r = outer_r * round_size
     r = [inner_r, outer_r]
 
+    unitypes = pd.unique(df.values.ravel())
+
     for i, (label, data) in enumerate(df.items()):
         c_data = Counter(data)
+        for k in unitypes:
+            if k not in c_data.keys():
+                c_data[k] = 0
         if order is None:
             order = list(c_data.keys())
 
         c.add(
             label,
-            [(order[i], c_data[order[i]]) for i in range(len(order))],
+            [(mapper[order[i]], c_data[order[i]]) for i in range(len(order))],
             center=centers[i],
             radius=r,
             rosetype="radius",
@@ -92,7 +102,7 @@ def grouped_pie(df: pd.DataFrame,
 
     c.set_global_opts(
         title_opts=opts.TitleOpts(title=title),
-        visualmap_opts=opts.VisualMapOpts(range_color=palette),
+        # visualmap_opts=opts.VisualMapOpts(range_color=palette),
         toolbox_opts=opts.ToolboxOpts(feature={"saveAsImage": {"title": "save", "pixelRatio": 5, }, }, ),
     )
 

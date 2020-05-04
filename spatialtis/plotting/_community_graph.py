@@ -8,15 +8,18 @@ from pyecharts import options as opts
 from pyecharts.charts import Graph
 
 from ._save import save_pyecharts
-from .palette import get_linear_colors
-from ..config import CONFIG
+from .palette import get_linear_colors, get_colors
 
 
 def graph_plot(df: pd.DataFrame,
-               type_col: Optional[str] = None,
-               neighbors_col: Optional[str] = None,
-               centroid_col: Optional[str] = None,
-               tooltip_col: Optional[str] = None,
+               node_col: Optional[str] = None,  # centroid_col
+               node_category_col: Optional[str] = None,  # cell type / communities
+               node_info_col: Optional[str] = None,
+               edge_col: Optional[str] = None,  # neighbors relationship
+               edge_category_col: Optional[str] = None,
+               edge_info_col: Optional[str] = None,
+               node_size: Union[float, int] = 3,
+               edge_size: Union[float, int] = 0.1,
                size: Sequence = (800, 800),
                renderer: str = 'canvas',
                theme: str = 'white',
@@ -26,47 +29,57 @@ def graph_plot(df: pd.DataFrame,
                title: Optional[str] = None,
                save: Union[str, Path, None] = None,
                ):
-    if type_col is None:
-        type_col = CONFIG.CELL_TYPE_COL
-    if neighbors_col is None:
-        neighbors_col = CONFIG.NEIGHBORS_COL
-    if centroid_col is None:
-        centroid_col = CONFIG.CENTROID_COL
+
     if palette is not None:
-        palette = get_linear_colors(palette)
+        palette = get_linear_colors(["Set3"])
 
     nodes_data = []
     edges_data = []
     categories = []
 
     cols = list(df.columns)
-    ixy = cols.index(centroid_col)
-    icategory = cols.index(type_col)
-    ineighbors = cols.index(neighbors_col)
-
-    if tooltip_col is not None:
-        iname = cols.index(type_col)
-    else:
-        iname = None
+    ixy = cols.index(node_col)
+    iedge = cols.index(edge_col)
+    if node_category_col is not None:
+        inode_category = cols.index(node_category_col)
+    if node_info_col is not None:
+        inode_info = cols.index(node_info_col)
+    if edge_category_col is not None:
+        iedge_category = cols.index(edge_category_col)
+        edge_categories = df[edge_category_col]
+        edge_types = pd.unique(edge_categories)
+        edges_colors = dict(zip(edge_types, get_colors(len(edge_types), ["Set3", "Spectral"])))
+    if edge_info_col is not None:
+        iedge_info = cols.index(edge_info_col)
 
     for i, (_, c) in enumerate(df.iterrows()):
         xy = eval(c[ixy])
-        category = str(c[icategory])
         node_config = dict(
             name=str(i),
             x=xy[1],
             y=xy[0],
-            category=category,
             label_opts=opts.LabelOpts(is_show=False),
+            symbol_size=node_size,
         )
-        if iname is not None:
-            node_config['value'] = str(c[iname])
+        if node_category_col is not None:
+            category = str(c[inode_category])
+            node_config['category'] = category
+            categories.append(opts.GraphCategory(name=category))
+        if node_info_col is not None:
+            node_config['value'] = str(c[inode_info])
 
         nodes_data.append(opts.GraphNode(**node_config))
-        categories.append(opts.GraphCategory(name=category))
 
-        for n in c[ineighbors]:
-            edges_data.append(opts.GraphLink(source=str(n), target=str(i)))
+        for n in c[iedge]:
+            if edge_category_col is not None:
+                source_category = edge_categories[n]
+                target_category = edge_categories[i]
+                if source_category == target_category:
+                    edges_data.append(opts.GraphLink(source=str(n), target=str(i), linestyle_opts=opts.LineStyleOpts(
+                        width=edge_size, color=edges_colors[source_category],
+                    )))
+            else:
+                edges_data.append(opts.GraphLink(source=str(n), target=str(i)))
 
     g = Graph(init_opts=opts.InitOpts(width=f"{size[0]}px",
                                       height=f"{size[1]}px",
@@ -85,10 +98,12 @@ def graph_plot(df: pd.DataFrame,
           (formatter="{c}"),
           ).set_global_opts(
         title_opts=opts.TitleOpts(title=title),
-        visualmap_opts=opts.VisualMapOpts(range_color=palette),
+        # visualmap_opts=opts.VisualMapOpts(range_color=palette),
         legend_opts=opts.LegendOpts(type_="scroll", orient="vertical", pos_left="2%", pos_top="20%"),
         toolbox_opts=opts.ToolboxOpts(feature={
             "saveAsImage": {"title": "save", "pixelRatio": 5, },
+            "brush": {},
+            "restore": {},
         }, ),
     )
 

@@ -71,11 +71,9 @@ def cell_components(
     adata: AnnData,
     groupby: Union[Sequence, str, None] = None,
     type_col: Optional[str] = None,
-    selected_types: Optional[Sequence] = None,
     export: bool = True,
     export_key: str = "cell_components",
     return_df: bool = False,
-    overwrite: bool = False,
 ):
     """the proportion of different type of cells
 
@@ -83,21 +81,19 @@ def cell_components(
         adata: anndata object to perform analysis
         groupby: how your experiments grouped, (Default: read from spatialtis.CONFIG.EXP_OBS)
         type_col: the key name of cell type in anndata.obs (Default: read from spatialtis.CONFIG.CELL_TYPE_COL)
-        selected_types: selected cell types you want to count
         export: whether to export to anndata.uns field
         export_key: the key name that used to record the results in anndata.uns field (Default: "cell_components")
         return_df: whether to return an pandas.DataFrame
-        overwrite: whether to overwrite if the key existed
 
     Return:
         pandas.DataFrame
 
     """
 
-    counter = type_counter(adata, groupby, type_col, selected_types)
+    counter = type_counter(adata, groupby, type_col)
 
     if export:
-        df2adata_uns(counter, adata, export_key, overwrite)
+        df2adata_uns(counter, adata, export_key)
 
     if return_df:
         return counter
@@ -107,12 +103,10 @@ def cell_co_occurrence(
     adata: AnnData,
     groupby: Union[Sequence, str, None] = None,
     type_col: Optional[str] = None,
-    selected_types: Optional[Sequence] = None,
     export: bool = True,
     export_key: str = "cell_co_occurrence",
     threshold: int = 50,
     return_df: bool = False,
-    overwrite: bool = False,
 ):
     """The probability of two type of cells occur simultaneously
 
@@ -120,23 +114,21 @@ def cell_co_occurrence(
             adata: anndata object to perform analysis
             groupby: how your experiments grouped, (Default: read from spatialtis.CONFIG.EXP_OBS)
             type_col: the key name of cell type in anndata.obs (Default: read from spatialtis.CONFIG.CELL_TYPE_COL)
-            selected_types: selected cell types you want to count
             export: whether to export to anndata.uns field
             export_key: the key name that used to record the results in anndata.uns field (Default: "cell_co_occurrence")
             threshold: this value determines the presence/absence of a cell type in ROI
             return_df: whether to return an pandas.DataFrame
-            overwrite: whether to overwrite if the key existed
 
         Return:
             pandas.DataFrame
 
         """
-    counter = type_counter(adata, groupby, type_col, selected_types)
+    counter = type_counter(adata, groupby, type_col)
 
     occurrence = counter.gt(threshold)
 
     if export:
-        df2adata_uns(occurrence, adata, export_key, overwrite)
+        df2adata_uns(occurrence, adata, export_key)
 
     if return_df:
         return occurrence
@@ -148,11 +140,9 @@ def cell_density(
     ratio: float = 1.0,
     groupby: Union[Sequence, str, None] = None,
     type_col: Optional[str] = None,
-    selected_types: Optional[Sequence] = None,
     export: bool = True,
     export_key: str = "cell_density",
     return_df: bool = False,
-    overwrite: bool = False,
 ):
     """Calculating cell density in each ROI
 
@@ -163,17 +153,15 @@ def cell_density(
         ratio: the ratio between pixel and real size, default is 1.0
         groupby: how your experiments grouped, (Default: read from spatialtis.CONFIG.EXP_OBS)
         type_col: the key name of cell type in anndata.obs (Default: read from spatialtis.CONFIG.CELL_TYPE_COL)
-        selected_types: selected cell types you want to count
         export: whether to export to anndata.uns field
         export_key: the key name that used to record the results in anndata.uns field (Default: "cell_density")
         return_df: whether to return an pandas.DataFrame
-        overwrite: whether to overwrite if the key existed
 
     Return:
             pandas.DataFrame
 
     """
-    counter = type_counter(adata, groupby, type_col, selected_types=selected_types)
+    counter = type_counter(adata, groupby, type_col)
     if isinstance(size[0], (int, float)):
         area = size[0] * size[1]
         results = counter.div(area * ratio)
@@ -185,7 +173,7 @@ def cell_density(
         raise ValueError("Unrecognized size input")
 
     if export:
-        df2adata_uns(results, adata, export_key, overwrite)
+        df2adata_uns(results, adata, export_key)
 
     if return_df:
         return results
@@ -196,11 +184,9 @@ def cell_morphology(
     metrics_col: str = "eccentricity",
     groupby: Union[Sequence, str, None] = None,
     type_col: Optional[str] = None,
-    selected_types: Optional[Sequence] = None,
     export: bool = True,
     export_key: str = "cell_morphology",
     return_df: bool = False,
-    overwrite: bool = False,
 ):
     """Cell morphology variation between different groups
 
@@ -210,11 +196,9 @@ def cell_morphology(
             (Default: "eccentricity", Options: "eccentricity", "area")
             groupby: how your experiments grouped, (Default: read from spatialtis.CONFIG.EXP_OBS)
             type_col: the key name of cell type in anndata.obs (Default: read from spatialtis.CONFIG.CELL_TYPE_COL)
-            selected_types: selected cell types you want to count
             export: whether to export to anndata.uns field
             export_key: the key name that used to record the results in anndata.uns field (Default: "cell_morphology")
             return_df: whether to return an pandas.DataFrame
-            overwrite: whether to overwrite if the key existed
 
         Return:
                 pandas.DataFrame
@@ -232,14 +216,11 @@ def cell_morphology(
     key = groupby + [type_col, metrics_col]
     df = adata.obs[key]
 
-    if selected_types is not None:
-        df = df[df[type_col].isin(selected_types)]
-
     df.index = pd.MultiIndex.from_frame(df[groupby + [type_col]])
     df = df.drop(groupby + [type_col], axis=1)
 
     if export:
-        df2adata_uns(df, adata, export_key, overwrite)
+        df2adata_uns(df, adata, export_key)
 
     if return_df:
         return df
