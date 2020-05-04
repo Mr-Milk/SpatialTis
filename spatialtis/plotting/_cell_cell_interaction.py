@@ -13,14 +13,16 @@ from ._save import save_pyecharts
 
 
 # mapper = {-1: "Avoidance", 1: "Association"}
+# the direction of interactions is from first element to second element in tuple
 def cc_interactions(df: pd.DataFrame,
                     mapper: Mapping,
                     order: Optional[Sequence] = None,
                     repulsion: Union[float, int] = 80000,
                     gravity: Union[float, int] = 0.2,
+                    layout: str = 'circular',
                     size: Sequence = (800, 800),
                     renderer: str = 'canvas',
-                    theme: str = 'white',
+                    theme: str = 'dark',
                     edges_colors: Optional[Sequence] = None,
                     display: bool = True,
                     return_plot: bool = False,
@@ -30,16 +32,14 @@ def cc_interactions(df: pd.DataFrame,
     if edges_colors is None:
         edges_colors = ["RdBu"]
 
-    nodes_data = []
-    edges_data = []
-
     edges_colors_range = get_linear_colors(edges_colors)
-    edges_width_range = np.arange(1, 101) / 10
+    edges_width_range = np.arange(1, 51) / 10
     nodes_size_range = np.arange(1, 5) * 10
 
     nodes = np.unique(list(df.columns.to_numpy()))
 
     edges = np.unique(df.to_numpy())
+    print(edges)
     if order is None:
         order = edges
 
@@ -89,7 +89,7 @@ def cc_interactions(df: pd.DataFrame,
             opts.GraphLink(source=e[1],
                            target=e[0],
                            symbol=['', 'arrow'],
-                           value=f"{mapper[v[0]]} {v[1]}/{v[-1]}",
+                           value=f"{mapper[v[0]]} {v[1]}/{v[-1]} {e[1]}→{e[0]}",
                            symbol_size=link_width[e] * 2,
                            linestyle_opts=opts.LineStyleOpts(width=link_width[e], curve=0.2, color=link_color[e]),
                            label_opts=opts.LabelOpts(is_show=False, )
@@ -100,11 +100,12 @@ def cc_interactions(df: pd.DataFrame,
                                       height=f"{size[1]}px",
                                       renderer=renderer,
                                       theme=theme,
+                                      animation_opts=opts.AnimationOpts(animation=False),
                                       ))
     g.add("",
           nodes_data,
           edges_data,
-          layout="force",
+          layout=layout,
           repulsion=repulsion,
           gravity=gravity,
           is_rotate_label=True,

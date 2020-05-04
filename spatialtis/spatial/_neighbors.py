@@ -80,9 +80,9 @@ class Neighbors(object):
         adata: AnnData,
         groupby: Union[Sequence, str, None] = None,
         type_col: Optional[str] = None,
-        shape_col: Optional[str] = "cell_shape",
+        shape_col: Optional[str] = None,
+        centroid_col: Optional[str] = None,
         selected_types: Optional[Sequence] = None,
-        centroid_col: str = "centroid",
     ):
 
         # keys for query info from anndata
@@ -90,6 +90,10 @@ class Neighbors(object):
             groupby = CONFIG.EXP_OBS
         if type_col is None:
             type_col = CONFIG.CELL_TYPE_COL
+        if centroid_col is None:
+            centroid_col = CONFIG.CENTROID_COL
+        if shape_col is None:
+            shape_col = CONFIG.SHAPE_COL
 
         self.__adata = adata
         self.__data = adata.obs

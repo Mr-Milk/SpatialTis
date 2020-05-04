@@ -212,7 +212,7 @@ class read_ROIs:
                     )
                 )
 
-            for i in tqdm(exec_iterator(results), total=len(results)):
+            for i in tqdm(exec_iterator(results), total=len(results), unit="ROI"):
                 pass
 
             results = ray.get(results)
@@ -257,10 +257,10 @@ class read_ROIs:
             columns=self.__obs_name,
             index=[str(i) for i in range(0, len(ann_obs))],
         )
-        ann_obs["area"] = areas
-        ann_obs["cell_shape"] = shapes
-        ann_obs["centroid"] = centroids
-        ann_obs["eccentricity"] = eccentricities
+        ann_obs[CONFIG.AREA_COL] = areas
+        ann_obs[CONFIG.SHAPE_COL] = shapes
+        ann_obs[CONFIG.CENTROID_COL] = centroids
+        ann_obs[CONFIG.ECCENTRICITY_COL] = eccentricities
 
         X = np.asarray(X, dtype=float)
 
