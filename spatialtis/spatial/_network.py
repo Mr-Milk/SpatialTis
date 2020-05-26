@@ -1,5 +1,8 @@
 import leidenalg
 import pandas as pd
+from tqdm import tqdm
+
+from spatialtis.config import CONFIG
 
 from ._neighbors import Neighbors
 from ._util import check_neighbors
@@ -19,11 +22,9 @@ def communities(n: Neighbors,
 
     sub_comm = []
     graphs = n.to_graphs()
-    for _, graph in graphs.items():
-        # print(graph.vcount())
+    for _, graph in tqdm(graphs.items(), bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
         part = leidenalg.find_partition(graph, leidenalg.ModularityVertexPartition)
         sub_comm += part.membership
-        # print(len(part.membership))
 
     sub_comm = pd.Series(sub_comm, index=n.data.index)
     # n.data[export_key] = sub_comm

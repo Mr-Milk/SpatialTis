@@ -3,47 +3,29 @@ from typing import Optional, Sequence, Union
 
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 from anndata import AnnData
 from scipy.spatial import cKDTree
 from scipy.stats import norm
-from shapely.geometry import MultiPoint
 
 from spatialtis.config import CONFIG
 
 from ..utils import filter_adata
+from ._util import quad_sta
 
 
 def _hotspot(cells, grid_size, level, pval):
-    bbox = MultiPoint(cells).bounds
-    width = bbox[2] - bbox[0]
-    height = bbox[3] - bbox[1]
-    nx = int(width // grid_size)
-    ny = int(height // grid_size)
+    q = quad_sta(cells, grid_size=grid_size)
 
+    nx = q.nx
+    ny = q.ny
     N = nx * ny
 
     # the grid must bigger than 3 * 3 so that it can have neighbors
     if N < 9:
-        return ["cold" for i in range(0, len(cells))]
+        return ["cold" for _ in range(0, len(cells))]
     else:
-        w_x = width / nx
-        h_y = height / ny
-        # modify from PySAL pointpats
-        dict_id_count = OrderedDict()
-        for i in range(ny):
-            for j in range(nx):
-                dict_id_count[j + i * nx] = 0
-        cells_grid_id = []
-        for point in cells:
-            index_x = int((point[0] - bbox[0]) // w_x)
-            index_y = int((point[1] - bbox[1]) // h_y)
-            if index_x == nx:
-                index_x -= 1
-            if index_y == ny:
-                index_y -= 1
-            id = index_y * nx + index_x
-            cells_grid_id.append(id)
-            dict_id_count[id] += 1
+        dict_id_count = q.grid_counts()
 
         quad_count = np.asarray(list(dict_id_count.values())).reshape(nx, ny)
         idx_points = [(i, j) for i in range(0, nx) for j in range(0, ny)]
@@ -56,7 +38,7 @@ def _hotspot(cells, grid_size, level, pval):
         S = np.sqrt(sum_c / N - mean_C ** 2)
         # There will be some situation when S == 0
         if S == 0:
-            return ["cold" for i in range(0, len(cells))]
+            return ["cold" for _ in range(0, len(cells))]
         else:
             for p in idx_points:
                 # neighbors = tree.query_ball_point(p, r=np.sqrt(2))
@@ -83,8 +65,8 @@ def _hotspot(cells, grid_size, level, pval):
                     hotsquad.append(hot)
 
             marker_hot = []
-            # print(cells_grid_id)
-            for i in cells_grid_id:
+
+            for i in q.cells_grid_id:
                 if hotsquad[i]:
                     marker_hot.append("hot")
                 else:
@@ -135,6 +117,12 @@ def hotspot(
     groups = df.groupby(groupby)
 
     if mp & (CONFIG.OS in ["Linux", "Darwin"]):
+
+        def exec_iterator(obj_ids):
+            while obj_ids:
+                done, obj_ids = ray.wait(obj_ids)
+                yield ray.get(done[0])
+
         results = []
         indexs = []
         hotcells = []
@@ -149,13 +137,18 @@ def hotspot(
                 elif len(tg) == 1:
                     hotcells.append(pd.Series(["cold"], index=tg.index))
 
+        for _ in tqdm(exec_iterator(results), total=len(results),
+                      bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
+            pass
+
         results = ray.get(results)
+
         for i, hots in enumerate(results):
             hotcells.append(pd.Series(hots, index=indexs[i]))
 
     else:
         hotcells = []
-        for name, group in groups:
+        for name, group in tqdm(groups, bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
             for t, tg in group.groupby(type_col):
                 if len(tg) > 1:
                     cells = [eval(c) for c in tg[centroid_col]]

@@ -1,4 +1,4 @@
-from anndata import read_h5ad
+ from anndata import read_h5ad
 
 import spatialtis.plotting as sp
 import spatialtis.spatial as ss
@@ -11,8 +11,8 @@ CONFIG.CELL_TYPE_COL = "leiden"
 def test_spatial_dist(shared_datadir):
     data = read_h5ad(shared_datadir / 'small.h5ad')
     ss.spatial_distribution(data, r=50)
-    ss.spatial_distribution(data, quad=(10, 10), method="MID", overwrite=True)
-    ss.spatial_distribution(data, method="CE", overwrite=True)
+    ss.spatial_distribution(data, quad=(10, 10), method="MID")
+    ss.spatial_distribution(data, method="CE")
 
     sp.spatial_distribution(data, ["Patient", "Part"])
 

@@ -1,8 +1,11 @@
 """
 Setting Global config for whole processing level
 """
+import os
 import platform
 from typing import Mapping, Optional, Sequence
+
+from colorama import Fore
 
 
 class _CONFIG(object):
@@ -12,6 +15,12 @@ class _CONFIG(object):
         self._CELL_TYPE_COL: Optional[str] = None
         self.WORKING_ENV: Optional[str] = "jupyter"
         self.OS: Optional[str] = None
+        self.CPU_USED: Optional[int] = None
+        self.PROGRESS_BAR: bool = True
+        self.MULTI_PROCESSING: bool = False
+
+        # set tqdm bar foramt
+        self.PBAR_FORMAT = "%s{l_bar}%s{bar}%s{r_bar}%s" % (Fore.GREEN, Fore.CYAN, Fore.GREEN, Fore.RESET)
 
         # used key name to store info in anndata
         self.CENTROID_COL: str = 'centroid'
@@ -51,12 +60,19 @@ class _CONFIG(object):
 CONFIG = _CONFIG()
 CONFIG.OS = platform.system()
 
+# set default cpu number
+cpu_count = os.cpu_count()
+if cpu_count is not None:
+    CONFIG.CPU_USED = int(cpu_count / 2)
+else:
+    CONFIG.CPU_USED = 2
+
 # auto run ray.init when running on Linux and MacOS
 if CONFIG.OS in ["Linux", "Darwin"]:
     import logging
     import ray
 
-    ray.init(logging_level=logging.FATAL, ignore_reinit_error=True)
+    ray.init(logging_level=logging.FATAL, ignore_reinit_error=True, num_cpus=CONFIG.CPU_USED)
 
 # can be override in plotting function
 # ['jupyter', 'zepplin', None]

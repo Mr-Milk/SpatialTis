@@ -14,7 +14,117 @@ from ._geom import geom_cells
 from ..config import CONFIG
 
 
-class read_ROI:
+def mask2cells(mask_img: Union[Path, str], ignore_bg: bool = True) -> Sequence:
+    """
+    Parameters
+    mask_img: Path/str, the path to mask img
+    ignore_bg: bool, ignore background in mask
+    """
+    # read mask image
+    mask = imread(mask_img)
+    # number of cells
+    counts = np.unique(mask)
+    # in case the number in mask is not continuous
+    mapper = dict(zip(counts, range(0, len(counts))))
+    # create list for each cell
+    cells = [[] for i in range(0, len(counts))]
+    # find the exact points that belong to each cell
+    iter = np.nditer(mask, flags=["multi_index"])
+    while not iter.finished:
+        cells[mapper[int(iter[0])]].append(iter.multi_index)
+        iter.iternext()
+    # usually 0 for background
+    # and if index 0 of cells didn't contain only one cell
+    if ignore_bg:
+        return cells[1:]
+    else:
+        return cells
+
+
+def get_cell_exp_stack(
+        stack: Sequence, cells: Sequence, method: str = "mean"
+) -> Sequence:
+    """
+    Parameters
+    channel: list or ndarray, matrix info of the channel
+    cells: list or ndarray, each element contains points for each cell
+    method: str, ('mean' / 'median' / 'sum' / ...)  any numpy method to compute expression level of single cell
+    """
+    cells_density = list()
+    for cell in cells:
+        cell_pixels = stack[:, [i[0] for i in cell], [i[1] for i in cell]]
+        exec(f"cells_density.append([np.{method}(density) for density in cell_pixels])")
+    # each secondary array as a channel
+    return cells_density
+
+
+class ROIreader:
+    tree = None
+    markers = None
+    channels = None
+    var = None
+    _var = None
+
+    def config_(self, channels=None, markers=None, callback=None):
+        """
+        Channel Name: Capitalize abbreviated element name follow with mass number like "Yb137"
+        """
+        if markers is not None:
+            if len(channels) != len(markers):
+                # TODO: fix uninformative print
+                print("Unmatched input")
+                return self
+            markers_map = dict(zip(channels, markers))
+            self.markers = OrderedDict((c, markers_map[c]) for c in channels)
+
+        if callback is not None:
+            try:
+                callback(self)
+            except NameError:
+                print("callback is not a function")
+
+        return self
+
+    def config_file_(
+            self, metadata, channel_col=None, marker_col=None, sep=",", callback=None
+    ):
+        meta = pd.read_csv(metadata, sep=sep)
+        channels = meta[channel_col].values
+        markers = None
+        if marker_col is not None:
+            markers = meta[marker_col].values
+        self.config_(channels=channels, markers=markers)
+
+        if callback is not None:
+            try:
+                callback(self)
+            except NameError:
+                print("callback is not a function")
+
+        return self
+
+    def set_info(self):
+        lc = len(self.channels)
+        lm = len(self.markers)
+        channel_key = CONFIG.CHANNEL_COL
+        marker_key = CONFIG.MARKER_COL
+
+        if lc == 0:
+            try:
+                self.channels = read_ROI(self.tree[0]).channels
+            finally:
+                self._var = pd.DataFrame({channel_key: self.channels})
+        elif (lc > 0) & (lm > 0):
+            self.var = pd.DataFrame(
+                {channel_key: self.channels, marker_key: list(self.markers.values())}
+            )
+        elif (lc > 0) & (lm == 0):
+            self.var = pd.DataFrame({marker_key: self.channels})
+        # anndata require str index, hard set everything to str
+        self.var.index = [str(i) for i in range(0, len(self.channels))]
+
+
+class read_ROI(ROIreader):
     """
     Your .tif/.tiff file should be exported from MCD viewer
     or you can specific channel name in 'page_name' field.
@@ -47,7 +157,6 @@ class read_ROI:
                 if img not in mask:
                     # From skimage doc: The different color bands/channels are stored in the third dimension
                     # so we need to transpose it
-                    print(img)
                     self.__stacks = np.transpose(imread(str(img)), (2, 1, 0))
                     stacks_count += 1
 
@@ -78,7 +187,7 @@ class read_ROI:
     def config(self, channels=None, markers=None):
 
         # selected_channels = filter_channels(self, channels=channels)
-        config(self, channels=channels, markers=markers)
+        super().config_(channels=channels, markers=markers)
         if not self.__stacked:
             self.__stacks = np.asarray(
                 [
@@ -97,109 +206,3 @@ class read_ROI:
         # print(f"Detected {len(data)} cells.")
 
         return data, geom_info
-
-
-def mask2cells(mask_img: Union[Path, str], ignore_bg: bool = True) -> Sequence:
-    """
-    Parameters
-    mask_img: Path/str, the path to mask img
-    ignore_bg: bool, ignore background in mask
-    """
-    # read mask image
-    mask = imread(mask_img)
-    # number of cells
-    counts = np.unique(mask)
-    # in case the number in mask is not continuous
-    mapper = dict(zip(counts, range(0, len(counts))))
-    # create list for each cell
-    cells = [[] for i in range(0, len(counts))]
-    # find the exact points that belong to each cell
-    iter = np.nditer(mask, flags=["multi_index"])
-    while not iter.finished:
-        cells[mapper[int(iter[0])]].append(iter.multi_index)
-        iter.iternext()
-    # usually 0 for background
-    # and if index 0 of cells didn't contain only one cell
-    if ignore_bg:
-        return cells[1:]
-    else:
-        return cells
-
-
-def get_cell_exp_stack(
-    stack: Sequence, cells: Sequence, method: str = "mean"
-) -> Sequence:
-    """
-    Parameters
-    channel: list or ndarray, matrix info of the channel
-    cells: list or ndarray, each element contains points for each cell
-    method: str, ('mean' / 'median' / 'sum' / ...)  any numpy method to compute expression level of single cell
-    """
-    cells_density = list()
-    for cell in cells:
-        cell_pixels = stack[:, [i[0] for i in cell], [i[1] for i in cell]]
-        exec(f"cells_density.append([np.{method}(density) for density in cell_pixels])")
-    # each secondary array as a channel
-    return cells_density
-
-
-def config(cls, channels=None, markers=None, callback=None):
-    """
-    Channel Name: Capitalize abbrivated element name follow with mass number like "Yb137"
-    """
-    cls.channels = channels
-    if markers is not None:
-        if len(channels) != len(markers):
-            # TODO: fix uninformative print
-            print("Unmatched input")
-            return cls
-        markers_map = dict(zip(channels, markers))
-        cls.markers = OrderedDict((c, markers_map[c]) for c in channels)
-
-    if callback is not None:
-        try:
-            callback(cls)
-        except NameError:
-            print("callback is not a function")
-
-    return cls
-
-
-def config_file(
-    cls, metadata, channel_col=None, marker_col=None, sep=",", callback=None
-):
-    meta = pd.read_csv(metadata, sep=sep)
-    channels = meta[channel_col].values
-    markers = None
-    if marker_col is not None:
-        markers = meta[marker_col].values
-    cls.config(channels=channels, markers=markers)
-
-    if callback is not None:
-        try:
-            callback(cls)
-        except NameError:
-            print("callback is not a function")
-
-    return cls
-
-
-def set_info(cls):
-    lc = len(cls.channels)
-    lm = len(cls.markers)
-    channel_key = CONFIG.CHANNEL_COL
-    marker_key = CONFIG.MARKER_COL
-
-    if lc == 0:
-        try:
-            cls.channels = read_ROI(cls.tree[0]).channels
-        finally:
-            cls._var = pd.DataFrame({channel_key: cls.channels})
-    elif (lc > 0) & (lm > 0):
-        cls.var = pd.DataFrame(
-            {channel_key: cls.channels, marker_key: list(cls.markers.values())}
-        )
-    elif (lc > 0) & (lm == 0):
-        cls.var = pd.DataFrame({marker_key: cls.channels})
-    # anndata require str index, hard set everything to str
-    cls.var.index = [str(i) for i in range(0, len(cls.channels))]

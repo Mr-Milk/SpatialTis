@@ -2,7 +2,7 @@ from typing import Optional, Sequence, Union
 
 import numpy as np
 import pandas as pd
-from bokeh.io import export_svgs, output_file, output_notebook, save
+from bokeh.io import output_notebook
 from bokeh.models import FactorRange, Legend, LegendItem
 from bokeh.plotting import figure, show
 from scipy.stats import gaussian_kde as kde

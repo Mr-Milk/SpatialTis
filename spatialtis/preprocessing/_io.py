@@ -9,7 +9,24 @@ from tqdm import tqdm
 
 from ..config import CONFIG
 
-from ._utils import config, config_file, read_ROI, set_info
+from ._utils import read_ROI, ROIreader
+
+
+def _get_roi(t, channels, markers, pg, mt, obsi, stacked):
+    if len(markers) >= 1:
+        roi = read_ROI(t, stacked=stacked).config(
+            channels=channels, markers=markers
+        )
+    else:
+        roi = read_ROI(t, stacked=stacked).config(channels=channels)
+
+    exp, cells = roi.exp_matrix(polygonize=pg, method=mt)
+
+    cell_count = len(cells[0])
+    obs = np.repeat(np.array([obsi]), cell_count, axis=0)
+
+    return [exp, list(obs), cells]
+
 
 if CONFIG.OS in ["Linux", "Darwin"]:
     try:
@@ -20,24 +37,10 @@ if CONFIG.OS in ["Linux", "Darwin"]:
             "Try `pip install ray` or use `mp=False`",
         )
 
-    @ray.remote
-    def _get_roi(t, channels, markers, pg, mt, obsi, stacked):
-        if len(markers) >= 1:
-            roi = read_ROI(t, stacked=stacked).config(
-                channels=channels, markers=markers
-            )
-        else:
-            roi = read_ROI(t, stacked=stacked).config(channels=channels)
-
-        exp, cells = roi.exp_matrix(polygonize=pg, method=mt)
-
-        cell_count = len(cells[0])
-        obs = np.repeat(np.array([obsi]), cell_count, axis=0)
-        # print(f"Added: {' '.join(obsi)}")
-        return [exp, list(obs), cells]
+    _get_roi_mp = ray.remote(_get_roi)
 
 
-class read_ROIs:
+class read_ROIs(ROIreader):
     """read all rois, one roi one folder
 
     Organize your folder as your experiment conditions.
@@ -117,13 +120,12 @@ class read_ROIs:
 
         """
         # we use callback function to set modify some info after config
-        return config_file(
-            self,
+        return super().config_file_(
             metadata,
-            channel_col=channel_col,
-            marker_col=marker_col,
-            sep=sep,
-            callback=set_info,
+            channel_col,
+            marker_col,
+            sep,
+            super().set_info,
         )
 
     def config(self, channels: Sequence = None, markers: Sequence = None):
@@ -141,7 +143,7 @@ class read_ROIs:
 
         """
         # we use callback function to set modify some info after config
-        return config(self, channels=channels, markers=markers, callback=set_info)
+        return super().config_(channels, markers, super().set_info)
 
     def to_anndata(
         self,
@@ -212,7 +214,8 @@ class read_ROIs:
                     )
                 )
 
-            for i in tqdm(exec_iterator(results), total=len(results), unit="ROI"):
+            for _ in tqdm(exec_iterator(results), total=len(results), unit="ROI",
+                          bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
                 pass
 
             results = ray.get(results)
@@ -227,24 +230,14 @@ class read_ROIs:
                 eccentricities += cells[3]
 
         else:
-            for i, d in tqdm(enumerate(self.tree), total=len(self.tree), unit="ROI"):
+            for i, d in tqdm(enumerate(self.tree), total=len(self.tree), unit="ROI",
+                             bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
 
-                if len(self.markers) >= 1:
-                    roi = read_ROI(d, stacked=self.__stacked).config(
-                        channels=self.channels, markers=self.markers
-                    )
-                else:
-                    roi = read_ROI(d, stacked=self.__stacked).config(
-                        channels=self.channels
-                    )
-
-                exp, cells = roi.exp_matrix(polygonize=polygonize, method=method)
-
-                cell_count = len(cells[0])
-                obs = np.repeat(np.array([self.obs[i]]), cell_count, axis=0)
+                exp, obs, cells = _get_roi(d, self.channels, self.markers,
+                                           polygonize, method, self.obs[i], self.__stacked)
 
                 X += exp
-                ann_obs += list(obs)
+                ann_obs += obs
                 areas += cells[0]
                 shapes += cells[1]
                 centroids += cells[2]

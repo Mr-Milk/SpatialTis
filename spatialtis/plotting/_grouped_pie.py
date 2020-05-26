@@ -38,6 +38,27 @@ def grouped_pie(df: pd.DataFrame,
                 title: Optional[str] = None,
                 save: Union[str, Path, None] = None,
                 ):
+    """
+
+    Args:
+        df:
+        mapper:
+        order:
+        selected_types:
+        pie_size:
+        round_size:
+        size:
+        renderer:
+        theme:
+        palette:
+        display:
+        return_plot:
+        title:
+        save:
+
+    Returns:
+
+    """
     if palette is not None:
         palette = get_linear_colors(palette)
 

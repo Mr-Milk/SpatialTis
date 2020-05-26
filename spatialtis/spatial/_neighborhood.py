@@ -1,9 +1,11 @@
 from collections import Counter
 from itertools import product
-from typing import Callable, Mapping, Sequence
+from typing import Callable, Mapping, Sequence, Optional
 
 import numpy as np
 import pandas as pd
+
+from tqdm import tqdm
 
 from spatialtis.config import CONFIG
 from spatialtis.utils import df2adata_uns
@@ -89,13 +91,22 @@ def _main(
     patch_func: Callable,
     resample: int = 50,
     pval: float = 0.01,
-    mp: bool = False,
+    mp: Optional[bool] = None,
 ):
+    if mp is None:
+        mp = CONFIG.MULTI_PROCESSING
+
     check_neighbors(n)
     cell_interactions = [k for k in product(n.unitypes, repeat=2)]
     results = dict()
 
     if mp & (CONFIG.OS in ["Linux", "Darwin"]):
+
+        def exec_iterator(obj_ids):
+            while obj_ids:
+                done, obj_ids = ray.wait(obj_ids)
+                yield ray.get(done[0])
+
         counts = []
         names = []
         for name, value in n.neighbors.items():
@@ -105,13 +116,18 @@ def _main(
             counts.append(id1)
             names.append(name)
 
+        for _ in tqdm(exec_iterator(results), total=len(results), unit="ROI",
+                      bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
+            pass
+
         counts = ray.get(counts)
 
-        for i, name in enumerate(names):
-            results[name] = patch_func(counts[i][0], counts[i][1], resample, pval)
+        for count, name in zip(counts, names):
+            results[name] = patch_func(count[0], count[1], resample, pval)
 
     else:
-        for name, value in n.neighbors.items():
+        for name, value in tqdm(n.neighbors.items(), unit="ROI",
+                                bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
             [perm_count, real_count] = _bootstrap(
                 n.types[name], value, cell_interactions, resample
             )
@@ -133,7 +149,6 @@ def neighborhood_analysis(
     export: bool = True,
     export_key: str = "neighborhood_analysis",
     return_df: bool = False,
-    overwrite: bool = False,
     mp: bool = False,
 ):
     """Python implementation of histocat's neighborhood analysis
@@ -149,7 +164,6 @@ def neighborhood_analysis(
         export: whether export to anndata object uns field
         export_key: which key used to export
         return_df: whether to return result dataframe
-        overwrite: whether to overwrite your previous results (if existed)
         mp: whether enable parallel processing
 
     .. seealso:: `spatial_enrichment_analysis <#spatialtis.spatial.spatial_enrichment_analysis>`_
@@ -161,7 +175,7 @@ def neighborhood_analysis(
     df = df.T.astype(int)
 
     if export:
-        df2adata_uns(df, n.adata, export_key, overwrite)
+        df2adata_uns(df, n.adata, export_key)
 
     if return_df:
         return df
@@ -173,7 +187,6 @@ def spatial_enrichment_analysis(
     export: bool = True,
     export_key: str = "spatial_enrichment_analysis",
     return_df: bool = False,
-    overwrite: bool = False,
     mp: bool = False,
 ):
     """An alternative neighborhood analysis
@@ -190,7 +203,6 @@ def spatial_enrichment_analysis(
             export: whether export to anndata object uns field
             export_key: which key used to export
             return_df: whether to return result dataframe
-            overwrite: whether to overwrite your previous results (if existed)
             mp: whether enable parallel processing
 
         .. seealso:: `neighborhood_analysis <#spatialtis.spatial.neighborhood_analysis>`_
@@ -201,7 +213,7 @@ def spatial_enrichment_analysis(
     df = df.T
 
     if export:
-        df2adata_uns(df, n.adata, export_key, overwrite)
+        df2adata_uns(df, n.adata, export_key)
 
     if return_df:
         return df
