@@ -16,42 +16,52 @@ from ._save import save_pyecharts
 # the direction of interactions is from first element to second element in tuple
 def cc_interactions(df: pd.DataFrame,
                     mapper: Mapping,
-                    order: Optional[Sequence] = None,
                     repulsion: Union[float, int] = 80000,
                     gravity: Union[float, int] = 0.2,
+                    threshold: float = 0.5,
                     layout: str = 'circular',
-                    size: Sequence = (800, 800),
                     renderer: str = 'canvas',
                     theme: str = 'dark',
                     edges_colors: Optional[Sequence] = None,
-                    display: bool = True,
-                    return_plot: bool = False,
+                    size: Sequence = (800, 800),
                     title: Optional[str] = None,
+                    display: bool = True,
                     save: Union[str, Path, None] = None,
+                    return_plot: bool = False,
                     ):
     if edges_colors is None:
         edges_colors = ["RdBu"]
 
     edges_colors_range = get_linear_colors(edges_colors)
-    edges_width_range = np.arange(1, 51) / 10
+    edges_width_range = np.arange(1, 20) / 10
     nodes_size_range = np.arange(1, 5) * 10
 
     nodes = np.unique(list(df.columns.to_numpy()))
 
     edges = np.unique(df.to_numpy())
-    print(edges)
-    if order is None:
-        order = edges
 
     graphs_nodes = {n: 0 for n in nodes}
+    edges_data = {}
     graphs_edges = {}
-    # (source, target): (type, value, sum) | (interaction_type, color, line_width)
+    # (source, target): (associate or avoidance, % of ROIs that are sign in all ROIs.)
 
     for i, (label, data) in enumerate(df.items()):
-        c_data = sorted([(k, v) for k, v in Counter(data).items() if k in order], key=lambda x: x[1], reverse=True)
-        graphs_edges[label] = (c_data[0][0], c_data[0][1], sum([i[1] for i in c_data]))
+        data = list(data.to_numpy())
+        if label not in graphs_nodes.keys():
+            reverse_label = (label[1], label[0])
+            if reverse_label in graphs_nodes.keys():
+                edges_data[reverse_label] += data
+            else:
+                edges_data[label] = data
 
-    # the bigger the nodes, the cell tend to interact with more cells
+    for c, data in edges_data.items():
+        c_data = sorted([(k, v) for k, v in Counter(data).items() if k in edges], key=lambda x: x[1], reverse=True)
+        proportions = c_data[0][1] / len(data)
+        # if no interaction, drop the edge
+        if (c_data[0][0] != 0) & (proportions > threshold):
+            graphs_edges[c] = (c_data[0][0], proportions, c_data[0][1])
+
+    # the bigger the nodes, the cell tend to interact with more cells in more ROIs
     for e, v in graphs_edges.items():
         if v[0] == 1:
             graphs_nodes[e[1]] += v[-1]
@@ -62,16 +72,21 @@ def cc_interactions(df: pd.DataFrame,
     nodes_size = {k: ((v - nv[0]) / nodes_size_normf + nodes_size_range[0]) for k, v in graphs_nodes.items()}
 
     # link width
+    '''
     lw = sorted([v[-1] for v in graphs_edges.values()])
     lw_normf = (lw[-1] - lw[0]) / (edges_width_range[-1] - edges_width_range[0])
     link_width = {k: ((v[-1] - lw[0]) / lw_normf + edges_width_range[0]) for k, v in graphs_edges.items()}
+    '''
 
     # link color
-    lc = sorted([v[1] for v in graphs_edges.values()])
+    lc = len(edges_colors_range)
+    link_color = {}
 
-    lc_normf = (lc[-1] - lc[0]) / (len(edges_colors_range))
-
-    link_color = {k: edges_colors_range[int((v[1] - lc[0]) // lc_normf)] for k, v in graphs_edges.items()}
+    for k, v in graphs_edges.items():
+        if v[0] == 1:
+            link_color[k] = edges_colors_range[int(lc * v[1]) - 1]
+        elif v[0] == -1:
+            link_color[k] = edges_colors_range[int(lc * (1-v[1])) - 1]
 
     nodes_data = []
     edges_data = []
@@ -86,12 +101,12 @@ def cc_interactions(df: pd.DataFrame,
 
     for e, v in graphs_edges.items():
         edges_data.append(
-            opts.GraphLink(source=e[1],
-                           target=e[0],
-                           symbol=['', 'arrow'],
-                           value=f"{mapper[v[0]]} {v[1]}/{v[-1]} {e[1]}→{e[0]}",
-                           symbol_size=link_width[e] * 2,
-                           linestyle_opts=opts.LineStyleOpts(width=link_width[e], curve=0.2, color=link_color[e]),
+            opts.GraphLink(source=e[0],
+                           target=e[1],
+                           # symbol=['', 'arrow'],
+                           value=f"{mapper[v[0]]}:{round(v[1], 2)} {e[0]}-{e[1]}",
+                           # symbol_size=link_width[e] * 2,
+                           linestyle_opts=opts.LineStyleOpts(width=1, curve=0.2, color=link_color[e]),
                            label_opts=opts.LabelOpts(is_show=False, )
                            )
         )

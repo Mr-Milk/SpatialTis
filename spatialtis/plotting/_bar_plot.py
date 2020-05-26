@@ -6,7 +6,9 @@ from bokeh.models import ColumnDataSource, FactorRange, Legend
 from bokeh.plotting import figure, show
 
 from spatialtis import CONFIG
-from spatialtis.plotting.palette import get_colors
+
+from .palette import get_colors
+from ._save import save_bokeh
 
 
 def _regroup_df(
@@ -25,12 +27,11 @@ def stacked_bar(
     groupby: Sequence[str],
     percentage: bool = True,
     direction: Union[str] = "vertical",
-    display: bool = True,
-    title: Optional[str] = None,
     size: Optional[Sequence[int]] = None,
-    save_svg: Optional[str] = None,
-    save_html: Optional[str] = None,
+    title: Optional[str] = None,
     palette: Union[Sequence[str], str, None] = None,
+    display: bool = True,
+    save: Optional[str] = None,
     return_plot: bool = False,
 ):
     if direction not in ["vertical", "horizontal"]:
@@ -113,13 +114,8 @@ def stacked_bar(
     p.hover.point_policy = "follow_mouse"
 
     # save something
-    if save_html:
-        output_file(save_html)
-        save(p)
-
-    if save_svg:
-        p.output_backend = "svg"
-        export_svgs(p, filename=save_svg)
+    if save is not None:
+        save_bokeh(p, save)
 
     # solve env here
     if (CONFIG.WORKING_ENV is not None) & display:

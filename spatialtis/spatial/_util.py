@@ -2,8 +2,11 @@ from typing import Union
 
 import numpy as np
 from shapely.geometry import box
+from shapely.geometry import MultiPoint
 
 from ._neighbors import Neighbors
+
+from collections import OrderedDict
 
 
 class NeighborsNotFoundError(Exception):
@@ -17,3 +20,43 @@ def check_neighbors(n: Neighbors):
         )
     if n.unitypes is None:
         raise ValueError("The types are not specific.")
+
+
+# modify from PySAL pointpats
+class quad_sta:
+    def __init__(self, points, nx=None, ny=None, grid_size=None):
+
+        self.points = points
+        self.bbox = MultiPoint(points).bounds
+        self.width = self.bbox[2] - self.bbox[0]
+        self.height = self.bbox[3] - self.bbox[1]
+
+        if (nx is None) & (ny is None):
+            self.nx = int(self.width // grid_size)
+            self.ny = int(self.height // grid_size)
+        else:
+            self.nx = nx
+            self.ny = ny
+
+        self.w_x = self.width / self.nx
+        self.h_y = self.height / self.ny
+
+        self.cells_grid_id = []
+
+    def grid_counts(self):
+        dict_id_count = OrderedDict()
+        for i in range(self.ny):
+            for j in range(self.nx):
+                dict_id_count[j + i * self.nx] = 0
+        for point in self.points:
+            index_x = int((point[0] - self.bbox[0]) // self.w_x)
+            index_y = int((point[1] - self.bbox[1]) // self.h_y)
+            if index_x == self.nx:
+                index_x -= 1
+            if index_y == self.ny:
+                index_y -= 1
+            id_ = index_y * self.nx + index_x
+            self.cells_grid_id.append(id_)
+            dict_id_count[id_] += 1
+
+        return dict_id_count

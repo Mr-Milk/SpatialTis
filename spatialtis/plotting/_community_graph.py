@@ -2,7 +2,11 @@ from collections import Counter
 from typing import Optional, Union, Sequence
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
+
+import matplotlib.pyplot as plt
+from matplotlib.collections import LineCollection
 
 from pyecharts import options as opts
 from pyecharts.charts import Graph
@@ -11,25 +15,24 @@ from ._save import save_pyecharts
 from .palette import get_linear_colors, get_colors
 
 
-def graph_plot(df: pd.DataFrame,
-               node_col: Optional[str] = None,  # centroid_col
-               node_category_col: Optional[str] = None,  # cell type / communities
-               node_info_col: Optional[str] = None,
-               edge_col: Optional[str] = None,  # neighbors relationship
-               edge_category_col: Optional[str] = None,
-               edge_info_col: Optional[str] = None,
-               node_size: Union[float, int] = 3,
-               edge_size: Union[float, int] = 0.1,
-               size: Sequence = (800, 800),
-               renderer: str = 'canvas',
-               theme: str = 'white',
-               palette: Optional[Sequence] = None,
-               display: bool = True,
-               return_plot: bool = False,
-               title: Optional[str] = None,
-               save: Union[str, Path, None] = None,
-               ):
-
+def graph_plot_interactive(df: pd.DataFrame,
+                           node_col: Optional[str] = None,  # centroid_col
+                           node_category_col: Optional[str] = None,  # cell type / communities
+                           node_info_col: Optional[str] = None,
+                           edge_col: Optional[str] = None,  # neighbors relationship
+                           edge_category_col: Optional[str] = None,
+                           edge_info_col: Optional[str] = None,
+                           node_size: Union[float, int] = 1,
+                           edge_size: Union[float, int] = 0.5,
+                           size: Sequence = (800, 800),
+                           renderer: str = 'canvas',
+                           theme: str = 'white',
+                           palette: Optional[Sequence] = None,
+                           display: bool = True,
+                           return_plot: bool = False,
+                           title: Optional[str] = None,
+                           save: Union[str, Path, None] = None,
+                           ):
     if palette is not None:
         palette = get_linear_colors(["Set3"])
 
@@ -116,3 +119,53 @@ def graph_plot(df: pd.DataFrame,
 
     if return_plot:
         return g
+
+
+def graph_plot(
+        nodes,
+        edges,
+        nodes_types=None,
+        edges_types=None,
+        size: Sequence = (10, 10),
+        palette: Optional[Sequence] = None,
+        display: bool = True,
+        return_plot: bool = False,
+        title: Optional[str] = None,
+        save: Union[str, Path, None] = None,
+):
+    if nodes_types is not None:
+        n_unitypes = np.unique(nodes_types)
+        nodes_colors = get_colors(len(n_unitypes), ['Spectral'])
+        nodes_colormap = dict(zip(n_unitypes, nodes_colors))
+    if edges_types is not None:
+        e_unitypes = np.unique(edges_types)
+        edges_colors = get_colors(len(e_unitypes), ['Set3'])
+        edges_colormap = dict(zip(e_unitypes, edges_colors))
+
+    fig, ax = plt.subplots(figsize=size)
+
+    line_cols = []
+    line_colors = []
+    for i, (e1, e2) in enumerate(edges):
+        line_cols.append([nodes[e1], nodes[e2]])
+
+        if edges_types is not None:
+            line_color = edges_colormap[edges_types[i]]
+        else:
+            line_color = '#51A8DD'
+        line_colors.append(
+            line_color
+        )
+    segs = LineCollection(line_cols, zorder=-1, linewidth=0.7, colors=line_colors)
+
+    ax.add_collection(segs)
+
+    for i, (n1, n2) in enumerate(nodes):
+        if nodes_types is not None:
+            point_color = nodes_colormap[nodes_types[i]]
+        else:
+            point_color = '#CB1B45'
+        ax.scatter(n1, n2, c=point_color, s=1)
+
+    plt.axis('off')
+    plt.show()

@@ -2,7 +2,6 @@ import shutil
 from pathlib import Path
 from typing import Sequence, Union
 
-import matplotlib.pyplot as plt
 import pandas as pd
 from anndata import AnnData
 
@@ -25,7 +24,6 @@ def df2adata_uns(
         df: the pandas.DataFrame object you want to write to the anndata.uns field
         adata: the anndata object to work with
         key: which anndata.uns key you want to write to
-        overwrite: whether to overwrite if the key existed
 
     """
     container = dict(
@@ -42,7 +40,7 @@ def df2adata_uns(
 
 
 def col2adata_obs(
-    col: Sequence, adata: AnnData, key: str, overwrite: bool = False,
+    col: Sequence, adata: AnnData, key: str,
 ):
     """Write a Sequence to anndata.obs
 
@@ -50,15 +48,8 @@ def col2adata_obs(
         col: the Sequence object
         adata: the anndata object to work with
         key: which anndata.obs key you want to write to
-        overwrite: whether to overwrite if the key existed
 
     """
-    keys = adata.uns.keys()
-    if (key in keys) & (not overwrite):
-        raise KeyError(
-            f"{key} already exists, if you want to rewrite, set overwrite=True"
-        )
-
     adata.obs[key] = col
 
     print(

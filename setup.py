@@ -6,6 +6,7 @@ setup(name="spatialtis",
       author_email="yb97643@um.edu.mo",
       python_requires='>=3.6',
       install_requires=['ray', 'anndata', 'numpy', 'pandas',
-                        'scikit-image', 'pointpats', 'scipy', 'shapely',
+                        'scikit-image', 'scipy', 'shapely',
                         'python-igraph', 'leidenalg', 'alphashape', 'bokeh',
-                        'seaborn', 'colour', 'IPython', 'matplotlib', 'tqdm', 'cairosvg', 'pyecharts'])
+                        'seaborn', 'colour', 'IPython', 'matplotlib', 'tqdm', 'pyecharts',
+                        'spatialentropy', 'colorama'])

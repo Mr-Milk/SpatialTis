@@ -1,15 +1,14 @@
-from typing import List, Optional, Sequence, Mapping
+from typing import List, Optional, Sequence, Mapping, Union
+from pathlib import Path
 
-import pandas as pd
 from anndata import AnnData
 from bokeh.io import output_notebook, show
 from bokeh.models import Legend, LegendItem
 from bokeh.plotting import figure
 
 from spatialtis import CONFIG
-
-from .palette import get_colors
 from ._save import save_bokeh
+from .palette import get_colors
 
 
 def cell_map(
@@ -18,10 +17,11 @@ def cell_map(
     type_col: Optional[str] = None,
     selected_types: Optional[Sequence] = None,
     shape_col: Optional[str] = None,
-    display: bool = True,
+    size: Optional[Sequence[int]] = None,
     title: Optional[str] = None,
-    save: Optional[str] = None,
-    palette: Optional[Sequence] = None,
+    palette: Union[Sequence[str], str, None] = None,
+    display: bool = True,
+    save: Union[str, Path, None] = None,
     return_plot: bool = False,
 ):
     if type_col is None:
@@ -29,7 +29,7 @@ def cell_map(
     if shape_col is None:
         shape_col = CONFIG.SHAPE_COL
 
-    df = adata.obs.query("&".join([f"({k}=={v})" for k, v in query.items()]))
+    df = adata.obs.query("&".join([f"({k}=='{v}')" for k, v in query.items()]))
     groups = df.groupby(type_col)
 
     default_palette = ["Spectral", "Category20"]
@@ -39,15 +39,22 @@ def cell_map(
 
     tools = "pan,wheel_zoom,box_zoom,reset,hover,save"
 
-    p = figure(
+    figure_config = dict(
         title=title,
         tools=tools,
         x_axis_location=None,
         y_axis_location=None,
         toolbar_location="above",
         tooltips="@name",
-        plot_width=700
     )
+
+    if size is None:
+        figure_config["plot_height"] = 700
+    else:
+        figure_config["plot_height"] = size[0]
+        figure_config["plot_width"] = size[1]
+
+    p = figure(**figure_config)
 
     legends = list()
     legends_name: List[str] = list()

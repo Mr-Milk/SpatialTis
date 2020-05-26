@@ -7,6 +7,7 @@ from spatialtis.config import CONFIG
 
 from ._bar_plot import stacked_bar
 from ._cell_map import cell_map
+from ._expression3d import expression_map
 from ._heatmap_sns import heatmap
 from ._stacked_kde_sns import stacked_kde
 from ._violin_plot import violin_plot
@@ -22,7 +23,8 @@ from .wrapper import (
     spatial_heterogeneity,
     cell_communities_graph,
     cell_type_graph,
-    cc_interactions
+    cc_interactions,
+    exp_neighcells,
 )
 
 if CONFIG.WORKING_ENV == "jupyter":

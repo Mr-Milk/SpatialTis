@@ -1,5 +1,6 @@
 from typing import Optional, Sequence, Union
 
+from tqdm import tqdm
 import igraph as ig
 import numpy as np
 from anndata import AnnData
@@ -130,7 +131,7 @@ class Neighbors(object):
         self.__neighborsbuilt = False
 
     def find_neighbors(
-        self, scale: float = 1, expand: float = 0, mp: bool = False,
+        self, scale: float = 1, expand: float = 0, mp: Optional[bool] = None,
     ):
         """To find the neighbors of each cell
 
@@ -140,6 +141,8 @@ class Neighbors(object):
             mp: whether enable parallel processing
 
         """
+        if mp is None:
+            mp = CONFIG.MULTI_PROCESSING
         # define how to enlarge cells based on user input
         use_scale = False
         use_expand = False
@@ -176,6 +179,12 @@ class Neighbors(object):
 
         # parallel processing
         if mp & (CONFIG.OS in ["Linux", "Darwin"]):
+
+            def exec_iterator(obj_ids):
+                while obj_ids:
+                    done, obj_ids = ray.wait(obj_ids)
+                    yield ray.get(done[0])
+
             if not self._polycells:
                 results = []
                 names = []
@@ -186,6 +195,10 @@ class Neighbors(object):
                     if self.__typecol is not None:
                         types = list(g[self.__typecol])
                         self.__types[n] = types
+
+                for _ in tqdm(exec_iterator(results), total=len(results), unit="ROI",
+                              bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
+                    pass
 
                 results = ray.get(results)
 
@@ -201,6 +214,10 @@ class Neighbors(object):
                     results.append(_neighborcells_mp.remote(polycells, scale, expand))
                     names.append(n)
 
+                for _ in tqdm(exec_iterator(results), total=len(results), unit="ROI",
+                              bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
+                    pass
+
                 results = ray.get(results)
 
                 for i, n in enumerate(names):
@@ -209,7 +226,8 @@ class Neighbors(object):
 
         else:
             if not self._polycells:
-                for n, g in self.__groups:
+                for n, g in tqdm(self.__groups, unit="ROI",
+                                 bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
                     polycells = _polygonize_cells(self.__shapecol, g)
                     self.__polycellsdb[n] = polycells
 
@@ -220,12 +238,13 @@ class Neighbors(object):
                 self._polycells = True
 
             if run_neighbors_search:
-                for n, polycells in self.__polycellsdb.items():
+                for n, polycells in tqdm(self.__polycellsdb.items(), unit="ROI",
+                                         bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
                     nbcells = _neighborcells(polycells, scale, expand)
                     self.__neighborsdb[n] = nbcells
                 self.__neighborsbuilt = True
 
-    def export_neighbors(self, export_key: str = "cell_neighbors", overwrite: bool = False):
+    def export_neighbors(self, export_key: str = "cell_neighbors"):
         """Export computed neighbors
 
         The neighbors relationship are stored in dict, number is index of cell in each ROI
@@ -235,7 +254,6 @@ class Neighbors(object):
 
         Args:
             export_key: the key name to export
-            overwrite: if to overwrite existed key
 
         """
         if not self.__neighborsbuilt:
@@ -254,7 +272,7 @@ class Neighbors(object):
                     except KeyError:
                         neighs = []
                     neighbors.append(neighs)
-            col2adata_obs(neighbors, self.__adata, export_key, overwrite)
+            col2adata_obs(neighbors, self.__adata, export_key)
         else:
             return (
                 'Cannot write to incomplete anndata because "selected_types" are used.'
@@ -348,6 +366,10 @@ class Neighbors(object):
             return self.__types
         else:
             return None
+
+    @property
+    def type_col(self):
+        return self.__typecol
 
     @property
     def data(self):
