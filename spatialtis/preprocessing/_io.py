@@ -214,7 +214,7 @@ class read_ROIs(ROIreader):
                     )
                 )
 
-            for _ in tqdm(exec_iterator(results), total=len(results), unit="ROI",
+            for _ in tqdm(exec_iterator(results), total=len(results), desc='process images', unit="ROI",
                           bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
                 pass
 
@@ -230,7 +230,7 @@ class read_ROIs(ROIreader):
                 eccentricities += cells[3]
 
         else:
-            for i, d in tqdm(enumerate(self.tree), total=len(self.tree), unit="ROI",
+            for i, d in tqdm(enumerate(self.tree), total=len(self.tree), desc='process images', unit="ROI",
                              bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
 
                 exp, obs, cells = _get_roi(d, self.channels, self.markers,

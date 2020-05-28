@@ -22,7 +22,8 @@ def communities(n: Neighbors,
 
     sub_comm = []
     graphs = n.to_graphs()
-    for _, graph in tqdm(graphs.items(), bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
+    for _, graph in tqdm(graphs.items(), desc="find communities",
+                         bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
         part = leidenalg.find_partition(graph, leidenalg.ModularityVertexPartition)
         sub_comm += part.membership
 

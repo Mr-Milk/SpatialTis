@@ -1,12 +1,11 @@
-import numpy as np
-import pandas as pd
-from itertools import product
+from typing import Optional, Sequence, Union
+from pathlib import Path
 
+import matplotlib as mpl
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.collections import PatchCollection
 from matplotlib.lines import Line2D
-import matplotlib.patches as mpatches
-import matplotlib as mpl
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 
@@ -20,7 +19,12 @@ def dot_matrix(
         cbar_legend_title=None,
         size_legend_title=None,
         color_legend_title=None,
-        color_legend_text=None
+        color_legend_text=None,
+        palette: Optional[Sequence] = None,
+        display: bool = True,
+        return_plot: bool = False,
+        title: Optional[str] = None,
+        save: Union[str, Path, None] = None,
 ):
     N, M = np.asarray(matrix).shape
     x, y = np.meshgrid(np.arange(M), np.arange(N))

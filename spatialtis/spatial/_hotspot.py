@@ -137,7 +137,7 @@ def hotspot(
                 elif len(tg) == 1:
                     hotcells.append(pd.Series(["cold"], index=tg.index))
 
-        for _ in tqdm(exec_iterator(results), total=len(results),
+        for _ in tqdm(exec_iterator(results), total=len(results), desc="hotspot analysis",
                       bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
             pass
 

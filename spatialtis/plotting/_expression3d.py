@@ -23,7 +23,7 @@ def expression_map(
                     size: Sequence = (800, 500),
                     palette: Optional[Sequence] = None,
                     display: bool = True,
-                    save: Union[str, Path, None] = None,
+                    # save: Union[str, Path, None] = None, # save multi plots is not allowed in pyecharts
                     return_plot: bool = False,
                     ):
     if marker_col is None:

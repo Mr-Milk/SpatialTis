@@ -16,7 +16,7 @@ def _wrapper(groups, types, type_col, centroid_col, patch_func, *args):
     names = [n for n, _ in groups]
     patterns = {n: {t: 0 for t in types} for n in names}
 
-    for name, group in tqdm(groups, unit="ROI",
+    for name, group in tqdm(groups, unit="ROI", desc="find distribution pattern",
                             bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
         for t, tg in group.groupby(type_col):
             if len(tg) > 1:
@@ -121,7 +121,7 @@ def spatial_distribution(
     groupby: Union[Sequence, str, None] = None,
     type_col: Optional[str] = None,
     centroid_col: Optional[str] = None,
-    method: str = "nn",
+    method: str = "nns",
     pval: float = 0.01,
     r: Optional[float] = 10,
     resample: int = 50,

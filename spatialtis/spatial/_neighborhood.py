@@ -116,7 +116,7 @@ def _main(
             counts.append(id1)
             names.append(name)
 
-        for _ in tqdm(exec_iterator(results), total=len(results), unit="ROI",
+        for _ in tqdm(exec_iterator(counts), total=len(counts), unit="ROI", desc="neighborhood analysis",
                       bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
             pass
 
@@ -126,7 +126,7 @@ def _main(
             results[name] = patch_func(count[0], count[1], resample, pval)
 
     else:
-        for name, value in tqdm(n.neighbors.items(), unit="ROI",
+        for name, value in tqdm(n.neighbors.items(), unit="ROI", desc="neighborhood analysis",
                                 bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
             [perm_count, real_count] = _bootstrap(
                 n.types[name], value, cell_interactions, resample

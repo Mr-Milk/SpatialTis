@@ -4,8 +4,16 @@ Setting Global config for whole processing level
 import os
 import platform
 from typing import Mapping, Optional, Sequence
+import warnings
 
 from colorama import Fore
+
+# get system os
+system_os = platform.system()
+
+if system_os in ["Linux", "Darwin"]:
+    import logging
+    import ray
 
 
 class _CONFIG(object):
@@ -15,7 +23,7 @@ class _CONFIG(object):
         self._CELL_TYPE_COL: Optional[str] = None
         self.WORKING_ENV: Optional[str] = "jupyter"
         self.OS: Optional[str] = None
-        self.CPU_USED: Optional[int] = None
+        self._CPU_USED: Optional[int] = None
         self.PROGRESS_BAR: bool = True
         self.MULTI_PROCESSING: bool = False
 
@@ -56,9 +64,29 @@ class _CONFIG(object):
         else:
             raise ValueError
 
+    @property
+    def CPU_USED(self):
+        return self._CPU_USED
+
+    @CPU_USED.setter
+    def CPU_USED(self, num):
+        # auto run ray.init when running on Linux and MacOS
+        if not isinstance(num, int):
+            raise ValueError("The number of CPU must be integer.")
+
+        self._CPU_USED = num
+
+        if self.OS in ["Linux", "Darwin"]:
+            import logging
+            import ray
+
+            ray.init(logging_level=logging.FATAL, ignore_reinit_error=True, num_cpus=self._CPU_USED)
+        else:
+            warnings.warn("Multi processing not supported on Windows platform")
+
 
 CONFIG = _CONFIG()
-CONFIG.OS = platform.system()
+CONFIG.OS = system_os
 
 # set default cpu number
 cpu_count = os.cpu_count()
@@ -66,13 +94,6 @@ if cpu_count is not None:
     CONFIG.CPU_USED = int(cpu_count / 2)
 else:
     CONFIG.CPU_USED = 2
-
-# auto run ray.init when running on Linux and MacOS
-if CONFIG.OS in ["Linux", "Darwin"]:
-    import logging
-    import ray
-
-    ray.init(logging_level=logging.FATAL, ignore_reinit_error=True, num_cpus=CONFIG.CPU_USED)
 
 # can be override in plotting function
 # ['jupyter', 'zepplin', None]

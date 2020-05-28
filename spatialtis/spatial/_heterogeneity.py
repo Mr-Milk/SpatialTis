@@ -125,7 +125,7 @@ def spatial_heterogeneity(
                     results.append(leibovici_entropy_mp.remote(points, types, d=d, base=base))
                 mindex.append(n)
 
-            for _ in tqdm(exec_iterator(results), total=len(results),
+            for _ in tqdm(exec_iterator(results), total=len(results), desc="heterogeneity",
                           bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
                 pass
 
@@ -135,7 +135,8 @@ def spatial_heterogeneity(
                 ent.append(e.entropy)
 
         else:
-            for n, g in tqdm(groups, bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
+            for n, g in tqdm(groups, desc="heterogeneity",
+                             bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
                 types = list(g[type_col])
                 points = [eval(i) for i in g[centroid_col]]
                 if method == "altieri":
