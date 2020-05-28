@@ -4,7 +4,7 @@
 # example: for cell type A with gene T 700, the neighbors of cells are type A 3, type B 2, type C 5
 # the Y = 700, X = (0.3, 0.2, 0.5)
 
-from collections import OrderedDict
+from collections import Counter
 from typing import Optional
 
 import numpy as np
@@ -63,17 +63,19 @@ def exp_neighcells(
 
     for name, roi in adata.obs.groupby(n.expobs):
         neighbors = neighbors_data[name]
-        for t, g in roi.reset_index().groupby(n.type_col):
-            for i1, i2 in zip(g.index, g['index']):
-                counts = OrderedDict(zip(n.unitypes, [0 for _ in range(len(n.unitypes))]))
-                for c in roi[n.type_col][neighbors[i1]]:
-                    counts[c] += 1
-                v = np.array(list(counts.values()))
-                if sum(v) != 0:
-                    v = v / sum(v)
-                X[t].append(list(v))
+        type_map = dict(zip(range(len(roi)), roi[n.type_col]))
 
-                Y[t].append(list(adata[i2].X[0]))
+        for (center, neighs), exp in zip(neighbors.items(), adata[roi.index].X):
+            t = type_map[center]
+            X[t].append(
+                Counter([type_map[i] for i in neighs])
+            )
+            Y[t].append(list(exp))
+
+    t_cols = n.unitypes
+    for t, d in X.items():
+        df = pd.DataFrame(d, columns=t_cols).fillna(0)
+        X[t] = (df / df.sum()).fillna(0).to_numpy()
 
     markers = adata.var[marker_col]
 
@@ -98,7 +100,7 @@ def exp_neighcells(
                     m_.append(m)
                     c1_.append(c1)
 
-        for _ in tqdm(exec_iterator(results), total=len(results),
+        for _ in tqdm(exec_iterator(results), total=len(results), desc="fit model",
                       bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
             pass
 
@@ -112,7 +114,7 @@ def exp_neighcells(
                 results.append([c2, c1, m, max_weights])
 
     else:
-        with tqdm(total=len(n.unitypes) + len(markers),
+        with tqdm(total=len(n.unitypes) * len(markers), desc="fit model",
                   bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)) as pbar:
             for c1 in n.unitypes:
                 y = np.asarray(Y[c1]).T
@@ -134,3 +136,4 @@ def exp_neighcells(
 
     if return_df:
         return df
+

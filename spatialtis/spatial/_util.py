@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Any
 
 import numpy as np
 from shapely.geometry import box
@@ -13,7 +13,10 @@ class NeighborsNotFoundError(Exception):
     pass
 
 
-def check_neighbors(n: Neighbors):
+def check_neighbors(n: Any):
+    if not isinstance(n, Neighbors):
+        raise TypeError("A spatialtis.Neighbors subject is needed.")
+
     if not n.neighborsbuilt:
         raise NeighborsNotFoundError(
             "Please run .find_neighbors() before further analysis."
@@ -38,8 +41,9 @@ class quad_sta:
             self.nx = nx
             self.ny = ny
 
-        self.w_x = self.width / self.nx
-        self.h_y = self.height / self.ny
+        if (self.nx != 0) & (self.ny != 0):
+            self.w_x = self.width / self.nx
+            self.h_y = self.height / self.ny
 
         self.cells_grid_id = []
 

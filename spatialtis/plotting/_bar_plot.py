@@ -1,14 +1,13 @@
 from typing import Any, Dict, Optional, Sequence, Union
 
 import pandas as pd
-from bokeh.io import export_svgs, output_file, output_notebook, save
+from bokeh.io import output_notebook
 from bokeh.models import ColumnDataSource, FactorRange, Legend
 from bokeh.plotting import figure, show
 
 from spatialtis import CONFIG
-
-from .palette import get_colors
 from ._save import save_bokeh
+from .palette import get_colors
 
 
 def _regroup_df(
