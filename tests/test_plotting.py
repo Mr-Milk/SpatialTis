@@ -27,12 +27,8 @@ df.columns.names = ['fruits']
 
 def test_cell_map(shared_datadir):
     data = read_h5ad(shared_datadir / 'small.h5ad')
-    ROI = data.obs[
-        (data.obs["Patient"] == "HPAP005")
-        & (data.obs["Part"] == "Tail")
-        & (data.obs["ROI"] == "ROI1")
-        ]
-    sp.cell_map(ROI)
+    ROI = {"Patient": "HPAP005", "Part": "Tail", "ROI": "ROI1"}
+    sp.cell_map(data, ROI)
 
 
 def test_violin():

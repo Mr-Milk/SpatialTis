@@ -11,8 +11,8 @@ CONFIG.CELL_TYPE_COL = "leiden"
 def test_spatial_dist(shared_datadir):
     data = read_h5ad(shared_datadir / 'small.h5ad')
     ss.spatial_distribution(data, r=50)
-    ss.spatial_distribution(data, quad=(10, 10), method="MID")
-    ss.spatial_distribution(data, method="CE")
+    ss.spatial_distribution(data, quad=(10, 10), method="quad")
+    ss.spatial_distribution(data, method="nns")
 
     sp.spatial_distribution(data, ["Patient", "Part"])
 
@@ -26,7 +26,7 @@ def test_spatial_hetero(shared_datadir):
 
 def test_hotspot(shared_datadir):
     data = read_h5ad(shared_datadir / 'small.h5ad')
-    ss.hotspot(data, grid_size=10, selected_types=["4", "6"])
+    ss.hotspot(data, grid_size=10)
 
 
 def test_neighbors(shared_datadir):
@@ -54,6 +54,6 @@ def test_spatial_mp(shared_datadir):
     data = read_h5ad(shared_datadir / 'small.h5ad')
     n = Neighbors(data)
     n.find_neighbors(scale=1.1, mp=True)
-    ss.neighborhood_analysis(n, resample=50, mp=True, overwrite=True)
-    ss.spatial_enrichment_analysis(n, resample=50, mp=True, overwrite=True)
-    ss.hotspot(data, grid_size=10, selected_types=["4", "6", "10", "2"], mp=True)
+    ss.neighborhood_analysis(n, resample=50, mp=True)
+    ss.spatial_enrichment_analysis(n, resample=50, mp=True)
+    ss.hotspot(data, grid_size=10)
