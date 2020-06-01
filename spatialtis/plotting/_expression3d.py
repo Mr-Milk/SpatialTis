@@ -1,10 +1,9 @@
-from typing import Union, Optional, Sequence, Mapping
 from pathlib import Path
+from typing import Mapping, Optional, Sequence, Union
 
 import pandas as pd
-from anndata import AnnData
-
 import pyecharts.options as opts
+from anndata import AnnData
 from pyecharts.charts import Bar3D, Scatter3D, Tab
 
 from ..config import CONFIG
@@ -12,29 +11,31 @@ from .palette import get_linear_colors
 
 
 def expression_map(
-                    adata: AnnData,
-                    query: Mapping,
-                    marker_col: Optional[str] = None,
-                    centroid_col: Optional[str] = None,
-                    order: Optional[Sequence] = None,
-                    method: str = 'bar3d',  # 'bar3d', 'scatter3d'
-                    renderer: str = 'canvas',
-                    axis_size: Sequence = (100, 100, 80),
-                    size: Sequence = (800, 500),
-                    palette: Optional[Sequence] = None,
-                    display: bool = True,
-                    # save: Union[str, Path, None] = None, # save multi plots is not allowed in pyecharts
-                    return_plot: bool = False,
-                    ):
+    adata: AnnData,
+    query: Mapping,
+    marker_col: Optional[str] = None,
+    centroid_col: Optional[str] = None,
+    order: Optional[Sequence] = None,
+    method: str = "bar3d",  # 'bar3d', 'scatter3d'
+    renderer: str = "canvas",
+    axis_size: Sequence = (100, 100, 80),
+    size: Sequence = (800, 500),
+    palette: Optional[Sequence] = None,
+    display: bool = True,
+    # save: Union[str, Path, None] = None, # save multi plots is not allowed in pyecharts
+    return_plot: bool = False,
+):
     if marker_col is None:
         marker_col = CONFIG.MARKER_COL
     if centroid_col is None:
         centroid_col = CONFIG.CENTROID_COL
-    if method not in ['bar3d', 'scatter3d']:
-        raise ValueError("No such plot method, available options are 'bar3d' and 'scatter3d'.")
+    if method not in ["bar3d", "scatter3d"]:
+        raise ValueError(
+            "No such plot method, available options are 'bar3d' and 'scatter3d'."
+        )
 
     if palette is None:
-        palette = ['RdYlBu']
+        palette = ["RdYlBu"]
     default_color = get_linear_colors(palette)
 
     gene_names = list(adata.var[marker_col])
@@ -59,11 +60,9 @@ def expression_map(
 
         zrange = sorted(zdata, key=lambda k: k[2])
         initopt_config = dict(
-            width=f"{size[0]}px",
-            height=f"{size[1]}px",
-            renderer=renderer,
+            width=f"{size[0]}px", height=f"{size[1]}px", renderer=renderer,
         )
-        if method == 'bar3d':
+        if method == "bar3d":
             a = Bar3D(init_opts=opts.InitOpts(**initopt_config))
         else:
             a = Scatter3D(init_opts=opts.InitOpts(**initopt_config))
@@ -74,7 +73,9 @@ def expression_map(
             data=zdata,
             xaxis3d_opts=opts.Axis3DOpts(type_="value"),
             yaxis3d_opts=opts.Axis3DOpts(type_="value"),
-            grid3d_opts=opts.Grid3DOpts(width=axis_size[1], height=axis_size[2], depth=axis_size[0]),
+            grid3d_opts=opts.Grid3DOpts(
+                width=axis_size[1], height=axis_size[2], depth=axis_size[0]
+            ),
         ).set_global_opts(
             visualmap_opts=opts.VisualMapOpts(
                 dimension=2,
@@ -83,9 +84,9 @@ def expression_map(
                 range_color=default_color,
             ),
             tooltip_opts=opts.TooltipOpts(is_show=False),
-            toolbox_opts=opts.ToolboxOpts(feature={
-                "saveAsImage": {"title": "save", "pixelRatio": 5, },
-            }, )
+            toolbox_opts=opts.ToolboxOpts(
+                feature={"saveAsImage": {"title": "save", "pixelRatio": 5,},},
+            ),
         )
 
         t.add(a, gene_name)

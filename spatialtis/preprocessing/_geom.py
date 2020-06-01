@@ -1,18 +1,18 @@
 from pathlib import Path
-from typing import Sequence, Union, Optional
+from typing import Optional, Sequence, Union
 
-import numpy as np
 import alphashape
+import numpy as np
 from shapely.geometry import MultiPoint
 from skimage.io import imread
 from skimage.measure import label, regionprops
 
 
 def mask2cells(
-        mask_img: Union[Path, str],
-        bg: Optional[int] = None,
-        polygonize: str = "convex",
-        alpha: Optional[float] = None,
+    mask_img: Union[Path, str],
+    bg: Optional[int] = None,
+    polygonize: str = "convex",
+    alpha: Optional[float] = None,
 ):
     area = []
     borders = []
@@ -61,7 +61,7 @@ def cell_border(cell, polygonize="convex", alpha=None):
 
 
 def get_cell_exp_stack(
-        stack: Sequence, cells: Sequence, method: str = "mean"
+    stack: Sequence, cells: Sequence, method: str = "mean"
 ) -> Sequence:
     """
     Parameters

@@ -2,10 +2,10 @@ from typing import Optional, Sequence, Union
 
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
 from anndata import AnnData
 from scipy.stats import entropy
-from spatialentropy import leibovici_entropy, altieri_entropy
+from spatialentropy import altieri_entropy, leibovici_entropy
+from tqdm import tqdm
 
 from spatialtis.config import CONFIG
 
@@ -33,18 +33,18 @@ if CONFIG.OS in ["Linux", "Darwin"]:
 
 
 def spatial_heterogeneity(
-        adata: AnnData,
-        groupby: Union[Sequence, str, None] = None,
-        type_col: Optional[str] = None,
-        centroid_col: Optional[str] = None,
-        method: str = "altieri",  # shannon, leibovici, altieri
-        base: Union[int, float, None] = None,
-        d: Optional[int] = None,
-        cut: Union[int, Sequence, None] = None,
-        compare: Optional[str] = None,
-        export_key: str = "spatial_heterogeneity",
-        return_df: bool = False,
-        mp: Optional[bool] = None
+    adata: AnnData,
+    groupby: Union[Sequence, str, None] = None,
+    type_col: Optional[str] = None,
+    centroid_col: Optional[str] = None,
+    method: str = "altieri",  # shannon, leibovici, altieri
+    base: Union[int, float, None] = None,
+    d: Optional[int] = None,
+    cut: Union[int, Sequence, None] = None,
+    compare: Optional[str] = None,
+    export_key: str = "spatial_heterogeneity",
+    return_df: bool = False,
+    mp: Optional[bool] = None,
 ) -> Optional[pd.DataFrame]:
     """compute spatial heterogeneity
     Here we use entropy for spatial heterogeneity, which describes the amount of information.
@@ -76,7 +76,9 @@ def spatial_heterogeneity(
         mp = CONFIG.MULTI_PROCESSING
 
     if method not in ["shannon", "altieri", "leibovici"]:
-        raise ValueError("Available entropy methods are 'shannon', 'altieri', 'leibovici'.")
+        raise ValueError(
+            "Available entropy methods are 'shannon', 'altieri', 'leibovici'."
+        )
 
     if method == "shannon":
         df = type_counter(adata, groupby, type_col)
@@ -129,13 +131,22 @@ def spatial_heterogeneity(
                 types = list(g[type_col])
                 points = [eval(i) for i in g[centroid_col]]
                 if method == "altieri":
-                    results.append(altieri_entropy_mp.remote(points, types, cut=cut, base=base))
+                    results.append(
+                        altieri_entropy_mp.remote(points, types, cut=cut, base=base)
+                    )
                 else:
-                    results.append(leibovici_entropy_mp.remote(points, types, d=d, base=base))
+                    results.append(
+                        leibovici_entropy_mp.remote(points, types, d=d, base=base)
+                    )
                 mindex.append(n)
 
-            for _ in tqdm(exec_iterator(results), total=len(results), desc="heterogeneity",
-                          bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
+            for _ in tqdm(
+                exec_iterator(results),
+                total=len(results),
+                desc="heterogeneity",
+                bar_format=CONFIG.PBAR_FORMAT,
+                disable=(not CONFIG.PROGRESS_BAR),
+            ):
                 pass
 
             mp_results = ray.get(results)
@@ -144,8 +155,12 @@ def spatial_heterogeneity(
                 ent.append(e)
 
         else:
-            for n, g in tqdm(groups, desc="heterogeneity",
-                             bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
+            for n, g in tqdm(
+                groups,
+                desc="heterogeneity",
+                bar_format=CONFIG.PBAR_FORMAT,
+                disable=(not CONFIG.PROGRESS_BAR),
+            ):
                 types = list(g[type_col])
                 points = [eval(i) for i in g[centroid_col]]
                 if method == "altieri":

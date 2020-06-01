@@ -9,11 +9,12 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
 from sklearn.ensemble import RandomForestRegressor
+from tqdm import tqdm
 
 from spatialtis.config import CONFIG
 from spatialtis.utils import df2adata_uns
+
 from ._neighbors import Neighbors
 from ._util import check_neighbors
 
@@ -40,15 +41,15 @@ if CONFIG.OS in ["Linux", "Darwin"]:
 
 
 def exp_neighcells(
-        n: Neighbors,
-        marker_col: Optional[str] = None,
-        std: float = 2.0,
-        importance: float = 0.5,
-        export: bool = True,
-        export_key: str = "exp_neighcells",
-        return_df: bool = False,
-        mp: bool = False,
-        **kwargs,
+    n: Neighbors,
+    marker_col: Optional[str] = None,
+    std: float = 2.0,
+    importance: float = 0.5,
+    export: bool = True,
+    export_key: str = "exp_neighcells",
+    return_df: bool = False,
+    mp: bool = False,
+    **kwargs,
 ):
     if marker_col is None:
         marker_col = CONFIG.MARKER_COL
@@ -67,9 +68,7 @@ def exp_neighcells(
 
         for (center, neighs), exp in zip(neighbors.items(), adata[roi.index].X):
             t = type_map[center]
-            X[t].append(
-                Counter([type_map[i] for i in neighs])
-            )
+            X[t].append(Counter([type_map[i] for i in neighs]))
             Y[t].append(list(exp))
 
     t_cols = n.unitypes
@@ -79,7 +78,9 @@ def exp_neighcells(
 
     markers = adata.var[marker_col]
 
-    results = list()  # [cell A, cell A's gene A, cell B that exert influences on cell A's gene A, weights]
+    results = (
+        list()
+    )  # [cell A, cell A's gene A, cell B that exert influences on cell A's gene A, weights]
 
     if mp & (CONFIG.OS in ["Linux", "Darwin"]):
 
@@ -100,8 +101,13 @@ def exp_neighcells(
                     m_.append(m)
                     c1_.append(c1)
 
-        for _ in tqdm(exec_iterator(results), total=len(results), desc="fit model",
-                      bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
+        for _ in tqdm(
+            exec_iterator(results),
+            total=len(results),
+            desc="fit model",
+            bar_format=CONFIG.PBAR_FORMAT,
+            disable=(not CONFIG.PROGRESS_BAR),
+        ):
             pass
 
         mp_results = ray.get(results)
@@ -114,8 +120,12 @@ def exp_neighcells(
                 results.append([c2, c1, m, max_weights])
 
     else:
-        with tqdm(total=len(n.unitypes) * len(markers), desc="fit model",
-                  bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)) as pbar:
+        with tqdm(
+            total=len(n.unitypes) * len(markers),
+            desc="fit model",
+            bar_format=CONFIG.PBAR_FORMAT,
+            disable=(not CONFIG.PROGRESS_BAR),
+        ) as pbar:
             for c1 in n.unitypes:
                 y = np.asarray(Y[c1]).T
                 x = np.asarray(X[c1])
@@ -129,11 +139,10 @@ def exp_neighcells(
                             results.append([c2, c1, m, max_weights])
             pbar.close()
 
-    df = pd.DataFrame(results, columns=['Affected_by', 'Cell', 'Marker', 'Score '])
+    df = pd.DataFrame(results, columns=["Affected_by", "Cell", "Marker", "Score "])
 
     if export:
         df2adata_uns(df, adata, export_key)
 
     if return_df:
         return df
-

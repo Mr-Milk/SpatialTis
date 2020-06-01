@@ -8,9 +8,9 @@ from ._neighbors import Neighbors
 from ._util import check_neighbors
 
 
-def communities(n: Neighbors,
-                export_key: str = "communities",
-                ):
+def communities(
+    n: Neighbors, export_key: str = "communities",
+):
     """leidenalg algorithm for communities detection
 
     Args:
@@ -22,8 +22,12 @@ def communities(n: Neighbors,
 
     sub_comm = []
     graphs = n.to_graphs()
-    for _, graph in tqdm(graphs.items(), desc="find communities",
-                         bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
+    for _, graph in tqdm(
+        graphs.items(),
+        desc="find communities",
+        bar_format=CONFIG.PBAR_FORMAT,
+        disable=(not CONFIG.PROGRESS_BAR),
+    ):
         part = leidenalg.find_partition(graph, leidenalg.ModularityVertexPartition)
         sub_comm += part.membership
 

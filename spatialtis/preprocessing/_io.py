@@ -5,21 +5,21 @@ from typing import Optional, Sequence, Union
 import anndata as ad
 import numpy as np
 import pandas as pd
-from skimage.io import imread
 from skimage.external import tifffile
+from skimage.io import imread
 from tqdm import tqdm
 
-from ._geom import mask2cells, get_cell_exp_stack
 from ..config import CONFIG
+from ._geom import get_cell_exp_stack, mask2cells
 
 
 def get_roi(
-        exp_img,
-        mask_img,
-        bg: Optional[int] = 0,
-        method: str = "mean",
-        polygonize: str = "convex",
-        alpha: Optional[float] = None,
+    exp_img,
+    mask_img,
+    bg: Optional[int] = 0,
+    method: str = "mean",
+    polygonize: str = "convex",
+    alpha: Optional[float] = None,
 ):
     # From skimage doc: The different color bands/channels are stored in the third dimension
     # so we need to transpose it
@@ -59,14 +59,13 @@ if CONFIG.OS in ["Linux", "Darwin"]:
 
 
 class read_ROIs:
-
     def __init__(
-            self,
-            entry: Union[Path, str],
-            obs_names: Sequence,
-            var: pd.DataFrame,
-            mask_pattern: Optional[str] = None,
-            img_pattern: Optional[str] = None,
+        self,
+        entry: Union[Path, str],
+        obs_names: Sequence,
+        var: pd.DataFrame,
+        mask_pattern: Optional[str] = None,
+        img_pattern: Optional[str] = None,
     ):
         self._obs_names = obs_names
         self._tree = []
@@ -100,8 +99,10 @@ class read_ROIs:
                 # locate the exp image
                 exp_set = [exp for exp in t.glob(f"*{img_pattern}*")]
                 if len(exp_set) > 1:
-                    raise ValueError(f"More than one image found, "
-                                     "please stacked them together and delete the unused. {t}")
+                    raise ValueError(
+                        f"More than one image found, "
+                        "please stacked them together and delete the unused. {t}"
+                    )
                 elif len(exp_set) == 0:
                     raise ValueError(f"No image found, {t}")
                 else:
@@ -111,7 +112,7 @@ class read_ROIs:
 
     # walk through the directory, until there is no directory
     def _exhaust_dir(
-            self, path: Union[Path, str],
+        self, path: Union[Path, str],
     ):
         d = [f for f in Path(path).iterdir() if f.is_dir()]
         for f in d:
@@ -121,12 +122,12 @@ class read_ROIs:
             self._exhaust_dir(f)
 
     def to_anndata(
-            self,
-            bg: Optional[int] = 0,
-            method: str = "mean",
-            polygonize: str = "convex",
-            alpha: Optional[float] = None,
-            mp: bool = False,
+        self,
+        bg: Optional[int] = 0,
+        method: str = "mean",
+        polygonize: str = "convex",
+        alpha: Optional[float] = None,
+        mp: bool = False,
     ):
         """get anndata object
 
@@ -173,18 +174,17 @@ class read_ROIs:
 
             for exp_img, mask_img in zip(self._exp_img, self._mask_img):
                 results.append(
-                    get_roi_mp.remote(
-                        exp_img,
-                        mask_img,
-                        bg,
-                        method,
-                        polygonize,
-                        alpha,
-                    )
+                    get_roi_mp.remote(exp_img, mask_img, bg, method, polygonize, alpha,)
                 )
 
-            for _ in tqdm(exec_iterator(results), total=len(results), desc='process images', unit="ROI",
-                          bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
+            for _ in tqdm(
+                exec_iterator(results),
+                total=len(results),
+                desc="process images",
+                unit="ROI",
+                bar_format=CONFIG.PBAR_FORMAT,
+                disable=(not CONFIG.PROGRESS_BAR),
+            ):
                 pass
 
             results = ray.get(results)
@@ -198,9 +198,14 @@ class read_ROIs:
                 eccentricities += cells[3]
 
         else:
-            for exp_img, mask_img, obs in tqdm(zip(self._exp_img, self._mask_img, self.obs), total=len(self._tree),
-                                               desc='process images', unit="ROI", bar_format=CONFIG.PBAR_FORMAT,
-                                               disable=(not CONFIG.PROGRESS_BAR)):
+            for exp_img, mask_img, obs in tqdm(
+                zip(self._exp_img, self._mask_img, self.obs),
+                total=len(self._tree),
+                desc="process images",
+                unit="ROI",
+                bar_format=CONFIG.PBAR_FORMAT,
+                disable=(not CONFIG.PROGRESS_BAR),
+            ):
                 [exp, cells] = get_roi(exp_img, mask_img, bg, method, polygonize, alpha)
                 X += exp
                 ann_obs += list(np.repeat(np.array([obs]), len(cells[0]), axis=0))

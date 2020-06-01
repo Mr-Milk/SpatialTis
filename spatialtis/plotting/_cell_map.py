@@ -1,5 +1,5 @@
-from typing import List, Optional, Sequence, Mapping, Union
 from pathlib import Path
+from typing import List, Mapping, Optional, Sequence, Union
 
 from anndata import AnnData
 from bokeh.io import output_notebook, show
@@ -7,6 +7,7 @@ from bokeh.models import Legend, LegendItem
 from bokeh.plotting import figure
 
 from spatialtis import CONFIG
+
 from ._save import save_bokeh
 from .palette import get_colors
 

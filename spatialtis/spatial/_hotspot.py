@@ -3,10 +3,10 @@ from typing import Optional, Sequence, Union
 
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
 from anndata import AnnData
 from scipy.spatial import cKDTree
 from scipy.stats import norm
+from tqdm import tqdm
 
 from spatialtis.config import CONFIG
 
@@ -137,8 +137,13 @@ def hotspot(
                 elif len(tg) == 1:
                     hotcells.append(pd.Series(["cold"], index=tg.index))
 
-        for _ in tqdm(exec_iterator(results), total=len(results), desc="hotspot analysis",
-                      bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
+        for _ in tqdm(
+            exec_iterator(results),
+            total=len(results),
+            desc="hotspot analysis",
+            bar_format=CONFIG.PBAR_FORMAT,
+            disable=(not CONFIG.PROGRESS_BAR),
+        ):
             pass
 
         results = ray.get(results)
@@ -148,7 +153,9 @@ def hotspot(
 
     else:
         hotcells = []
-        for name, group in tqdm(groups, bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
+        for name, group in tqdm(
+            groups, bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)
+        ):
             for t, tg in group.groupby(type_col):
                 if len(tg) > 1:
                     cells = [eval(c) for c in tg[centroid_col]]

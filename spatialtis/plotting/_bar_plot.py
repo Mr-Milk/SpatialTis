@@ -6,6 +6,7 @@ from bokeh.models import ColumnDataSource, FactorRange, Legend
 from bokeh.plotting import figure, show
 
 from spatialtis import CONFIG
+
 from ._save import save_bokeh
 from .palette import get_colors
 

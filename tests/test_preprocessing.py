@@ -1,6 +1,6 @@
+import pandas as pd
 import pytest
 
-import pandas as pd
 from spatialtis import read_ROIs
 
 conditions = ["Patients", "Sample", "ROI"]

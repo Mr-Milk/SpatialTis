@@ -1,12 +1,10 @@
+from collections import OrderedDict
 from typing import Any
 
 import numpy as np
-from shapely.geometry import box
-from shapely.geometry import MultiPoint
+from shapely.geometry import MultiPoint, box
 
 from ._neighbors import Neighbors
-
-from collections import OrderedDict
 
 
 class NeighborsNotFoundError(Exception):

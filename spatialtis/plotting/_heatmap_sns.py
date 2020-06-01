@@ -10,20 +10,20 @@ from .palette import get_colors, get_linear_colors
 
 
 def heatmap(
-        df: pd.DataFrame,
-        row_label: Optional[str] = None,
-        col_label: Optional[str] = None,
-        row_colors: Union[Sequence[str], str, None] = None,
-        col_colors: Union[Sequence[str], str, None] = None,
-        palette: Union[Sequence[str], str, None] = None,
-        colorbar_type: str = "bar",
-        categorical_colorbar_text: Union[Sequence[str], str, None] = None,
-        row_colors_legend_bbox: Optional[Sequence[float]] = None,
-        col_colors_legend_bbox: Optional[Sequence[float]] = None,
-        colorbar_bbox: Optional[Sequence[float]] = None,
-        display: bool = True,
-        return_plot: bool = False,
-        **kwargs,
+    df: pd.DataFrame,
+    row_label: Optional[str] = None,
+    col_label: Optional[str] = None,
+    row_colors: Union[Sequence[str], str, None] = None,
+    col_colors: Union[Sequence[str], str, None] = None,
+    palette: Union[Sequence[str], str, None] = None,
+    colorbar_type: str = "bar",
+    categorical_colorbar_text: Union[Sequence[str], str, None] = None,
+    row_colors_legend_bbox: Optional[Sequence[float]] = None,
+    col_colors_legend_bbox: Optional[Sequence[float]] = None,
+    colorbar_bbox: Optional[Sequence[float]] = None,
+    display: bool = True,
+    return_plot: bool = False,
+    **kwargs,
 ):
     """a higher wrapper for seaborn's clustermap
 

@@ -1,9 +1,8 @@
 from collections import Counter
-from typing import Optional, Union, Sequence, Mapping
 from pathlib import Path
+from typing import Mapping, Optional, Sequence, Union
 
 import pandas as pd
-
 from pyecharts import options as opts
 from pyecharts.charts import Pie
 
@@ -23,21 +22,22 @@ def get_grid(counts, min_ncol=8):
             return nrow, min_ncol
 
 
-def grouped_pie(df: pd.DataFrame,
-                mapper: Mapping,
-                order: Optional[Sequence] = None,
-                selected_types: Optional[Sequence] = None,
-                pie_size: float = 0.8,
-                round_size: float = 0.7,
-                size: Sequence = (900, 500),
-                renderer: str = 'canvas',
-                theme: str = 'white',
-                palette: Optional[Sequence] = None,
-                display: bool = True,
-                return_plot: bool = False,
-                title: Optional[str] = None,
-                save: Union[str, Path, None] = None,
-                ):
+def grouped_pie(
+    df: pd.DataFrame,
+    mapper: Mapping,
+    order: Optional[Sequence] = None,
+    selected_types: Optional[Sequence] = None,
+    pie_size: float = 0.8,
+    round_size: float = 0.7,
+    size: Sequence = (900, 500),
+    renderer: str = "canvas",
+    theme: str = "white",
+    palette: Optional[Sequence] = None,
+    display: bool = True,
+    return_plot: bool = False,
+    title: Optional[str] = None,
+    save: Union[str, Path, None] = None,
+):
     """
 
     Args:
@@ -66,20 +66,18 @@ def grouped_pie(df: pd.DataFrame,
         df = df[selected_types]
 
     c = Pie(
-        init_opts=opts.InitOpts(width=f"{size[0]}px",
-                                height=f"{size[1]}px",
-                                renderer=renderer,
-                                theme=theme,
-                                )
+        init_opts=opts.InitOpts(
+            width=f"{size[0]}px", height=f"{size[1]}px", renderer=renderer, theme=theme,
+        )
     )
 
-    width = int(''.join([i for i in c.width if i.isdigit()]))
-    height = int(''.join([i for i in c.height if i.isdigit()]))
+    width = int("".join([i for i in c.width if i.isdigit()]))
+    height = int("".join([i for i in c.height if i.isdigit()]))
 
     (nrow, ncol) = get_grid(df.shape[1])
 
     grid_width = width / ncol
-    grid_height = height*0.95 / nrow
+    grid_height = height * 0.95 / nrow
 
     step_w = grid_width / width * 100
     start_w = step_w / 2
@@ -87,8 +85,8 @@ def grouped_pie(df: pd.DataFrame,
     step_h = grid_height / height * 100
     start_h = step_h / 2 + 5
 
-    center_w = [str(start_w + step_w * i) + '%' for i in range(ncol)]
-    center_h = [str(start_h + step_h * i) + '%' for i in range(nrow)]
+    center_w = [str(start_w + step_w * i) + "%" for i in range(ncol)]
+    center_h = [str(start_h + step_h * i) + "%" for i in range(nrow)]
 
     centers = []
     for w in center_w:
@@ -124,7 +122,9 @@ def grouped_pie(df: pd.DataFrame,
     c.set_global_opts(
         title_opts=opts.TitleOpts(title=title),
         # visualmap_opts=opts.VisualMapOpts(range_color=palette),
-        toolbox_opts=opts.ToolboxOpts(feature={"saveAsImage": {"title": "save", "pixelRatio": 5, }, }, ),
+        toolbox_opts=opts.ToolboxOpts(
+            feature={"saveAsImage": {"title": "save", "pixelRatio": 5,},},
+        ),
     )
 
     if save is not None:

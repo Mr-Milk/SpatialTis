@@ -3,8 +3,8 @@ Setting Global config for whole processing level
 """
 import os
 import platform
-from typing import Mapping, Optional, Sequence
 import warnings
+from typing import Mapping, Optional, Sequence
 
 from colorama import Fore
 
@@ -28,18 +28,23 @@ class _CONFIG(object):
         self.MULTI_PROCESSING: bool = False
 
         # set tqdm bar foramt
-        self.PBAR_FORMAT = "%s{l_bar}%s{bar}%s{r_bar}%s" % (Fore.GREEN, Fore.CYAN, Fore.GREEN, Fore.RESET)
+        self.PBAR_FORMAT = "%s{l_bar}%s{bar}%s{r_bar}%s" % (
+            Fore.GREEN,
+            Fore.CYAN,
+            Fore.GREEN,
+            Fore.RESET,
+        )
 
         # used key name to store info in anndata
-        self.CENTROID_COL: str = 'centroid'
-        self.COMMUNITY_COL: str = 'communities'
-        self.NEIGHBORS_COL: str = 'cell_neighbors'
-        self.NEIGHBORS_COUNT_COL: str = 'neighbors_count'
-        self.AREA_COL: str = 'area'
-        self.SHAPE_COL: str = 'cell_shape'
-        self.ECCENTRICITY_COL: str = 'eccentricity'
-        self.MARKER_COL: str = 'markers'
-        self.CHANNEL_COL: str = 'channels'
+        self.CENTROID_COL: str = "centroid"
+        self.COMMUNITY_COL: str = "communities"
+        self.NEIGHBORS_COL: str = "cell_neighbors"
+        self.NEIGHBORS_COUNT_COL: str = "neighbors_count"
+        self.AREA_COL: str = "area"
+        self.SHAPE_COL: str = "cell_shape"
+        self.ECCENTRICITY_COL: str = "eccentricity"
+        self.MARKER_COL: str = "markers"
+        self.CHANNEL_COL: str = "channels"
 
     @property
     def EXP_OBS(self):
@@ -80,7 +85,11 @@ class _CONFIG(object):
             import logging
             import ray
 
-            ray.init(logging_level=logging.FATAL, ignore_reinit_error=True, num_cpus=self._CPU_USED)
+            ray.init(
+                logging_level=logging.FATAL,
+                ignore_reinit_error=True,
+                num_cpus=self._CPU_USED,
+            )
         else:
             warnings.warn("Multi processing not supported on Windows platform")
 
