@@ -90,6 +90,7 @@ def expression_map(
 
         t.add(a, gene_name)
 
+    '''
     if save is not None:
         # nested tab can only save in html
         p = Path(save)
@@ -97,6 +98,7 @@ def expression_map(
             p += '.html'
         # save_path = f"""{'/'.join(p.parts[:-1])}/{p.stem}.html"""
         t.render(p)
+    '''
 
     if display:
         # t.load_javascript()

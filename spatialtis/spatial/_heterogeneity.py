@@ -21,8 +21,15 @@ if CONFIG.OS in ["Linux", "Darwin"]:
             "Try `pip install ray` or use `mp=False`",
         )
 
-    altieri_entropy_mp = ray.remote(altieri_entropy)
-    leibovici_entropy_mp = ray.remote(leibovici_entropy)
+    @ray.remote
+    def altieri_entropy_mp(*args, **kwargs):
+        e = altieri_entropy(*args, **kwargs)
+        return e.entropy
+
+    @ray.remote
+    def leibovici_entropy_mp(*args, **kwargs):
+        e = leibovici_entropy(*args, **kwargs)
+        return e.entropy
 
 
 def spatial_heterogeneity(
@@ -34,7 +41,7 @@ def spatial_heterogeneity(
         base: Union[int, float, None] = None,
         d: Optional[int] = None,
         cut: Union[int, Sequence, None] = None,
-        compare: Optional[int] = None,
+        compare: Optional[str] = None,
         export_key: str = "spatial_heterogeneity",
         return_df: bool = False,
         mp: Optional[bool] = None
@@ -56,6 +63,7 @@ def spatial_heterogeneity(
         compare: Compute Kullback-Leibler divergences based on which level
         export_key: the key name to store info, exported to anndata.uns field
         return_df: whether to return a pandas DataFrame object
+        mp:
 
     """
     if groupby is None:
@@ -79,7 +87,8 @@ def spatial_heterogeneity(
 
         KL_div = dict()
         if compare is not None:
-            groups = df.groupby(level=groupby[compare])
+            compare_index = CONFIG.EXP_OBS.index(compare)
+            groups = df.groupby(level=compare)
             for n, g in groups:
                 count_g = g.sum()
                 qk = count_g.div(count_g.sum())
@@ -89,7 +98,7 @@ def spatial_heterogeneity(
         for row in df.iterrows():
             pk = list(row[1].div(row[1].sum()))
             if compare is not None:
-                compare_level = row[0][compare]
+                compare_level = row[0][compare_index]
                 KL.append(entropy(pk, KL_div[compare_level], base=base))
                 KL_level.append(compare_level)
             ent.append(entropy(pk, base=base))
@@ -132,7 +141,7 @@ def spatial_heterogeneity(
             mp_results = ray.get(results)
 
             for e in mp_results:
-                ent.append(e.entropy)
+                ent.append(e)
 
         else:
             for n, g in tqdm(groups, desc="heterogeneity",
@@ -148,7 +157,7 @@ def spatial_heterogeneity(
 
         data = {"heterogeneity": ent}
         roi_heterogeneity = pd.DataFrame(data=data)
-        roi_heterogeneity.index = pd.MultiIndex.from_tuples(mindex)
+        roi_heterogeneity.index = pd.MultiIndex.from_tuples(mindex, names=groupby)
 
     # export to anndata
     df2adata_uns(roi_heterogeneity, adata, export_key)
