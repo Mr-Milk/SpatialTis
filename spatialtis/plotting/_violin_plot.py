@@ -9,8 +9,8 @@ from scipy.stats import gaussian_kde as kde
 
 from spatialtis import CONFIG
 
-from .palette import get_colors
 from ._save import save_bokeh
+from .palette import get_colors
 
 
 class Status(object):

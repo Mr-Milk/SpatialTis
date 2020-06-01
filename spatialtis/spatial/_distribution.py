@@ -2,12 +2,13 @@ from typing import Optional, Sequence, Union
 
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
 from anndata import AnnData
 from scipy.spatial import cKDTree
 from scipy.stats import chi2, norm
+from tqdm import tqdm
 
 from spatialtis.config import CONFIG
+
 from ..utils import df2adata_uns, filter_adata
 from ._util import quad_sta
 
@@ -16,8 +17,13 @@ def _wrapper(groups, types, type_col, centroid_col, patch_func, *args):
     names = [n for n, _ in groups]
     patterns = {n: {t: 0 for t in types} for n in names}
 
-    for name, group in tqdm(groups, unit="ROI", desc="find distribution pattern",
-                            bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
+    for name, group in tqdm(
+        groups,
+        unit="ROI",
+        desc="find distribution pattern",
+        bar_format=CONFIG.PBAR_FORMAT,
+        disable=(not CONFIG.PROGRESS_BAR),
+    ):
         for t, tg in group.groupby(type_col):
             if len(tg) > 1:
                 cells = [eval(c) for c in tg[centroid_col]]
@@ -179,9 +185,7 @@ def spatial_distribution(
     if centroid_col is None:
         centroid_col = CONFIG.CENTROID_COL
 
-    df = filter_adata(
-        adata, groupby, type_col, centroid_col,
-    )
+    df = filter_adata(adata, groupby, type_col, centroid_col,)
     types = pd.unique(df[type_col])
     groups = df.groupby(groupby)
 

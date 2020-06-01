@@ -1,10 +1,9 @@
 from collections import Counter
 from itertools import product
-from typing import Callable, Mapping, Sequence, Optional
+from typing import Callable, Mapping, Optional, Sequence
 
 import numpy as np
 import pandas as pd
-
 from tqdm import tqdm
 
 from spatialtis.config import CONFIG
@@ -116,8 +115,14 @@ def _main(
             counts.append(id1)
             names.append(name)
 
-        for _ in tqdm(exec_iterator(counts), total=len(counts), unit="ROI", desc="neighborhood analysis",
-                      bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
+        for _ in tqdm(
+            exec_iterator(counts),
+            total=len(counts),
+            unit="ROI",
+            desc="neighborhood analysis",
+            bar_format=CONFIG.PBAR_FORMAT,
+            disable=(not CONFIG.PROGRESS_BAR),
+        ):
             pass
 
         counts = ray.get(counts)
@@ -126,8 +131,13 @@ def _main(
             results[name] = patch_func(count[0], count[1], resample, pval)
 
     else:
-        for name, value in tqdm(n.neighbors.items(), unit="ROI", desc="neighborhood analysis",
-                                bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
+        for name, value in tqdm(
+            n.neighbors.items(),
+            unit="ROI",
+            desc="neighborhood analysis",
+            bar_format=CONFIG.PBAR_FORMAT,
+            disable=(not CONFIG.PROGRESS_BAR),
+        ):
             [perm_count, real_count] = _bootstrap(
                 n.types[name], value, cell_interactions, resample
             )

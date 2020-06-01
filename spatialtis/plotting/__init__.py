@@ -13,18 +13,18 @@ from ._stacked_kde_sns import stacked_kde
 from ._violin_plot import violin_plot
 from .palette import colorcycle, get_colors, get_linear_colors, view_palette
 from .wrapper import (
+    cc_interactions,
     cell_co_occurrence,
+    cell_communities_graph,
     cell_components,
     cell_density,
     cell_morphology,
+    cell_type_graph,
+    exp_neighcells,
     neighborhood_analysis,
     spatial_distribution,
     spatial_enrichment_analysis,
     spatial_heterogeneity,
-    cell_communities_graph,
-    cell_type_graph,
-    cc_interactions,
-    exp_neighcells,
 )
 
 if CONFIG.WORKING_ENV == "jupyter":

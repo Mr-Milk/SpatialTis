@@ -1,6 +1,7 @@
+import os
+
 import pytest
 from anndata import read_h5ad
-import os
 
 import spatialtis as st
 import spatialtis.plotting as sp

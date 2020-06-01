@@ -8,9 +8,7 @@ from anndata import AnnData
 from spatialtis.config import CONFIG
 
 
-def df2adata_uns(
-    df: pd.DataFrame, adata: AnnData, key: str
-):
+def df2adata_uns(df: pd.DataFrame, adata: AnnData, key: str):
     """Preserve all info in pd.DataFrame as dict, and write to anndata.uns
     The anndata object haven't fully support read/write of a pandas.Dataframe object,
     this is an solution to store all the information in a dicts

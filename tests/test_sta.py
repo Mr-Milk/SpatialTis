@@ -1,5 +1,6 @@
-import pytest
 import os
+
+import pytest
 from anndata import read_h5ad
 
 import spatialtis as st

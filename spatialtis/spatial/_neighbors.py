@@ -1,17 +1,16 @@
-from typing import Optional, Sequence, Union
 import warnings
+from typing import Optional, Sequence, Union
 
-from tqdm import tqdm
 import igraph as ig
 import numpy as np
 from anndata import AnnData
+from scipy.spatial import cKDTree
 from scipy.spatial.distance import euclidean
 from shapely.affinity import scale as sscale
 from shapely.geometry import asMultiPoint, box
 from shapely.strtree import STRtree
 from shapely.wkt import dumps, loads
-
-from scipy.spatial import cKDTree
+from tqdm import tqdm
 
 from spatialtis.config import CONFIG
 from spatialtis.utils import col2adata_obs
@@ -93,14 +92,14 @@ class Neighbors(object):
     """
 
     def __init__(
-            self,
-            adata: AnnData,
-            geom: str = "shape",
-            *,
-            groupby: Union[Sequence, str, None] = None,
-            type_col: Optional[str] = None,
-            shape_col: Optional[str] = None,
-            centroid_col: Optional[str] = None,
+        self,
+        adata: AnnData,
+        geom: str = "shape",
+        *,
+        groupby: Union[Sequence, str, None] = None,
+        type_col: Optional[str] = None,
+        shape_col: Optional[str] = None,
+        centroid_col: Optional[str] = None,
     ):
 
         # keys for query info from anndata
@@ -112,7 +111,7 @@ class Neighbors(object):
             centroid_col = CONFIG.CENTROID_COL
         if shape_col is None:
             shape_col = CONFIG.SHAPE_COL
-        if geom not in ['shape', 'point']:
+        if geom not in ["shape", "point"]:
             raise ValueError("Available options for 'geom' are 'shape', 'point'")
 
         # verify if neighbors and polycells built
@@ -136,7 +135,10 @@ class Neighbors(object):
         self.__types = {n: 0 for n in self.__names}
 
     def find_neighbors(
-            self, expand: Optional[float] = None, scale: Optional[float] = None, mp: Optional[bool] = None,
+        self,
+        expand: Optional[float] = None,
+        scale: Optional[float] = None,
+        mp: Optional[bool] = None,
     ):
         """To find the neighbors of each cell
 
@@ -154,8 +156,10 @@ class Neighbors(object):
         if (expand is None) & (scale is None):
             raise ValueError("Neither 'expand' or 'scale' are specific")
         elif (expand is not None) & (scale is not None):
-            warnings.warn(f"Conflict parameters, can't set 'expand' and 'scale' in the same time, use expand={expand}")
-        elif (expand is None) & (self.__geom == 'point'):
+            warnings.warn(
+                f"Conflict parameters, can't set 'expand' and 'scale' in the same time, use expand={expand}"
+            )
+        elif (expand is None) & (self.__geom == "point"):
             raise ValueError("Parameter 'expand' is not specific")
         elif expand is not None:
             if expand < 0:
@@ -173,7 +177,7 @@ class Neighbors(object):
                     yield ray.get(done[0])
 
             # prepare data for shape neighbor search
-            if (self.__geom == 'shape') & (not self.__polycells):
+            if (self.__geom == "shape") & (not self.__polycells):
                 results = []
                 names = []
                 for n, g in self.__groups:
@@ -184,8 +188,13 @@ class Neighbors(object):
                         types = list(g[self.__typecol])
                         self.__types[n] = types
 
-                for _ in tqdm(exec_iterator(results), total=len(results), desc='polygonize cells',
-                              bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
+                for _ in tqdm(
+                    exec_iterator(results),
+                    total=len(results),
+                    desc="polygonize cells",
+                    bar_format=CONFIG.PBAR_FORMAT,
+                    disable=(not CONFIG.PROGRESS_BAR),
+                ):
                     pass
 
                 results = ray.get(results)
@@ -198,12 +207,17 @@ class Neighbors(object):
             results = []
             names = []
             # shape neighbor search
-            if self.__geom == 'shape':
+            if self.__geom == "shape":
                 for n, polycells in self.__polycellsdb.items():
                     results.append(_neighborshapes_mp.remote(polycells, scale, expand))
                     names.append(n)
-                for _ in tqdm(exec_iterator(results), total=len(results), desc='find neighbors',
-                              bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
+                for _ in tqdm(
+                    exec_iterator(results),
+                    total=len(results),
+                    desc="find neighbors",
+                    bar_format=CONFIG.PBAR_FORMAT,
+                    disable=(not CONFIG.PROGRESS_BAR),
+                ):
                     pass
                 results = ray.get(results)
             # point neighbor search
@@ -211,8 +225,13 @@ class Neighbors(object):
                 for n, g in self.__groups:
                     results.append(_neighborpoints_mp.remote(g[self.__centcol], expand))
                     names.append(n)
-                for _ in tqdm(exec_iterator(results), total=len(results), desc='find neighbors',
-                              bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
+                for _ in tqdm(
+                    exec_iterator(results),
+                    total=len(results),
+                    desc="find neighbors",
+                    bar_format=CONFIG.PBAR_FORMAT,
+                    disable=(not CONFIG.PROGRESS_BAR),
+                ):
                     pass
                 results = ray.get(results)
 
@@ -222,8 +241,12 @@ class Neighbors(object):
 
         else:
             if not self.__polycells:
-                for n, g in tqdm(self.__groups, desc='polygonize cells',
-                                 bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
+                for n, g in tqdm(
+                    self.__groups,
+                    desc="polygonize cells",
+                    bar_format=CONFIG.PBAR_FORMAT,
+                    disable=(not CONFIG.PROGRESS_BAR),
+                ):
                     polycells = _polygonize_cells(self.__shapecol, g)
                     self.__polycellsdb[n] = polycells
 
@@ -233,9 +256,13 @@ class Neighbors(object):
 
                 self.__polycells = True
             # shape neighbor search
-            if self.__geom == 'shape':
-                for n, polycells in tqdm(self.__polycellsdb.items(), desc='find neighbors',
-                                         bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)):
+            if self.__geom == "shape":
+                for n, polycells in tqdm(
+                    self.__polycellsdb.items(),
+                    desc="find neighbors",
+                    bar_format=CONFIG.PBAR_FORMAT,
+                    disable=(not CONFIG.PROGRESS_BAR),
+                ):
                     nbcells = _neighborshapes(polycells, scale, expand)
                     self.__neighborsdb[n] = nbcells
             # point neighbor search
@@ -272,7 +299,7 @@ class Neighbors(object):
         col2adata_obs(neighbors, self.__adata, export_key)
 
     def neighbors_count(
-            self, export_key: str = "neighbors_count",
+        self, export_key: str = "neighbors_count",
     ):
         """Get how many neighbors for each cell
 
