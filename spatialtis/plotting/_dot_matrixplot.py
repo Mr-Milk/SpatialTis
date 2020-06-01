@@ -100,4 +100,5 @@ def dot_matrix(
     cbar.ax.yaxis.set_tick_params(length=0)  # hide ticks
     cbar.set_alpha(0.5)  # be consistent with color in plot
 
-    plt.show()
+    if not display:
+        plt.close()

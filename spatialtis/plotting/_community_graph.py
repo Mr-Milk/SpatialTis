@@ -168,4 +168,5 @@ def graph_plot(
         ax.scatter(n1, n2, c=point_color, s=1)
 
     plt.axis('off')
-    plt.show()
+    if not display:
+        plt.close()

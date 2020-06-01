@@ -62,6 +62,7 @@ def cell_density(
 def cell_co_occurrence(
         adata: AnnData,
         groupby: Optional[Sequence[str]] = None,
+        compare: Optional[str] = None,
         selected_types: Optional[Sequence] = None,
         method: str = "dot",  # dot, heatmap
         key: str = "cell_co_occurrence",
@@ -70,10 +71,14 @@ def cell_co_occurrence(
 ):
     df = adata_uns2df(adata, key)
 
+    if groupby is None:
+        groupby = CONFIG.EXP_OBS
+    if compare is None:
+        compare = CONFIG.EXP_OBS[0]
     if selected_types is not None:
         df = df[selected_types]
 
-    tdf = df.astype(int).groupby(level=groupby)
+    tdf = df.astype(int).groupby(level=compare)
     X = []
     for n, g in tdf:
         c = (g.sum() / len(g)).fillna(0)
@@ -86,9 +91,7 @@ def cell_co_occurrence(
             data.append(p)
         X.append(data)
     pdf = (pd.DataFrame(X) > (1 - pval)).astype(int)
-    pdf.index = pd.MultiIndex.from_frame(
-        df.index.to_frame(index=False)[groupby].drop_duplicates()
-    )
+    pdf.index = df.index.to_frame(index=False)[compare].drop_duplicates()
     pdf.columns = pd.MultiIndex.from_arrays(
         np.asarray([i for i in combinations_with_replacement(df.columns, 2)]).T,
         names=["Cell type1", "Cell type2"],

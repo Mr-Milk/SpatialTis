@@ -10,6 +10,9 @@ tutorial/
 
 tissue.yml
 
+*render.html
+*test.svg
+*test.png
 *.DS_Store
 .idea/
 
