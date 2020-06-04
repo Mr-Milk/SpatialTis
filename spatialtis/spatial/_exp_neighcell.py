@@ -44,7 +44,7 @@ def exp_neighcells(
     n: Neighbors,
     marker_col: Optional[str] = None,
     std: float = 2.0,
-    importance: float = 0.5,
+    importance: float = 0.7,
     export: bool = True,
     export_key: str = "exp_neighcells",
     return_df: bool = False,
@@ -133,7 +133,7 @@ def exp_neighcells(
                 for g, m in zip(y, markers):
                     pbar.update(1)
                     if np.std(g) >= std:
-                        max_ix, max_weights = _max_feature(x, g, **kwargs)
+                        [max_ix, max_weights] = _max_feature(x, g, **kwargs)
                         if max_weights >= importance:
                             c2 = n.unitypes[max_ix]
                             results.append([c2, c1, m, max_weights])

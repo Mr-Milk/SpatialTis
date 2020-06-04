@@ -6,19 +6,28 @@ To install spatialtis, please see the `Installation <installation.rst>`_ section
 Prerequisites
 -------------
 
-To work with spatialtis, you need to know about `anndata`, if you are familiar with `pandas` and `numpy` this should be quite easy for you. To learn how to work with anndata, you can read this `tutorial <https://falexwolf.de/blog/171223_AnnData_indexing_views_HDF5-backing/>`_ written by the author of `anndata` and `scanpy`. You can also refer to `anndata documentation <https://anndata.readthedocs.io/en/stable/>`_.
-
-The spatialtis analysis workflow is designed to work with `scanpy`, a python library for single cell analysis, you can perform normal single cell analysis with `scanpy` and spatial analysis with spatialtis. However, it's possible to skip scanpy as long as you can sort out the cell type. If you want to use `scanpy`, please read `scanpy documentation <https://icb-scanpy.readthedocs-hosted.com/en/stable/>`_ for details, or you can start with `scanpy tutorial <https://scanpy-tutorials.readthedocs.io/en/latest/index.html>`_.
-
-If you are not familiar with `pandas` and `numpy`, there are a lots of good tutorials out there, check the official tutorial for `numpy <https://numpy.org/devdocs/user/quickstart.html>`_ and `pandas <https://pandas.pydata.org/pandas-docs/stable/getting_started/tutorials.html>`_.
+To work with spatialtis, you need to know about `anndata`, if you are familiar with `pandas` and `numpy` this should be quite easy for you.
+To learn how to work with anndata, you can read this `tutorial <https://falexwolf.de/blog/171223_AnnData_indexing_views_HDF5-backing/>`_ written by the author of `anndata` and `scanpy`.
+You can also refer to `anndata documentation <https://anndata.readthedocs.io/en/stable/>`_.
+The spatialtis analysis workflow is designed to work with `scanpy`, a python library for single cell analysis,
+you can perform normal single cell analysis with `scanpy` and spatial analysis with spatialtis.
+However, it's possible to skip scanpy as long as you can sort out the cell type.
+If you want to use `scanpy`, please read `scanpy documentation <https://icb-scanpy.readthedocs-hosted.com/en/stable/>`_ for details,
+or you can start with `scanpy tutorial <https://scanpy-tutorials.readthedocs.io/en/latest/index.html>`_.
+If you are not familiar with `pandas` and `numpy`,
+there are a lots of good tutorials out there, check the official tutorial for `numpy <https://numpy.org/devdocs/user/quickstart.html>`_ and `pandas <https://pandas.pydata.org/pandas-docs/stable/getting_started/tutorials.html>`_.
 
 
 Reading Data
 ------------
 
-Currently, we support data file from Imaging mass cytometry (IMC) and Multiplexed ion beam imaging (MIBI),
+spatialtis prepared a preprocessing module to help you convert your data into `anndata`.
+Currently, spatialtis can read single cell information from multichannel image file with mask image prepared.
+For example, technology like Imaging mass cytometry (IMC) and Multiplexed ion beam imaging (MIBI).
+For other spatial single-cell technologies, it's easy to transform your expression matrix into `anndata`.
 
-You input data must contain in one entry folder, each ROI must store in seperate sub-folders with its mask image, and the structure must organized as your experiments.
+You input data must contain in *one* entry folder, each ROI must store in seperate sub-folders with its mask image,
+and the structure must organized as your experiments.
 
 Let's say your file structure look like this::
 
@@ -37,7 +46,10 @@ Let's say your file structure look like this::
             ├── Patient3
             └── ...
 
-In one of the ROI folders, it contains data files like, there should always be a `mask` image that tells spatialtis how each cell looks like, spatialtis **CAN'T** do segmentation. The `mask` images should have the same naming pattern, eg. All contain a unique keyword "mask". so that spatialtis knows which one is the `mask` image.::
+In one of the ROI folders, it contains data files like,
+there should always be a `mask` image that tells spatialtis how each cell looks like,
+spatialtis **CAN'T** do segmentation. The `mask` images should have the same naming pattern,
+eg. All contain a unique keyword "mask". so that spatialtis knows which one is the `mask` image.::
 
     ROI1
     ├── Patient1_Body_ROI1_Dy161_CD20.tiff

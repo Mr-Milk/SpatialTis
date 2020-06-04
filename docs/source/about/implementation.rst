@@ -1,13 +1,17 @@
 Implementation
 ===============
 
-This section will introduce some algorithms use in spatialtis.
+This section will introduce the idea of all the spatial analysis methods and algorithms use in spatialtis.
+
+Hopefully the following explanation can help you understand it as easily as possible.
 
 Determine cell shape
 --------------------
 
-There are two way to determine the shape of a cell, "convex" or "concave". The "concave" is slower and need an extra
-parameter, an alpha value. This will influence the `cell_shape` and `area` but no other geometry information.
+There are two way to determine the shape of a cell, "convex hull" or "concave hull". The "concave hull" is slower and need an extra
+parameter, an alpha value. This will influence the `cell_shape` but no other geometry information. Although the shape
+look more authetic using concave hull, spatialtis use `alphashape <https://github.com/bellockk/alphashape>`_ which is pure-python
+implementation so it's super slow. We highly recommend using "convex hull" which is the default setting.
 
 .. image:: ../src/convex_concave.png
     :align: center
@@ -24,32 +28,45 @@ conducted to determine the significance, if one or both are absence would be det
 Find cell neighbors
 -------------------
 
-For each ROI, every cell will be stored in a R-tree structure allow for fast neighbor search. In spatialtis we use
+Depends on the resolution of different spatial single-cell technology, some resolved single cell as point, another with
+subcellular resolution can resolve single cell in 2D-shape.
+For each ROI, every cell will be stored in a spatial index tree structure allowing for fast neighbor search.
+
+For point data, `KD-tree <https://en.wikipedia.org/wiki/K-d_tree>`_ is used and constructed using
+scipy's `cKDtree <https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.cKDTree.html>`_.
+
+For 2D-shape data, `R-tree <https://en.wikipedia.org/wiki/R-tree>`_ is used and constructed using
 shapely's `STRtree <https://shapely.readthedocs.io/en/latest/manual.html#str-packed-r-tree>`_.
 
-Neighborhood analysis
-----------------------
+Profiling of cell-cell interaction
+-----------------------------------
 
-This analysis is from `histocat <https://www.nature.com/articles/nmeth.4391>`_, it's a Monte Carlo method. After `Find cell neighbors <#find-cell-neighbors>`_,
-we know the neighbor cells for each cell. Therefore, we know the counts of cell type `X` at the neighborhood of cell type `Y`. Then we randomize the cell in a ROI, the position of cell and the sum of every
-cell type will not change, only cell type will be reassigned. Then we count the neighbors again. User can define how many times randomization (resample) will happen. And then a pseudo `P` value is calculated:
+To profile the interaction between cells, spatialtis used permutation test. First purposed in `histocat <https://www.nature.com/articles/nmeth.4391>`_.
+
+Let's simplify the situation here, consider only the interaction between cell type A and B. We can draw a distribution
+from the real dataset of the number of Cell B at the neighborhood of Cell A. After that, we can randomize the dataset,
+randomly reassign cell type to different cell while keep the number of each cell type unchanged. Therefore we can draw
+another distribution. This randomization process can perform multiple times (usually 1000 times) to draw a null distribution.
+
+.. image:: ../src/permutation_test.png
+    :align: center
+    :width: 60%
+
+Now let's compare the difference between two distributions. If the distribution from the real has less difference to the
+distribution from the random dataset, it means the real distribution might just be random whereas the relationship between
+Cell A and B is likely to be random. But if there is a significant differences, the relationship between Cell A and B could
+likely to be association (If many Cell B around Cell A) or avoidance (If few Cell B around Cell A).
+
+In neighborhood analysis, a pseudo-`p` value is calculated as follow:
 
 .. math::
     P_{association} = \frac{\text{Numbers of }(\overline{perm}\geq\overline{real})}{\text{Number of resample} + 1}
 
     P_{avoidance} = \frac{\text{Numbers of }(\overline{perm}\leq\overline{real})}{\text{Number of resample} + 1}
 
-With user defined p-value threshold, we can determine the significance.
+In spatial enrichment analysis which is from a `MIBI paper <https://www.nature.com/articles/nm.3488>`_,
+z-score is calculated instead of pseudo-`p` value.
 
-
-Spatial enrichment analysis
----------------------------
-
-This analysis is from `MIBI paper <https://www.nature.com/articles/nm.3488>`_, it's basically the same as the neighborhood analysis, the major
-difference is they used Z-score instead of a `P` value. Positive Z-score means association and negative Z-score means avoidance. You might notice that
-in that paper they do it based on markers, because they defined different cell types based on marker expression and assign the type name based
-on marker name. This is also possible in spatialtis simply by storing these info in a new key in `anndata.obs` field, and then tell
-spatialtis the `type_col` has changed to a new key.
 
 Spatial distribution
 ---------------------
@@ -147,7 +164,12 @@ Index of aggregation is calculated as follow:
 Spatial heterogeneity
 ----------------------
 
-In spatialtis, we use Shannon entropy to quantify the heterogeneity in a ROI
+In spatialtis, three entropy methods have been implemented to quantify the heterogeneity in a ROI.
+Shannon entropy doesn't consider the spatial information. The Leibovici entropy and Altieri entropy consider
+spatial factor to evaluate entropy in a system.
+
+Shannon entropy
+###############
 
 .. math::
     H(X) = -\sum P_i log_2(P_i)
@@ -157,6 +179,57 @@ Kullback–Leibler divergences for each sample within the group are computed, sm
 
 .. math::
     D = \sum P_i log_2(\frac{P_i}{Q_i})
+
+Leibovici entropy
+###################
+
+Leibovici entropy is based on the shannon entropy. A new variable :math:`Z` is introduced.
+
+:math:`Z` is defined as co-occurrences across the space. For example, we have :math:`I` types of cells.
+The combination of any two type of cells is :math:`(x_i, x_{i'})`,
+the number of all combinations is denoted as :math:`R`.
+
+If order is preserved, :math:`R = P_I^2 = I^2`;
+
+If the combinations are unordered, :math:`R = C_I^2= (I^2+I)/2`.
+
+At a user defined distance :math:`d`, only co-occurrences with the distance :math:`d` will take into consideration.
+
+The Leibovici entropy is defined as:
+
+.. math::
+    H(Z|d) = \sum_{r=1}^{I^m}{p(z_r|d)}log(\frac{1}{p(z_r|d)})
+
+
+Altieri entropy
+#################
+
+Altieri entropy introduce another new vairable :math:`W`. :math:`W_k` represents a series of sample window, i.e.
+:math:`[0,2][2,4][4,10],[10,...]` while :math:`k=1,...,K`.
+
+The purpose of this entropy is to decompose the spatial entropy into **Spatial mutual information** :math:`MI(Z,W)`
+and **Spatial residual entropy** :math:`H(Z)_W`.
+
+The Altieri entropy is defined as:
+
+.. math::
+    H(Z)=\sum_{r=1}^Rp(z_r)log(\frac{1}{p(z_r)})=MI(Z,W)+H(Z)_W
+
+The Spatial residue entropy is defined as:
+
+.. math::
+    H(Z)_W = \sum_{k=1}^Kp(w_k)H(Z|w_k)
+
+.. math::
+    H(Z|w_k) = \sum_{r=1}^Rp(z_r|w_k)log(\frac{1}{p(z_r|w_k)})
+
+The Spatial mutual information is defined as:
+
+.. math::
+    MI(Z,W)=\sum_{k=1}^Kp(w_k)PI(Z|w_k)
+
+.. math::
+    PI(Z|w_k)=\sum_{r=1}^Rp(z_r|w_k)log(\frac{p(z_r|w_k)}{p(z_r)})
 
 Hotspot detection
 ------------------
@@ -203,5 +276,13 @@ This is used to find communities in a ROI.
 The neighbors relationships are convert to graph, each cell is a node, two nodes are connected if
 they are neighbors, edge weight is represented by distance. Using leidenalg algorithm, we can detect
 the communities within a ROI.
+
+
+Marker influences on neighbor Cells/Markers
+-------------------------------------------
+
+The word *marker* can refer to gene/transcript/protein/metabolite... depends on your own data.
+
+Random forest regressor estimator is constructed to find which
 
 

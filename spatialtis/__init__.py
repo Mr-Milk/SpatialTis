@@ -1,4 +1,4 @@
-import warnings
+#import warnings
 
 from .config import CONFIG
 from .preprocessing import *
@@ -6,6 +6,7 @@ from .spatial import (
     Neighbors,
     communities,
     exp_neighcells,
+    exp_neighexp,
     hotspot,
     neighborhood_analysis,
     spatial_distribution,
@@ -15,4 +16,4 @@ from .spatial import (
 from .sta import *
 from .utils import adata_uns2df, df2adata_uns, prepare_svca
 
-warnings.filterwarnings("ignore", category=FutureWarning)
+#warnings.filterwarnings("ignore", category=FutureWarning)
