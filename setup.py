@@ -9,4 +9,4 @@ setup(name="spatialtis",
                         'scikit-image', 'scipy', 'shapely',
                         'python-igraph', 'leidenalg', 'alphashape', 'bokeh',
                         'seaborn', 'colour', 'IPython', 'matplotlib', 'tqdm', 'pyecharts',
-                        'spatialentropy', 'colorama'])
+                        'spatialentropy', 'colorama', 'snapshot_phantomjs'])

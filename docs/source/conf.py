@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.abspath("../.."))
 
 # -- Project information -----------------------------------------------------
 
-project = "spatialTis"
+project = "SpatialTis"
 copyright = "2020, Mr-Milk"
 author = "Mr-Milk"
 
@@ -61,6 +61,14 @@ html_theme = "sphinx_rtd_theme"
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
+html_favicon = 'src/favicon.png'
+# html_logo = 'src/favicon.png'
+
+# html_theme = "#ef8992"
+#html_theme_options = {
+#    "rightsidebar": "true",
+#    "relbarbgcolor": "#ef8992"
+#}
 
 # configuration for nbsphinx
 nbsphinx_input_prompt = ''
