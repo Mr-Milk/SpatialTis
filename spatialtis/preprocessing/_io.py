@@ -5,8 +5,7 @@ from typing import Optional, Sequence, Union
 import anndata as ad
 import numpy as np
 import pandas as pd
-from skimage.external import tifffile
-from skimage.io import imread
+import tifffile
 from tqdm import tqdm
 
 from ..config import CONFIG
