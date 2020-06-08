@@ -127,7 +127,7 @@ def spatial_heterogeneity(
 
             results = list()
 
-            for n, g in groups:
+            for i, (n, g) in enumerate(groups):
                 types = list(g[type_col])
                 points = [eval(i) for i in g[centroid_col]]
                 if method == "altieri":
@@ -138,7 +138,12 @@ def spatial_heterogeneity(
                     results.append(
                         leibovici_entropy_mp.remote(points, types, d=d, base=base)
                     )
-                mindex.append(n)
+                # one column index
+                if isinstance(n, str):
+                    mindex.append((n, i,))
+                # multiIndex
+                else:
+                    mindex.append((*n, i,))
 
             for _ in tqdm(
                 exec_iterator(results),
@@ -155,12 +160,12 @@ def spatial_heterogeneity(
                 ent.append(e)
 
         else:
-            for n, g in tqdm(
+            for i, (n, g) in enumerate(tqdm(
                 groups,
                 desc="heterogeneity",
                 bar_format=CONFIG.PBAR_FORMAT,
                 disable=(not CONFIG.PROGRESS_BAR),
-            ):
+            )):
                 types = list(g[type_col])
                 points = [eval(i) for i in g[centroid_col]]
                 if method == "altieri":
@@ -169,6 +174,12 @@ def spatial_heterogeneity(
                     e = leibovici_entropy(points, types, d=d, base=base)
                 ent.append(e.entropy)
                 mindex.append(n)
+                # one column index
+                if isinstance(n, str):
+                    mindex.append((n, i,))
+                # multiIndex
+                else:
+                    mindex.append((*n, i,))
 
         data = {"heterogeneity": ent}
         roi_heterogeneity = pd.DataFrame(data=data)
