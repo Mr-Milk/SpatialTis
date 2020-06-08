@@ -21,7 +21,7 @@ class _CONFIG(object):
         self._EXP_OBS: Optional[Sequence[str]] = None
         self._ROI_KEY: Optional[str] = None
         self._CELL_TYPE_COL: Optional[str] = None
-        self.WORKING_ENV: Optional[str] = "jupyter"
+        self._WORKING_ENV: Optional[str] = "jupyter"
         self.OS: Optional[str] = None
         self._CPU_USED: Optional[int] = None
         self.PROGRESS_BAR: bool = True
@@ -68,6 +68,17 @@ class _CONFIG(object):
             self._CELL_TYPE_COL = type_col
         else:
             raise ValueError
+
+    @property
+    def WORKING_ENV(self):
+        return self._WORKING_ENV
+
+    @WORKING_ENV.setter
+    def WORKING_ENV(self, env):
+        if env not in ['jupyter', 'zepplin', None]:
+            warnings.warn("Unknown working environments", UserWarning)
+        if env is None:
+            self.PROGRESS_BAR = False
 
     @property
     def CPU_USED(self):

@@ -46,10 +46,15 @@ Let's say your file structure look like this::
             ├── Patient3
             └── ...
 
-In one of the ROI folders, it contains data files like,
+In each one of the ROI folders, show contains *two* data files:
+
+    - *One* mask image file
+    - *One* stacked channels image file
+
 there should always be a `mask` image that tells spatialtis how each cell looks like,
-spatialtis **CAN'T** do segmentation. The `mask` images should have the same naming pattern,
-eg. All contain a unique keyword "mask". so that spatialtis knows which one is the `mask` image.::
+spatialtis **CAN'T** do segmentation.
+
+If you image channels are stored in seperated images, like below::
 
     ROI1
     ├── Patient1_Body_ROI1_Dy161_CD20.tiff
@@ -59,40 +64,44 @@ eg. All contain a unique keyword "mask". so that spatialtis knows which one is t
     ├── ...
     └── Patient1_Body_ROI1_mask.tiff
 
+please stacked them into single image file, your folder should eventually look
+like this::
 
-Read all your data::
+    ROI1
+        ├── stacked.tiff
+        ├── Patient1_Body_ROI1_mask.tiff
+        └── ...
+
+First we need to specific the path of the entry folder of our data::
 
     entry = '/Data'
-    condition_name = ['Patient', 'Sample', 'ROI']
 
-    data = read_ROIs(entry, condition_name)
+And then, we need to describe how the experiment is designed.
+The names should be corresponded to each level of the folder, if you look back to the file tree
+that we show before, it's easy to understand::
 
-There are two type of data files, one is to store each channel in seperate images, another is to store all channels in on stacked images, if you use stacked images as input::
+    obs_name = ['Patient', 'Sample', 'ROI']
 
-    data = read_ROIs(entry, condition_name, stacked=True)
-
-To tell spatialtis the channels and markers, you can config it in two ways, you can use file::
-
-    """metadata.csv
-    channels,markers
-    Dy161,CD20
-    Dy162,CD8
-    Dy164,CD99
-    Er166,NFkB
-    ...
-    """
-    metadata = '/metadata.csv'
-
-    data.config_file(metadata, channel_col='channels', marker_col='markers')
-
-Or you can directly pass in python list, but make sure the channels and markers are corresponded, and if you use stacked images, the order of channels' name will correspond to stacked order::
+Another information is the markers data, it needs to be stored into a dataframe.
+This allow you to add as many columns as you want, for example you can add an extra
+"channels" columns. But remember the order of your marker must correspond to the layers in your image file.
+Either following the order of channels or pages, depends on the structure of your `.tiff`::
 
     channels = ['Dy161', 'Dy162', 'Dy164', 'Er166', ...]
     markers = ['CD20', 'CD8', 'CD99', 'NFkB', ...]
+    var = pd.DataFrame({"channels":channels, "markers":markers})
 
-    data.config(channels=channels, markers=markers)
+Now, let's read it out::
 
-Finally, we can start processing your images into anndata::
+    data = read_ROIs(entry, obs_name, var,
+                     mask_pattern="mask", img_pattern="stacked")
+
+You must noticed that there are another two arguments, *mask_pattern* allows you to tell spatialtis which file is the mask
+image, in our example, file name contains "mask" will be used as mask image. The same for *img_pattern*, so if you have
+other files in the same directory, this will help spatialtis identify which is mask image and which is data image.
+
+Finally, we can start processing your images into anndata, the speed is related to the size of your image, in my own test
+an 1000*1000 ROI from IMC data takes ~15s::
 
     data = data.to_anndata()
 
@@ -101,15 +110,10 @@ If you have a large dataset, you can set `mp=True` to enable parallel processing
     data = data.to_anndata(mp=True)
 
 The default methods to determine the cell shape is "convex hull", another option is "concave hull"
-(`Determine cell shape <about/implementation.html#determine-cell-shape>`_), if you want to get more accurate shape information,
-you can use `polygonize="concave"`, but you need to determine the alpha value::
+(`Determine cell shape <about/implementation.html#determine-cell-shape>`_). Although "concave hull" is going to give you
+more accurate shape, i strongly recommend using "convex hull".
 
-    data = data.to_anndata(polygonize="concave", alpha=2.0)
-
-.. note::
-    The default method
-
-Depends on the size of your data, usually it takes 10s - 15s each ROI. Make sure to save your data on the disk::
+After the processing Make sure to save your data on the disk::
 
     data.write(filename="sample.h5ad")
 
@@ -139,17 +143,17 @@ Before any analysis using spatialtis, it's necessary to set up some global confi
 
 There are two analysis modules in spatialtis, `statistic` and `spatial`, and a visualization module `plotting`.::
 
-    import spatialtis.sta as st
-    import spatialtis.spatial as ss
+    import spatialtis as st
     import spatialtis.plotting as sp
 
 Now let's load the data::
 
     from anndata import read_h5ad
-
     data = read_h5ad('/sample.h5ad')
 
-Usually an analysis function will have a corresponded visualization function, they share the same name but exists in different modules. Please don't import those function individually, it will cause conflicts.::
+Usually an analysis function will have a corresponded visualization function,
+they share the same name but exists in different modules.
+Please don't import those function individually, it will cause conflicts.::
 
     # analysis function for cell components
     st.cell_components(data)

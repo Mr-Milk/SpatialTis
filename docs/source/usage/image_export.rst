@@ -3,7 +3,8 @@ Export to static image
 
 .. note::
     If you need to run on cluster or non-display environment, it's recommended that you save the data first and visualize it
-    in your own computer with screen. For pyecharts' visualization, you should export it as html, open in browser, adjust it
+    in your own computer with screen. So that you can have better authetic control towards the visuzliation.
+    For pyecharts' visualization, you should export it as html, open in browser, adjust it
     till you are satisfied and then use the save bottom to save it in `.png`. If you run in notebook, bokeh and pyecharts can
     be rendered inline.
 
@@ -19,29 +20,28 @@ images, extra dependencies need to be installed. There are three visualization l
 | Naive export | `.html`, `.svg`      | `.html`, `.png`       | `.png`, `.jpeg`,  |
 |              |                      |                       | `.eps`, `.pdf` ...|
 +--------------+----------------------+-----------------------+-------------------+
-| Other export | `.png`, `.pdf`,      | `.pdf`, `.svg`,       |                   |
-|              | `.eps`               | `.eps`                |                   |
-+--------------+----------------------+-----------------------+-------------------+
+
 
 All static export will ensure the image quality reach the normal publication requirement (dpi>=300), if you need further
 configuration, use `return_plot=True` to get the plot instance.
 
 
-For bokeh >= 2.0.0, you need to install `geckodriver` with `firefox` or `chromedriver` with `chromium browser`,
+For bokeh >= 2.0.0, you need to install `geckodriver <https://github.com/mozilla/geckodriver/releases>`_ with
+`firefox <https://www.mozilla.org/firefox/new/>`_
+or `chromedriver <https://chromedriver.chromium.org/downloads>`_ with `chromium <https://download-chromium.appspot.com/>`_,
 check `selenium-python <https://selenium-python.readthedocs.io/installation.html#drivers>`_, download selenium afterwards;
 For pyecharts, `phantom.js` is recommended::
 
-    # install via conda
-    conda install selenium phantomjs
+    # Option 1: install via conda
+    conda install -c conda-forge selenium phantomjs
+    conda install -c conda-forge geckodriver firefox
 
-    # install selenium via pip
+    # Option 2: install selenium via pip and phantomjs via npm
     pip install selenium
-
-    # install phantomjs via npm/cnpm
     npm install phantomjs
-    # if you are in China, pull from Alibaba's mirror
-    cnpm install phantomjs
 
-To export `.svg` in pyecharts, use `renderer='svg'` to switch to svg backend, the default is 'canvas'; However, the svg
+
+To export `.svg` in pyecharts, pass parameter `renderer='svg'` into plotting function to switch to svg backend,
+the default is 'canvas'; However, the svg
 is not perfect, your exported image might has layout issue. This can only be solved if echarts.js support `svg`
 further in the future.

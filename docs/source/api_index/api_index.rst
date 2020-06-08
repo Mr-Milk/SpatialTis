@@ -9,3 +9,4 @@ API Reference
    spatial
    plotting
    utils
+   config

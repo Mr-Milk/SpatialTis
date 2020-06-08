@@ -1,4 +1,4 @@
-# SpatialTis <img src="docs/source/src/favicon.png" style="zoom:20%;" />
+# SpatialTis <img src="docs/source/src/favicon.png" width=5% />
 ![CI](https://github.com/Mr-Milk/SpatialTis/workflows/CI/badge.svg) ![codecov](https://codecov.io/gh/Mr-Milk/SpatialTis/branch/master/graph/badge.svg?token=DYNZ45IPSQ)
 
 SpatialTis is a toolkit of spatial analysis for spatial single cell data. It support single cell data in single cell solution or sub-cellular resolution.
