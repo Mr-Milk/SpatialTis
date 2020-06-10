@@ -52,8 +52,10 @@ class _CONFIG(object):
 
     @EXP_OBS.setter
     def EXP_OBS(self, obs):
-        if isinstance(obs, (Sequence, str)):
-            self._EXP_OBS = list(obs)
+        if isinstance(obs, str):
+            self._EXP_OBS = [obs]
+        elif isinstance(obs, Sequence):
+            self._EXP_OBS = obs
         else:
             raise ValueError
         self._ROI_KEY = self._EXP_OBS[-1]

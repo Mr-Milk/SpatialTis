@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Sequence, Union
+from typing import Any, Dict, Optional, Sequence, Union, Mapping
 
 import pandas as pd
 from bokeh.io import output_notebook
@@ -11,28 +11,20 @@ from ._save import save_bokeh
 from .palette import get_colors
 
 
-def _regroup_df(
-    df: pd.DataFrame, groupby: Sequence[str], percentage: bool = True,
-):
-    groups = df.groupby(level=groupby).sum()
-
-    if percentage:
-        groups = groups.div(groups.sum(axis=1), axis=0) * 100
-
-    return groups
-
-
 def stacked_bar(
-    df: pd.DataFrame,
-    groupby: Sequence[str],
-    percentage: bool = True,
-    direction: Union[str] = "vertical",
-    size: Optional[Sequence[int]] = None,
-    title: Optional[str] = None,
-    palette: Union[Sequence[str], str, None] = None,
-    display: bool = True,
-    save: Optional[str] = None,
-    return_plot: bool = False,
+        df: pd.DataFrame,
+        groupby: Sequence[str],
+        percentage: bool = True,
+        sort_type: Optional[str] = None,
+        ascending: bool = True,
+        group_order: Optional[tuple] = None,
+        direction: Union[str] = "vertical",
+        size: Optional[Sequence[int]] = None,
+        title: Optional[str] = None,
+        palette: Union[Sequence[str], str, None] = None,
+        display: bool = True,
+        save: Optional[str] = None,
+        return_plot: bool = False,
 ):
     if direction not in ["vertical", "horizontal"]:
         raise ValueError(f"Unrecognized direction '{direction}'")
@@ -43,9 +35,49 @@ def stacked_bar(
         print("Only support 3 levels depth categorical data")
         return None
 
-    df = _regroup_df(df, groupby, percentage=percentage)
+    df = df.groupby(level=groupby).sum()
 
-    factors = list(df.index)
+    if percentage:
+        df = df.div(df.sum(axis=1), axis=0) * 100
+
+    if sort_type is not None:
+        df = df.sort_values(sort_type, ascending=ascending)
+
+    if group_order is not None:
+        mapper = dict()
+        reorder_index = []
+        na_value = max([len(i) for i in group_order.values()])
+        for ix in df.index:
+            nums = []
+            if isinstance(ix, str):
+                nums.append(group_order[groupby[0]].index(ix))
+            else:
+                for i, e in enumerate(ix):
+                    try:
+                        nums.append(group_order[groupby[i]].index(e))
+                    except:
+                        nums.append(na_value + 1)
+            try:
+                mapper[tuple(nums)].append(ix)
+            except:
+                mapper[tuple(nums)] = []
+                mapper[tuple(nums)].append(ix)
+
+        for i in sorted(list(mapper.keys())):
+            for t in mapper[i]:
+                reorder_index.append(t)
+        df = df.loc[reorder_index, :]
+
+    factors = list()
+    for i in list(df.index):
+        if isinstance(i, Sequence):
+            if not isinstance(i, str):
+                factors.append(tuple([str(t) for t in i]))
+            else:
+                factors.append(i)
+        else:
+            factors.append(str(i))
+
     types = list(df.columns)
     reg = df.to_dict(orient="list")
 

@@ -240,7 +240,7 @@ class Neighbors(object):
             self.__neighborsbuilt = True
 
         else:
-            if not self.__polycells:
+            if (self.__geom == "shape") & (not self.__polycells):
                 for n, g in tqdm(
                     self.__groups,
                     desc="polygonize cells",
@@ -267,7 +267,12 @@ class Neighbors(object):
                     self.__neighborsdb[n] = nbcells
             # point neighbor search
             else:
-                for n, g in self.__groups:
+                for n, g in tqdm(
+                        self.__groups,
+                        desc="find neighbors",
+                        bar_format=CONFIG.PBAR_FORMAT,
+                        disable=(not CONFIG.PROGRESS_BAR),
+                ):
                     nbcells = _neighborpoints(g[self.__centcol], expand)
                     self.__neighborsdb[n] = nbcells
             self.__neighborsbuilt = True

@@ -25,7 +25,7 @@ from ._violin_plot import violin_plot
 
 def cell_components(
     adata: AnnData,
-    groupby: Optional[Sequence[str]] = None,
+    groupby: Sequence[str],
     selected_types: Optional[Sequence] = None,
     key: str = "cell_components",
     **kwargs,
@@ -42,7 +42,7 @@ def cell_components(
 
 def cell_density(
     adata: AnnData,
-    groupby: Optional[Sequence[str]] = None,
+    groupby: Sequence[str],
     selected_types: Optional[Sequence] = None,
     key: str = "cell_density",
     **kwargs,
@@ -208,7 +208,7 @@ def neighborhood_analysis(
         dot_color = counts.pivot(index="type1", columns="type2", values="%").to_numpy()
         dot_size = counts.pivot(index="type1", columns="type2", values="all").to_numpy()
 
-        dot_matrix(
+        p = dot_matrix(
             matrix,
             dot_color,
             dot_size,

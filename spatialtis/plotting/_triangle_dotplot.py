@@ -17,7 +17,7 @@ def tri_dotplot(
     diagnol_arr,
     labels,
     annotate=False,
-    xlabel_rotation=0,
+    xlabel_rotation=90,
     ylabel_rotation=0,
     return_plot=False,
 ):

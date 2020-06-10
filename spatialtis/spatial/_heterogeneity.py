@@ -183,7 +183,7 @@ def spatial_heterogeneity(
 
         data = {"heterogeneity": ent}
         roi_heterogeneity = pd.DataFrame(data=data)
-        roi_heterogeneity.index = pd.MultiIndex.from_tuples(mindex, names=groupby)
+        roi_heterogeneity.index = pd.MultiIndex.from_tuples(mindex, names=groupby + ["id"])
 
     # export to anndata
     df2adata_uns(roi_heterogeneity, adata, export_key)
