@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Sequence, Union, Mapping
+from typing import Any, Dict, Mapping, Optional, Sequence, Union
 
 import pandas as pd
 from bokeh.io import output_notebook
@@ -12,19 +12,19 @@ from .palette import get_colors
 
 
 def stacked_bar(
-        df: pd.DataFrame,
-        groupby: Sequence[str],
-        percentage: bool = True,
-        sort_type: Optional[str] = None,
-        ascending: bool = True,
-        group_order: Optional[tuple] = None,
-        direction: Union[str] = "vertical",
-        size: Optional[Sequence[int]] = None,
-        title: Optional[str] = None,
-        palette: Union[Sequence[str], str, None] = None,
-        display: bool = True,
-        save: Optional[str] = None,
-        return_plot: bool = False,
+    df: pd.DataFrame,
+    groupby: Sequence[str],
+    percentage: bool = True,
+    sort_type: Optional[str] = None,
+    ascending: bool = True,
+    group_order: Optional[tuple] = None,
+    direction: Union[str] = "vertical",
+    size: Optional[Sequence[int]] = None,
+    title: Optional[str] = None,
+    palette: Union[Sequence[str], str, None] = None,
+    display: bool = True,
+    save: Optional[str] = None,
+    return_plot: bool = False,
 ):
     if direction not in ["vertical", "horizontal"]:
         raise ValueError(f"Unrecognized direction '{direction}'")

@@ -1,6 +1,4 @@
 from bokeh.io import output_notebook
-
-# enable retina mode for all devices
 from IPython.display import set_matplotlib_formats
 
 from spatialtis.config import CONFIG
@@ -32,5 +30,5 @@ if CONFIG.WORKING_ENV == "jupyter":
 elif CONFIG.WORKING_ENV == "zeppelin":
     output_notebook(hide_banner=True, notebook_type="zepplin")
 
-
+# enable retina mode for all devices
 set_matplotlib_formats("retina")
