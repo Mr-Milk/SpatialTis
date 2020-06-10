@@ -1,7 +1,7 @@
-import pandas as pd
-import numpy as np
-
 from typing import Optional
+
+import numpy as np
+import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
 from tqdm import tqdm
 
@@ -34,14 +34,14 @@ if CONFIG.OS in ["Linux", "Darwin"]:
 
 
 def exp_neighexp(
-        n: Neighbors,
-        marker_col: Optional[str] = None,
-        importance: float = 0.5,
-        export: bool = True,
-        export_key: str = "exp_neighexp",
-        return_df: bool = False,
-        mp: bool = False,
-        **kwargs,
+    n: Neighbors,
+    marker_col: Optional[str] = None,
+    importance: float = 0.5,
+    export: bool = True,
+    export_key: str = "exp_neighexp",
+    return_df: bool = False,
+    mp: bool = False,
+    **kwargs,
 ):
     if marker_col is None:
         marker_col = CONFIG.MARKER_COL
@@ -54,18 +54,32 @@ def exp_neighexp(
     markers = adata.var[marker_col]
     markers_mapper = dict(zip(markers, range(len(markers))))
 
-    interactions = adata_uns2df(adata, 'exp_neighcells')
+    interactions = adata_uns2df(adata, "exp_neighcells")
     cc_mapper = dict()
     cexp_mapper = dict()
-    X = dict(zip([tuple(i[1]) for i in interactions[['Affected_by', 'Cell', 'Marker']].iterrows()],
-                 [[] for _ in range(interactions.shape[0])]))
-    Y = dict(zip([tuple(i[1]) for i in interactions[['Affected_by', 'Cell', 'Marker']].iterrows()],
-                 [[] for _ in range(interactions.shape[0])]))
+    X = dict(
+        zip(
+            [
+                tuple(i[1])
+                for i in interactions[["Affected_by", "Cell", "Marker"]].iterrows()
+            ],
+            [[] for _ in range(interactions.shape[0])],
+        )
+    )
+    Y = dict(
+        zip(
+            [
+                tuple(i[1])
+                for i in interactions[["Affected_by", "Cell", "Marker"]].iterrows()
+            ],
+            [[] for _ in range(interactions.shape[0])],
+        )
+    )
 
-    for cell, df in interactions.groupby('Affected_by'):
-        cc_mapper[cell] = list(pd.unique(df['Cell']))
-    for cell, df in interactions.groupby('Cell'):
-        cexp_mapper[cell] = list(pd.unique(df['Marker']))
+    for cell, df in interactions.groupby("Affected_by"):
+        cc_mapper[cell] = list(pd.unique(df["Cell"]))
+    for cell, df in interactions.groupby("Cell"):
+        cexp_mapper[cell] = list(pd.unique(df["Marker"]))
 
     all_cell_types = cc_mapper.keys()
 
@@ -79,7 +93,9 @@ def exp_neighexp(
             centcell = type_map[center]
             if centcell in all_cell_types:
                 selected_type = cc_mapper[centcell]
-                selected_neigh = [(i, type_map[i]) for i in neighs if type_map[i] in selected_type]
+                selected_neigh = [
+                    (i, type_map[i]) for i in neighs if type_map[i] in selected_type
+                ]
 
                 for (ic, c) in selected_neigh:
                     for gene in cexp_mapper[c]:
@@ -101,11 +117,11 @@ def exp_neighexp(
             combs.append(comb)
 
         for _ in tqdm(
-                exec_iterator(results),
-                total=len(results),
-                desc="fit model",
-                bar_format=CONFIG.PBAR_FORMAT,
-                disable=(not CONFIG.PROGRESS_BAR),
+            exec_iterator(results),
+            total=len(results),
+            desc="fit model",
+            bar_format=CONFIG.PBAR_FORMAT,
+            disable=(not CONFIG.PROGRESS_BAR),
         ):
             pass
 
@@ -117,13 +133,20 @@ def exp_neighexp(
 
     else:
         results = []
-        for comb, arr in tqdm(X.items(), desc="fit model", bar_format=CONFIG.PBAR_FORMAT,
-                              disable=(not CONFIG.PROGRESS_BAR), ):
+        for comb, arr in tqdm(
+            X.items(),
+            desc="fit model",
+            bar_format=CONFIG.PBAR_FORMAT,
+            disable=(not CONFIG.PROGRESS_BAR),
+        ):
             [max_ix, max_weights] = _max_feature(arr, Y[comb], **kwargs)
             if max_weights > importance:
                 results.append((markers[max_ix], *comb, max_weights))
 
-    df = pd.DataFrame(data=results, columns=['Marker', 'Affected_by', 'Cell', 'Affected_Marker', 'Score'])
+    df = pd.DataFrame(
+        data=results,
+        columns=["Marker", "Affected_by", "Cell", "Affected_Marker", "Score"],
+    )
 
     if export:
         df2adata_uns(df, adata, export_key)

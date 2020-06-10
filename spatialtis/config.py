@@ -77,7 +77,7 @@ class _CONFIG(object):
 
     @WORKING_ENV.setter
     def WORKING_ENV(self, env):
-        if env not in ['jupyter', 'zepplin', None]:
+        if env not in ["jupyter", "zepplin", None]:
             warnings.warn("Unknown working environments", UserWarning)
         if env is None:
             self.PROGRESS_BAR = False

@@ -268,10 +268,10 @@ class Neighbors(object):
             # point neighbor search
             else:
                 for n, g in tqdm(
-                        self.__groups,
-                        desc="find neighbors",
-                        bar_format=CONFIG.PBAR_FORMAT,
-                        disable=(not CONFIG.PROGRESS_BAR),
+                    self.__groups,
+                    desc="find neighbors",
+                    bar_format=CONFIG.PBAR_FORMAT,
+                    disable=(not CONFIG.PROGRESS_BAR),
                 ):
                     nbcells = _neighborpoints(g[self.__centcol], expand)
                     self.__neighborsdb[n] = nbcells

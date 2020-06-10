@@ -160,12 +160,14 @@ def spatial_heterogeneity(
                 ent.append(e)
 
         else:
-            for i, (n, g) in enumerate(tqdm(
-                groups,
-                desc="heterogeneity",
-                bar_format=CONFIG.PBAR_FORMAT,
-                disable=(not CONFIG.PROGRESS_BAR),
-            )):
+            for i, (n, g) in enumerate(
+                tqdm(
+                    groups,
+                    desc="heterogeneity",
+                    bar_format=CONFIG.PBAR_FORMAT,
+                    disable=(not CONFIG.PROGRESS_BAR),
+                )
+            ):
                 types = list(g[type_col])
                 points = [eval(i) for i in g[centroid_col]]
                 if method == "altieri":
@@ -183,7 +185,9 @@ def spatial_heterogeneity(
 
         data = {"heterogeneity": ent}
         roi_heterogeneity = pd.DataFrame(data=data)
-        roi_heterogeneity.index = pd.MultiIndex.from_tuples(mindex, names=groupby + ["id"])
+        roi_heterogeneity.index = pd.MultiIndex.from_tuples(
+            mindex, names=groupby + ["id"]
+        )
 
     # export to anndata
     df2adata_uns(roi_heterogeneity, adata, export_key)
