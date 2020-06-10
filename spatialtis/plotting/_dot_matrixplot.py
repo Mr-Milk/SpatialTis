@@ -15,6 +15,8 @@ def dot_matrix(
     dot_size,
     xlabels,
     ylabels,
+    xlabel_rotation=90,
+    ylabel_rotation=0,
     cbar_mapper=None,
     cbar_legend_title=None,
     size_legend_title=None,
@@ -162,6 +164,9 @@ def dot_matrix(
 
     # turn off minor ticks
     plt.minorticks_off()
+
+    plt.xticks(rotation=xlabel_rotation)
+    plt.yticks(rotation=ylabel_rotation)
 
     axins = inset_axes(
         ax,
