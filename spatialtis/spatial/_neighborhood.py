@@ -17,16 +17,12 @@ def _count_neighbors(types: Sequence, relationships: Mapping, storage_object: Ma
     if len(relationships) > 0:
         for k, v in relationships.items():
             if len(v) > 0:
-                counts = Counter([types[i] for i in v])
-                center_type = types[k]
-                # only when it has it's own types at neighborhood will count
-                if center_type in counts.keys():
-                    for t, count in counts.items():
-                        select = (
-                            center_type,
-                            t,
-                        )
-                        storage_object[select].append(count)
+                for t, count in Counter([types[i] for i in v]).items():
+                    select = (
+                        types[k],
+                        t,
+                    )
+                    storage_object[select].append(count)
 
     itr = storage_object.keys()
     counts = [np.mean(v) if len(v) > 0 else 0 for v in storage_object.values()]
@@ -70,13 +66,24 @@ if CONFIG.OS in ["Linux", "Darwin"]:
 def _patch_neighborhood(
     perm_count: pd.DataFrame, real_count: pd.DataFrame, resample: int, pval: float
 ):
-    p_gt = ((perm_count >= real_count.to_numpy()).sum() + 1) / (resample + 1)
-    p_lt = ((perm_count <= real_count.to_numpy()).sum() + 1) / (resample + 1)
+    p_gt = (perm_count >= real_count.to_numpy()).sum() / (resample + 1)
+    p_lt = (perm_count <= real_count.to_numpy()).sum() / (resample + 1)
     direction = p_lt < p_gt
-    p = p_lt * direction + p_gt * (direction is False)
-    sig = p < pval
-    sigv = sig * np.sign((0.5 - direction))
-    return sigv
+    re_direction = [not i for i in direction]
+    p = p_gt * direction + p_lt * re_direction
+    sig = (1 - p) < pval
+
+    sigv = []
+    for pv, s, d in zip(p, sig, direction):
+        if not s:
+            sigv.append(0)
+        else:
+            if d:
+                sigv.append(1)
+            else:
+                sigv.append(-1)
+
+    return pd.Series(sigv, index=sig.index)
 
 
 def _patch_spatial_enrichment(
