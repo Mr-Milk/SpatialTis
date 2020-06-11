@@ -225,6 +225,11 @@ class Neighbors(object):
                 for n, g in self.__groups:
                     results.append(_neighborpoints_mp.remote(g[self.__centcol], expand))
                     names.append(n)
+
+                    if self.__typecol is not None:
+                        types = list(g[self.__typecol])
+                        self.__types[n] = types
+
                 for _ in tqdm(
                     exec_iterator(results),
                     total=len(results),
@@ -275,6 +280,11 @@ class Neighbors(object):
                 ):
                     nbcells = _neighborpoints(g[self.__centcol], expand)
                     self.__neighborsdb[n] = nbcells
+
+                    if self.__typecol is not None:
+                        types = list(g[self.__typecol])
+                        self.__types[n] = types
+
             self.__neighborsbuilt = True
 
     def export_neighbors(self, export_key: str = "cell_neighbors"):
