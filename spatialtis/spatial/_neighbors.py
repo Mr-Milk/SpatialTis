@@ -61,6 +61,11 @@ def _neighborpoints(cells, expand):
     cells = [eval(c) for c in cells]
     tree = cKDTree(cells)
     result = tree.query_ball_point(cells, expand)
+    for i, arr in zip(range(len(cells)), result):
+        try:
+            arr.remove(i)
+        except ValueError:
+            pass
     return dict(zip(range(len(cells)), result))
 
 
