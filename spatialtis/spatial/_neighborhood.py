@@ -14,18 +14,16 @@ from ._util import check_neighbors
 
 
 def _count_neighbors(types: Sequence, relationships: Mapping, storage_object: Mapping):
-    if len(relationships) > 0:
+    cells = len(relationships)
+    if cells > 0:
         for k, v in relationships.items():
             if len(v) > 0:
                 for t, count in Counter([types[i] for i in v]).items():
-                    select = (
-                        types[k],
-                        t,
-                    )
+                    select = (types[k], t)
                     storage_object[select].append(count)
 
     itr = storage_object.keys()
-    counts = [np.mean(v) if len(v) > 0 else 0 for v in storage_object.values()]
+    counts = [(np.sum(v) / cells) for v in storage_object.values()]
     return dict(zip(itr, counts))
 
 
