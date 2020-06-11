@@ -175,14 +175,12 @@ def spatial_heterogeneity(
                 else:
                     e = leibovici_entropy(points, types, d=d, base=base)
                 ent.append(e.entropy)
-                mindex.append(n)
                 # one column index
                 if isinstance(n, str):
                     mindex.append((n, i,))
                 # multiIndex
                 else:
                     mindex.append((*n, i,))
-
         data = {"heterogeneity": ent}
         roi_heterogeneity = pd.DataFrame(data=data)
         roi_heterogeneity.index = pd.MultiIndex.from_tuples(
