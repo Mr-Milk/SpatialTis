@@ -43,8 +43,8 @@ def test_cell_co_occurrence():
 
 def test_cell_co_occurrence_plot():
     data = pytest.data
-    sp.cell_co_occurrence(data, method="dot", show=False)
-    sp.cell_co_occurrence(data, ["Patient", "Part"], method="heatmap", show=False)
+    sp.cell_co_occurrence(data, method="dot", display=False)
+    sp.cell_co_occurrence(data, ["Patient", "Part"], method="heatmap", display=False)
 
 
 def test_cell_morphology():
@@ -54,4 +54,4 @@ def test_cell_morphology():
 
 def test_cell_morphology_plot():
     data = pytest.data
-    sp.cell_morphology(data, "Patient", "Part", "4", show=False)
+    sp.cell_morphology(data, "Patient", "Part", "4", display=False)

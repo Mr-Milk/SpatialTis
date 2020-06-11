@@ -20,6 +20,7 @@ def tri_dotplot(
     xlabel_rotation=90,
     ylabel_rotation=0,
     return_plot=False,
+    display=True,
 ):
 
     all_max = list()
@@ -59,7 +60,8 @@ def tri_dotplot(
     ax.xaxis.set_ticks_position("none")
     ax.yaxis.set_ticks_position("none")
 
-    plt.show()
+    if display:
+        plt.show()
 
     if return_plot:
         return fig, ax

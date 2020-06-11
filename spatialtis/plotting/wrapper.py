@@ -311,8 +311,12 @@ def spatial_heterogeneity(
     **kwargs,
 ):
     df = adata_uns2df(adata, key)
+    inames = df.index.names
 
-    p = violin_plot(df, groupby, metric, **kwargs)
+    if len(inames) == 2:
+        p = stacked_bar(df, [inames[0]], percentage=False, sort_type=metric)
+    else:
+        p = violin_plot(df, groupby, metric, **kwargs)
 
     return p
 
