@@ -17,12 +17,16 @@ def _count_neighbors(types: Sequence, relationships: Mapping, storage_object: Ma
     if len(relationships) > 0:
         for k, v in relationships.items():
             if len(v) > 0:
-                for t, count in Counter([types[i] for i in v]).items():
-                    select = (
-                        types[k],
-                        t,
-                    )
-                    storage_object[select].append(count)
+                counts = Counter([types[i] for i in v])
+                center_type = types[k]
+                # only when it has it's own types at neighborhood will count
+                if center_type in counts.keys():
+                    for t, count in counts.items():
+                        select = (
+                            center_type,
+                            t,
+                        )
+                        storage_object[select].append(count)
 
     itr = storage_object.keys()
     counts = [np.mean(v) if len(v) > 0 else 0 for v in storage_object.values()]
@@ -40,7 +44,7 @@ def _bootstrap(
 
     perm_count = {k: [] for k in cell_interactions}
     shuffle_types = cell_types.copy()
-    for attempt in range(0, resample):
+    for attempt in range(resample):
         np.random.shuffle(shuffle_types)
         tmp_storage = {k: [] for k in cell_interactions}
         perm = _count_neighbors(shuffle_types, cell_neighbors, tmp_storage)
@@ -66,8 +70,8 @@ if CONFIG.OS in ["Linux", "Darwin"]:
 def _patch_neighborhood(
     perm_count: pd.DataFrame, real_count: pd.DataFrame, resample: int, pval: float
 ):
-    p_gt = (perm_count >= real_count.to_numpy()).sum() / (resample + 1)
-    p_lt = (perm_count <= real_count.to_numpy()).sum() / (resample + 1)
+    p_gt = ((perm_count >= real_count.to_numpy()).sum() + 1) / (resample + 1)
+    p_lt = ((perm_count <= real_count.to_numpy()).sum() + 1) / (resample + 1)
     direction = p_lt < p_gt
     p = p_lt * direction + p_gt * (direction is False)
     sig = p < pval

@@ -231,8 +231,8 @@ def neighborhood_analysis(
             col_colors_legend_bbox=(1.05, 0.5),
             row_colors_legend_bbox=(-0.25, 0.5),
             colorbar_bbox=(-0.25, 0.15),
-            row_cluster=None,
-            col_cluster=True,
+            row_cluster=True,
+            col_cluster=None,
         )
         # allow user to overwrite the default plot config
         for k, v in kwargs.items():
