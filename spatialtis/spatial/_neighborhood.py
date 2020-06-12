@@ -20,11 +20,10 @@ def _count_neighbors(types: Sequence, relationships: Mapping, storage_object: Ma
             if len(v) > 0:
                 counts = Counter([types[i] for i in v])
                 center_type = types[k]
-                if center_type in counts.keys():
-                    for t, count in counts.items():
-                        select = (center_type, t)
-                        storage_object[select].append(count)
-
+                # if center_type in counts.keys():
+                for t, count in counts.items():
+                    select = (center_type, t)
+                    storage_object[select].append(count)
     itr = storage_object.keys()
     counts = [(np.sum(v) / cells) for v in storage_object.values()]
     return dict(zip(itr, counts))
@@ -67,22 +66,13 @@ if CONFIG.OS in ["Linux", "Darwin"]:
 def _patch_neighborhood(
     perm_count: pd.DataFrame, real_count: pd.DataFrame, resample: int, pval: float
 ):
-    p_gt = (perm_count >= real_count.to_numpy()).sum() / (resample + 1)
-    p_lt = (perm_count <= real_count.to_numpy()).sum() / (resample + 1)
-    direction = p_lt < p_gt
-    re_direction = [not i for i in direction]
-    p = p_gt * direction + p_lt * re_direction
-    sig = (1 - p) < pval
-
-    sigv = []
-    for pv, s, d in zip(p, sig, direction):
-        if not s:
-            sigv.append(0)
-        else:
-            if d:
-                sigv.append(1)
-            else:
-                sigv.append(-1)
+    p_gt = ((perm_count >= real_count.to_numpy()).sum() + 1) / (resample + 1)
+    p_lt = ((perm_count <= real_count.to_numpy()).sum() + 1) / (resample + 1)
+    direction = p_gt < p_lt
+    p = p_gt * direction + p_lt * (direction is False)
+    sig = p < pval
+    sigv = sig * np.sign(direction - 0.5)
+    # print(p_gt[0], p_lt[0], direction[0], p[0], sig[0], sigv[0])
 
     return pd.Series(sigv, index=sig.index)
 

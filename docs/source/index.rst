@@ -6,7 +6,7 @@
 Welcome to SpatialTis's documentation!
 ==========================================
 
-.. image:: src/favicon.png
+.. image:: src/favicon-chrome.png
    :align: center
    :width: 20%
 
