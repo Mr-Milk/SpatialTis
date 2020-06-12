@@ -13,7 +13,19 @@ from ._neighbors import Neighbors
 from ._util import check_neighbors
 
 
-def _count_neighbors(types: Sequence, relationships: Mapping, storage_object: Mapping):
+class CellComb:
+    def __init__(self, types):
+        self.types = types
+        self.comb = [k for k in product(types, repeat=2)]
+        self.relationships = {t1: [(t1, t2) for t2 in types] for t1 in types}
+
+    def get_comb(self, t):
+        return self.relationships[t]
+
+
+def _count_neighbors(
+    types: Sequence, relationships: Mapping, cellcomb: CellComb, storage_object: Mapping
+):
     cells = len(relationships)
     if cells > 0:
         for k, v in relationships.items():
@@ -21,33 +33,33 @@ def _count_neighbors(types: Sequence, relationships: Mapping, storage_object: Ma
                 counts = Counter([types[i] for i in v])
                 center_type = types[k]
                 # if center_type in counts.keys():
-                for t, count in counts.items():
-                    select = (center_type, t)
-                    storage_object[select].append(count)
+                for (t1, t2) in cellcomb.get_comb(center_type):
+                    try:
+                        c = counts[t2]
+                    except ValueError:
+                        c = 0
+                    storage_object[(t1, t2)].append(c)
     itr = storage_object.keys()
-    counts = [(np.sum(v) / cells) for v in storage_object.values()]
+    counts = [np.mean(v) / cells if len(v) > 0 else 0 for v in storage_object.values()]
     return dict(zip(itr, counts))
 
 
 def _bootstrap(
-    cell_types: list,
-    cell_neighbors: Mapping,
-    cell_interactions: Sequence,
-    resample: int,
+    cell_types: list, cell_neighbors: Mapping, cellcomb: CellComb, resample: int,
 ):
-    tmp_storage = {k: [] for k in cell_interactions}
-    real_count = _count_neighbors(cell_types, cell_neighbors, tmp_storage)
+    tmp_storage = {k: [] for k in cellcomb.comb}
+    real_count = _count_neighbors(cell_types, cell_neighbors, cellcomb, tmp_storage)
 
-    perm_count = {k: [] for k in cell_interactions}
+    perm_count = {k: [] for k in cellcomb.comb}
     shuffle_types = cell_types.copy()
     for attempt in range(resample):
         np.random.shuffle(shuffle_types)
-        tmp_storage = {k: [] for k in cell_interactions}
-        perm = _count_neighbors(shuffle_types, cell_neighbors, tmp_storage)
+        tmp_storage = {k: [] for k in cellcomb.comb}
+        perm = _count_neighbors(shuffle_types, cell_neighbors, cellcomb, tmp_storage)
         for itr, m in perm.items():
             perm_count[itr].append(m)
-    perm_count = pd.DataFrame(perm_count, columns=cell_interactions)
-    real_count = pd.DataFrame(real_count, index=[0], columns=cell_interactions)
+    perm_count = pd.DataFrame(perm_count, columns=cellcomb.comb)
+    real_count = pd.DataFrame(real_count, index=[0], columns=cellcomb.comb)
     return [perm_count, real_count]
 
 
@@ -66,13 +78,15 @@ if CONFIG.OS in ["Linux", "Darwin"]:
 def _patch_neighborhood(
     perm_count: pd.DataFrame, real_count: pd.DataFrame, resample: int, pval: float
 ):
-    p_gt = ((perm_count >= real_count.to_numpy()).sum() + 1) / (resample + 1)
-    p_lt = ((perm_count <= real_count.to_numpy()).sum() + 1) / (resample + 1)
+    p_gt = (perm_count >= real_count.to_numpy()).sum() / (resample + 1)
+    p_lt = (perm_count <= real_count.to_numpy()).sum() / (resample + 1)
     direction = p_gt < p_lt
-    p = p_gt * direction + p_lt * (direction is False)
+    redirection = [not i for i in direction]
+    p = p_gt * direction + p_lt * redirection
     sig = p < pval
-    sigv = sig * np.sign(direction - 0.5)
-    # print(p_gt[0], p_lt[0], direction[0], p[0], sig[0], sigv[0])
+    sigv = (sig * np.sign(direction - 0.5)).astype(int)
+    # for i in range(3):
+    #    print(p_gt[i], direction[i], p_lt[i], redirection[i], p[i], sig[i], sigv[i])
 
     return pd.Series(sigv, index=sig.index)
 
@@ -98,7 +112,7 @@ def _main(
         mp = CONFIG.MULTI_PROCESSING
 
     check_neighbors(n)
-    cell_interactions = [k for k in product(n.unitypes, repeat=2)]
+    cellcomb = CellComb(n.unitypes)
     results = dict()
 
     if mp & (CONFIG.OS in ["Linux", "Darwin"]):
@@ -111,9 +125,7 @@ def _main(
         counts = []
         names = []
         for name, value in n.neighbors.items():
-            id1 = _bootstrap_mp.remote(
-                n.types[name], value, cell_interactions, resample
-            )
+            id1 = _bootstrap_mp.remote(n.types[name], value, cellcomb, resample)
             counts.append(id1)
             names.append(name)
 
@@ -141,7 +153,7 @@ def _main(
             disable=(not CONFIG.PROGRESS_BAR),
         ):
             [perm_count, real_count] = _bootstrap(
-                n.types[name], value, cell_interactions, resample
+                n.types[name], value, cellcomb, resample
             )
             results[name] = patch_func(perm_count, real_count, resample, pval)
 
