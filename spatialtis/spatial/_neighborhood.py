@@ -18,9 +18,12 @@ def _count_neighbors(types: Sequence, relationships: Mapping, storage_object: Ma
     if cells > 0:
         for k, v in relationships.items():
             if len(v) > 0:
-                for t, count in Counter([types[i] for i in v]).items():
-                    select = (types[k], t)
-                    storage_object[select].append(count)
+                counts = Counter([types[i] for i in v])
+                center_type = types[k]
+                if center_type in counts.keys():
+                    for t, count in counts.items():
+                        select = (center_type, t)
+                        storage_object[select].append(count)
 
     itr = storage_object.keys()
     counts = [(np.sum(v) / cells) for v in storage_object.values()]
