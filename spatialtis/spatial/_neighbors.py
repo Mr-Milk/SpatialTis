@@ -13,11 +13,11 @@ from shapely.wkt import dumps, loads
 from tqdm import tqdm
 
 from spatialtis.config import CONFIG
-from spatialtis.utils import col2adata_obs
+from spatialtis.utils import col2adata_obs, timer
 
 
-def _polygonize_cells(shapecol, group):
-    shapes = group[shapecol]
+def _polygonize_cells(shapekey, group):
+    shapes = group[shapekey]
     polycells = []
     for cell in shapes:
         c = asMultiPoint(eval(cell))
@@ -90,9 +90,9 @@ class Neighbors(object):
         adata: anndata object to perform analysis
         geom: how to resolve cell data, as "point" or "shape"
         groupby: how your experiments grouped, (Default: read from spatialtis.CONFIG.EXP_OBS)
-        type_col: the key name of cell type in anndata.obs (Default: read from spatialtis.CONFIG.CELL_TYPE_COL)
-        shape_col: the key name of cell shape in anndata.obs (Default: "cell_shape")
-        centroid_col: anndata.obs key that store cell centroid info (Default: "centroid")
+        type_key: the key name of cell type in anndata.obs (Default: read from spatialtis.CONFIG.CELL_TYPE_KEY)
+        shape_key: the key name of cell shape in anndata.obs (Default: "cell_shape")
+        centroid_key: anndata.obs key that store cell centroid info (Default: "centroid")
 
     """
 
@@ -102,20 +102,20 @@ class Neighbors(object):
         geom: str = "shape",
         *,
         groupby: Union[Sequence, str, None] = None,
-        type_col: Optional[str] = None,
-        shape_col: Optional[str] = None,
-        centroid_col: Optional[str] = None,
+        type_key: Optional[str] = None,
+        shape_key: Optional[str] = None,
+        centroid_key: Optional[str] = None,
     ):
 
         # keys for query info from anndata
         if groupby is None:
             groupby = CONFIG.EXP_OBS
-        if type_col is None:
-            type_col = CONFIG.CELL_TYPE_COL
-        if centroid_col is None:
-            centroid_col = CONFIG.CENTROID_COL
-        if shape_col is None:
-            shape_col = CONFIG.SHAPE_COL
+        if type_key is None:
+            type_key = CONFIG.CELL_TYPE_KEY
+        if centroid_key is None:
+            centroid_key = CONFIG.CENTROID_KEY
+        if shape_key is None:
+            shape_key = CONFIG.SHAPE_KEY
         if geom not in ["shape", "point"]:
             raise ValueError("Available options for 'geom' are 'shape', 'point'")
 
@@ -126,9 +126,9 @@ class Neighbors(object):
         self.__adata = adata
         self.__data = adata.obs
         self.__geom = geom
-        self.__typecol = type_col
-        self.__shapecol = shape_col
-        self.__centcol = centroid_col
+        self.__typekey = type_key
+        self.__shapekey = shape_key
+        self.__centkey = centroid_key
         self.__groupby = groupby
         self.__groups = self.__data.groupby(groupby, sort=False)
 
@@ -136,9 +136,10 @@ class Neighbors(object):
         self.__names = [n for n, _ in self.__groups]
         self.__polycellsdb = {n: 0 for n in self.__names}
         self.__neighborsdb = {n: 0 for n in self.__names}
-        self.__uniquetypes = np.unique(self.__data[type_col])
+        self.__uniquetypes = np.unique(self.__data[type_key])
         self.__types = {n: 0 for n in self.__names}
 
+    @timer(prefix="Finding cell neighbors")
     def find_neighbors(
         self,
         expand: Optional[float] = None,
@@ -186,11 +187,11 @@ class Neighbors(object):
                 results = []
                 names = []
                 for n, g in self.__groups:
-                    results.append(_polygonize_cells_mp.remote(self.__shapecol, g))
+                    results.append(_polygonize_cells_mp.remote(self.__shapekey, g))
                     names.append(n)
 
-                    if self.__typecol is not None:
-                        types = list(g[self.__typecol])
+                    if self.__typekey is not None:
+                        types = list(g[self.__typekey])
                         self.__types[n] = types
 
                 for _ in tqdm(
@@ -228,11 +229,11 @@ class Neighbors(object):
             # point neighbor search
             else:
                 for n, g in self.__groups:
-                    results.append(_neighborpoints_mp.remote(g[self.__centcol], expand))
+                    results.append(_neighborpoints_mp.remote(g[self.__centkey], expand))
                     names.append(n)
 
-                    if self.__typecol is not None:
-                        types = list(g[self.__typecol])
+                    if self.__typekey is not None:
+                        types = list(g[self.__typekey])
                         self.__types[n] = types
 
                 for _ in tqdm(
@@ -257,11 +258,11 @@ class Neighbors(object):
                     bar_format=CONFIG.PBAR_FORMAT,
                     disable=(not CONFIG.PROGRESS_BAR),
                 ):
-                    polycells = _polygonize_cells(self.__shapecol, g)
+                    polycells = _polygonize_cells(self.__shapekey, g)
                     self.__polycellsdb[n] = polycells
 
-                    if self.__typecol is not None:
-                        types = list(g[self.__typecol])
+                    if self.__typekey is not None:
+                        types = list(g[self.__typekey])
                         self.__types[n] = types
 
                 self.__polycells = True
@@ -283,16 +284,16 @@ class Neighbors(object):
                     bar_format=CONFIG.PBAR_FORMAT,
                     disable=(not CONFIG.PROGRESS_BAR),
                 ):
-                    nbcells = _neighborpoints(g[self.__centcol], expand)
+                    nbcells = _neighborpoints(g[self.__centkey], expand)
                     self.__neighborsdb[n] = nbcells
 
-                    if self.__typecol is not None:
-                        types = list(g[self.__typecol])
+                    if self.__typekey is not None:
+                        types = list(g[self.__typekey])
                         self.__types[n] = types
 
             self.__neighborsbuilt = True
 
-    def export_neighbors(self, export_key: str = "cell_neighbors"):
+    def export_neighbors(self, export_key: Optional[str] = None):
         """Export computed neighbors
 
         The neighbors relationship are stored in dict, number is index of cell in each ROI
@@ -304,6 +305,12 @@ class Neighbors(object):
             export_key: the key name to export
 
         """
+
+        if export_key is None:
+            export_key = CONFIG.neighbors_key
+        else:
+            CONFIG.neighbors_key = export_key
+
         if not self.__neighborsbuilt:
             return "Please run .find_neighbors() before further analysis."
 
@@ -319,7 +326,7 @@ class Neighbors(object):
         col2adata_obs(neighbors, self.__adata, export_key)
 
     def neighbors_count(
-        self, export_key: str = "neighbors_count",
+        self, export_key: Optional[str] = None,
     ):
         """Get how many neighbors for each cell
 
@@ -330,6 +337,11 @@ class Neighbors(object):
             export_key: the key name to export
 
         """
+
+        if export_key is None:
+            export_key = CONFIG.neighbors_count_key
+        else:
+            CONFIG.neighbors_count_key = export_key
 
         if not self.__neighborsbuilt:
             return "Please run .find_neighbors() before further analysis."
@@ -345,13 +357,17 @@ class Neighbors(object):
                 counts.append(count)
         col2adata_obs(counts, self.__adata, export_key)
 
-    def read_neighbors(self, read_key: str = "cell_neighbors"):
+    def read_neighbors(self, read_key: Optional[str] = None):
         """Read computed neighbors from anndata
 
             Args:
                 read_key: the key name to read
 
         """
+
+        if read_key is None:
+            read_key = CONFIG.neighbors_key
+
         if read_key not in self.__adata.obs.keys():
             raise KeyError(f"{read_key} not exists.")
 
@@ -367,7 +383,7 @@ class Neighbors(object):
             return None
         new_graphs = {n: 0 for n in self.__names}
         for n, g in self.__groups:
-            centroids = [eval(c) for c in g[self.__centcol]]
+            centroids = [eval(c) for c in g[self.__centkey]]
             edges = self.__neighborsdb[n]
             graph_edges = []
             for k, vs in edges.items():
@@ -389,21 +405,21 @@ class Neighbors(object):
 
     @property
     def unitypes(self):
-        if self.__typecol is not None:
+        if self.__typekey is not None:
             return self.__uniquetypes
         else:
             return None
 
     @property
     def types(self):
-        if self.__typecol is not None:
+        if self.__typekey is not None:
             return self.__types
         else:
             return None
 
     @property
-    def type_col(self):
-        return self.__typecol
+    def type_key(self):
+        return self.__typekey
 
     @property
     def data(self):

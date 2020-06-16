@@ -15,6 +15,7 @@ from ._bar_plot import stacked_bar
 from ._cell_cell_interaction import cc_interactions
 from ._community_graph import graph_plot, graph_plot_interactive
 from ._dot_matrixplot import dot_matrix
+from ._dotplot import dotplot
 from ._grouped_pie import grouped_pie
 from ._heatmap_sns import heatmap
 from ._sankey import sankey
@@ -27,9 +28,12 @@ def cell_components(
     adata: AnnData,
     groupby: Sequence[str],
     selected_types: Optional[Sequence] = None,
-    key: str = "cell_components",
+    key: Optional[str] = None,
     **kwargs,
 ):
+    if key is None:
+        key = CONFIG.cell_components_key
+
     df = adata_uns2df(adata, key)
 
     if selected_types is not None:
@@ -42,18 +46,24 @@ def cell_components(
 
 def cell_density(
     adata: AnnData,
-    groupby: Sequence[str],
+    groupby: Optional[Sequence[str]] = None,
     selected_types: Optional[Sequence] = None,
-    key: str = "cell_density",
+    key: Optional[str] = None,
     **kwargs,
 ):
+    if key is None:
+        key = CONFIG.cell_density_key
+
     df = adata_uns2df(adata, key)
 
     if selected_types is not None:
         df = df[selected_types]
 
     df = pd.DataFrame(df.stack(), columns=["density"])
-    groupby = list(groupby) + ["type"]
+    if groupby is not None:
+        groupby = ["type"] + list(groupby)
+    else:
+        groupby = ["type"]
     p = violin_plot(df, groupby, "density", **kwargs)
 
     return p
@@ -65,10 +75,13 @@ def cell_co_occurrence(
     compare: Optional[str] = None,
     selected_types: Optional[Sequence] = None,
     method: str = "dot",  # dot, heatmap
-    key: str = "cell_co_occurrence",
+    key: Optional[str] = None,
     pval: float = 0.01,
     **kwargs,
 ):
+    if key is None:
+        key = CONFIG.cell_co_occurrence_key
+
     df = adata_uns2df(adata, key)
 
     if groupby is None:
@@ -142,11 +155,14 @@ def cell_morphology(
     col: Optional[str] = None,
     selected_types: Optional[str] = None,
     *,
-    key: str = "cell_morphology",
+    key: Optional[str] = None,
     **kwargs,
 ):
+    if key is None:
+        key = CONFIG.cell_morphology_key
+
     df = adata_uns2df(adata, key)
-    type_col = CONFIG.CELL_TYPE_COL
+    type_col = CONFIG.CELL_TYPE_KEY
 
     p = stacked_kde(df.xs(selected_types, level=type_col), row=row, col=col, **kwargs)
     return p
@@ -155,17 +171,21 @@ def cell_morphology(
 def neighborhood_analysis(
     adata: AnnData,
     groupby: Optional[Sequence[str]] = None,
-    key: str = "neighborhood_analysis",
+    key: Optional[str] = None,
     method: str = "graph",  # graph, heatmap, dot_matrix
+    order: bool = False,
     **kwargs,
 ):
+    if key is None:
+        key = CONFIG.neighborhood_analysis_key
+
     df = adata_uns2df(adata, key)
 
     if method == "graph":
         p = cc_interactions(df, {-1: "Avoidance", 1: "Association"}, **kwargs)
     elif method == "dot_matrix":
         try:
-            cc = adata_uns2df(adata, "cell_components")
+            cc = adata_uns2df(adata, CONFIG.cell_components_key)
         except KeyError:
             raise Exception(
                 "Please run cell_components before plotting the dot matrix plot"
@@ -194,11 +214,11 @@ def neighborhood_analysis(
                 counts.append([label[0], label[1], all_sign, 0, p])
             elif c_data[0][0] == 1:
                 counts.append(
-                    [label[0], label[1], all_sign, c_data[0][1] / all_sign, p]
+                    [label[0], label[1], all_sign, 1 - c_data[0][1] / all_sign, p]
                 )
             else:
                 counts.append(
-                    [label[0], label[1], all_sign, 1 - c_data[0][1] / all_sign, p]
+                    [label[0], label[1], all_sign, c_data[0][1] / all_sign, p]
                 )
         counts = pd.DataFrame(counts, columns=["type1", "type2", "all", "%", "p"])
         matrix = counts.pivot(index="type1", columns="type2", values="p")
@@ -207,7 +227,6 @@ def neighborhood_analysis(
         matrix = matrix.to_numpy()
         dot_color = counts.pivot(index="type1", columns="type2", values="%").to_numpy()
         dot_size = counts.pivot(index="type1", columns="type2", values="all").to_numpy()
-
         p = dot_matrix(
             matrix,
             dot_color,
@@ -222,6 +241,9 @@ def neighborhood_analysis(
         )
 
     elif method == "heatmap":
+
+        return df
+
         plot_kwargs = dict(
             row_colors=groupby,
             col_colors=["Cell type1", "Cell type2"],
@@ -245,9 +267,12 @@ def neighborhood_analysis(
 def spatial_enrichment_analysis(
     adata: AnnData,
     groupby: Optional[Sequence[str]] = None,
-    key: str = "spatial_enrichment_analysis",
+    key: Optional[str] = None,
     **kwargs,
 ):
+    if key is None:
+        key = CONFIG.spatial_enrichment_analysis_key
+
     df = adata_uns2df(adata, key)
 
     plot_kwargs = dict(
@@ -270,26 +295,51 @@ def spatial_distribution(
     adata: AnnData,
     groupby: Optional[Sequence[str]] = None,
     selected_types: Optional[Sequence] = None,
-    key: str = "spatial_distribution",
-    method: str = "pie",  # pie, heatmap
+    key: Optional[str] = None,
+    method: str = "dot",  # pie, heatmap
     **kwargs,
 ):
+    if key is None:
+        key = CONFIG.spatial_distribution_key
+
     df = adata_uns2df(adata, key)
 
     if selected_types is not None:
         df = df[selected_types]
 
+    """ Overlay text label, maybe support in future
     if method == "pie":
         order = [1, 2, 3, 0]
         mapper = {0: "No cell", 1: "Random", 2: "Regular", 3: "Cluster"}
         p = grouped_pie(df, mapper, order=order, **kwargs)
+    """
+    if method == "dot":
+        names = []
+        counts = []
+        for n, col in df.iteritems():
+            names.append(n)
+            counts.append(Counter(col))
+        counts.append({1: 0, 2: 0, 3: 0, 0: 0})
+        tb = pd.DataFrame(counts)
+        tb.drop(tb.tail(1).index, inplace=True)
+        tb.fillna(0, inplace=True)
+        tb.rename(
+            columns={0: "No Cell", 1: "Random", 2: "Regular", 3: "Cluster"},
+            inplace=True,
+        )
+        tb.index = names
+        tb.index.name = "Cell"
+        tb.columns.name = "Pattern"
+        tb = tb[["No Cell", "Random", "Regular", "Cluster"]]
+        p = dotplot(tb, y="Cell", x="Pattern", annotated=False)
+        # p = dotplot(tb.T, x="Cell", y="Pattern", annotated=False)
     elif method == "heatmap":
         plot_kwargs = dict(
             row_colors=groupby,
             col_colors=["Cell type"],
             palette=["#fffec6", "#c54a52", "#4a89b9", "#5a539d"],
             colorbar_type="categorical",
-            categorical_colorbar_text=["Blank", "Random", "Regular", "Clumped"],
+            categorical_colorbar_text=["No Cell", "Random", "Regular", "Cluster"],
             col_colors_legend_bbox=(1.05, 0.5),
             row_colors_legend_bbox=(-0.25, 0.5),
             row_cluster=None,
@@ -300,16 +350,24 @@ def spatial_distribution(
             plot_kwargs[k] = v
 
         p = heatmap(df, **plot_kwargs)
+    else:
+        raise ValueError("Support methods are 'dot' and 'heatmap'.")
     return p
 
 
 def spatial_heterogeneity(
     adata: AnnData,
     groupby: Optional[Sequence[str]] = None,
-    key: str = "spatial_heterogeneity",
+    key: Optional[str] = None,
     metric: str = "heterogeneity",
     **kwargs,
 ):
+    if key is None:
+        key = CONFIG.spatial_heterogeneity_key
+
+    if metric not in ["heterogeneity", "KL"]:
+        raise ValueError("Available options for metric are 'heterogeneity' and 'KL'.")
+
     df = adata_uns2df(adata, key)
     inames = df.index.names
 
@@ -324,24 +382,24 @@ def spatial_heterogeneity(
 def cell_type_graph(
     adata: AnnData,
     query: Mapping,
-    type_col: Optional[str] = None,
-    neighbors_col: Optional[str] = None,
-    centroid_col: Optional[str] = None,
+    type_key: Optional[str] = None,
+    neighbors_key: Optional[str] = None,
+    centroid_key: Optional[str] = None,
     **kwargs,
 ):
-    if type_col is None:
-        type_col = CONFIG.CELL_TYPE_COL
-    if neighbors_col is None:
-        neighbors_col = CONFIG.NEIGHBORS_COL
-    if centroid_col is None:
-        centroid_col = CONFIG.CENTROID_COL
+    if type_key is None:
+        type_key = CONFIG.CELL_TYPE_KEY
+    if neighbors_key is None:
+        neighbors_key = CONFIG.NEIGHBORS_KEY
+    if centroid_key is None:
+        centroid_key = CONFIG.CENTROID_KEY
 
     df = adata.obs.query("&".join([f"({k}=='{v}')" for k, v in query.items()]))
     p = graph_plot_interactive(
         df,
-        node_col=centroid_col,
-        node_category_col=type_col,
-        edge_col=neighbors_col,
+        node_col=centroid_key,
+        node_category_col=type_key,
+        edge_col=neighbors_key,
         **kwargs,
     )
     return p
@@ -351,26 +409,26 @@ def cell_communities_graph(
     adata: AnnData,
     query: Mapping,
     method: str = "interactive",
-    type_col: Optional[str] = None,
-    community_col: Optional[str] = None,
-    neighbors_col: Optional[str] = None,
-    centroid_col: Optional[str] = None,
+    type_key: Optional[str] = None,
+    community_key: Optional[str] = None,
+    neighbors_key: Optional[str] = None,
+    centroid_key: Optional[str] = None,
     **kwargs,
 ):
-    if type_col is None:
-        type_col = CONFIG.CELL_TYPE_COL
-    if community_col is None:
-        community_col = CONFIG.COMMUNITY_COL
-    if neighbors_col is None:
-        neighbors_col = CONFIG.NEIGHBORS_COL
-    if centroid_col is None:
-        centroid_col = CONFIG.CENTROID_COL
+    if type_key is None:
+        type_key = CONFIG.CELL_TYPE_KEY
+    if community_key is None:
+        community_key = CONFIG.COMMUNITY_KEY
+    if neighbors_key is None:
+        neighbors_key = CONFIG.NEIGHBORS_KEY
+    if centroid_key is None:
+        centroid_key = CONFIG.CENTROID_KEY
 
-    if neighbors_col not in adata.obs.keys():
+    if neighbors_key not in adata.obs.keys():
         raise KeyError(
             "Neighbor key not found, export neighbors or specific your own key."
         )
-    if community_col not in adata.obs.keys():
+    if community_key not in adata.obs.keys():
         raise KeyError(
             "Community key not found, run community or specific your own key."
         )
@@ -380,17 +438,17 @@ def cell_communities_graph(
     if method == "interactive":
         p = graph_plot_interactive(
             df,
-            node_col=centroid_col,
-            node_info_col=type_col,
-            edge_col=neighbors_col,
-            edge_category_col=community_col,
+            node_col=centroid_key,
+            node_info_col=type_key,
+            edge_col=neighbors_key,
+            edge_category_col=community_key,
             **kwargs,
         )
 
     else:
-        nodes = [eval(n) for n in df[centroid_col]]
-        neighs = df[neighbors_col]
-        nodes_types = list(df[community_col])
+        nodes = [eval(n) for n in df[centroid_key]]
+        neighs = df[neighbors_key]
+        nodes_types = list(df[community_key])
 
         edges = []
         edges_types = []
@@ -407,10 +465,13 @@ def cell_communities_graph(
 
 def exp_neighcells(
     adata: AnnData,
-    key: str = "exp_neighcells",
+    key: Optional[str] = None,
     palette: Optional[Sequence] = None,
     **kwargs,
 ):
+    if key is None:
+        key = CONFIG.exp_neighcell_key
+
     df = adata_uns2df(adata, key)
 
     cell_types = pd.unique(df.iloc[:, [0, 1]].values.flatten())

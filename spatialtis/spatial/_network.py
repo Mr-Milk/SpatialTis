@@ -1,3 +1,5 @@
+from typing import Optional
+
 import leidenalg
 import pandas as pd
 from tqdm import tqdm
@@ -9,7 +11,7 @@ from ._util import check_neighbors
 
 
 def communities(
-    n: Neighbors, export_key: str = "communities",
+    n: Neighbors, export_key: Optional[str] = None,
 ):
     """leidenalg algorithm for communities detection
 
@@ -18,6 +20,12 @@ def communities(
         export_key: the key name to store info, exported to anndata.obs field
 
     """
+
+    if export_key is None:
+        export_key = CONFIG.community_key
+    else:
+        CONFIG.community_key = export_key
+
     check_neighbors(n)
 
     sub_comm = []

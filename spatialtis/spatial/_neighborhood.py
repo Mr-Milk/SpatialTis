@@ -40,7 +40,7 @@ def _count_neighbors(
                         c = 0
                     storage_object[(t1, t2)].append(c)
     itr = storage_object.keys()
-    counts = [np.mean(v) / cells if len(v) > 0 else 0 for v in storage_object.values()]
+    counts = [np.mean(v) if len(v) > 0 else 0 for v in storage_object.values()]
     return dict(zip(itr, counts))
 
 
@@ -171,7 +171,7 @@ def neighborhood_analysis(
     resample: int = 50,
     pval: float = 0.01,
     export: bool = True,
-    export_key: str = "neighborhood_analysis",
+    export_key: Optional[str] = None,
     return_df: bool = False,
     mp: bool = False,
 ):
@@ -194,6 +194,12 @@ def neighborhood_analysis(
 
 
     """
+
+    if export_key is None:
+        export_key = CONFIG.neighborhood_analysis_key
+    else:
+        CONFIG.neighborhood_analysis_key = export_key
+
     df = _main(n, _patch_neighborhood, resample=resample, pval=pval, mp=mp)
 
     df = df.T.astype(int)
@@ -209,7 +215,7 @@ def spatial_enrichment_analysis(
     n: Neighbors,
     resample: int = 50,
     export: bool = True,
-    export_key: str = "spatial_enrichment_analysis",
+    export_key: Optional[str] = None,
     return_df: bool = False,
     mp: bool = False,
 ):
@@ -232,6 +238,12 @@ def spatial_enrichment_analysis(
         .. seealso:: `neighborhood_analysis <#spatialtis.spatial.neighborhood_analysis>`_
 
         """
+
+    if export_key is None:
+        export_key = CONFIG.spatial_enrichment_analysis_key
+    else:
+        CONFIG.spatial_enrichment_analysis_key = export_key
+
     df = _main(n, _patch_spatial_enrichment, resample=resample, mp=mp)
 
     df = df.T

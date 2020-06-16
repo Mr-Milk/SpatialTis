@@ -19,13 +19,14 @@ if system_os in ["Linux", "Darwin"]:
 class _CONFIG(object):
     def __init__(self):
         self._EXP_OBS: Optional[Sequence[str]] = None
-        self._ROI_KEY: Optional[str] = None
-        self._CELL_TYPE_COL: Optional[str] = None
+        self.ROI_KEY: Optional[str] = None
+        self._CELL_TYPE_KEY: Optional[str] = None
         self._WORKING_ENV: Optional[str] = "jupyter"
         self.OS: Optional[str] = None
-        self._CPU_USED: Optional[int] = None
+        self._CPU_ALLOC: Optional[int] = None
         self.PROGRESS_BAR: bool = True
         self.MULTI_PROCESSING: bool = False
+        self.VERBOSE: bool = True
 
         # set tqdm bar foramt
         self.PBAR_FORMAT = "%s{l_bar}%s{bar}%s{r_bar}%s" % (
@@ -36,15 +37,34 @@ class _CONFIG(object):
         )
 
         # used key name to store info in anndata
-        self.CENTROID_COL: str = "centroid"
-        self.COMMUNITY_COL: str = "communities"
-        self.NEIGHBORS_COL: str = "cell_neighbors"
-        self.NEIGHBORS_COUNT_COL: str = "neighbors_count"
-        self.AREA_COL: str = "area"
-        self.SHAPE_COL: str = "cell_shape"
-        self.ECCENTRICITY_COL: str = "eccentricity"
-        self.MARKER_COL: str = "markers"
-        self.CHANNEL_COL: str = "channels"
+        self.CENTROID_KEY: str = "centroid"
+        self.COMMUNITY_KEY: str = "communities"
+        self.NEIGHBORS_KEY: str = "cell_neighbors"
+        self.NEIGHBORS_COUNT_KEY: str = "neighbors_count"
+        self.AREA_KEY: str = "area"
+        self.SHAPE_KEY: str = "cell_shape"
+        self.ECCENTRICITY_KEY: str = "eccentricity"
+        self.MARKER_KEY: str = "markers"
+        self.CHANNEL_KEY: str = "channels"
+
+        # export key, the key name used to store results, private to user
+        # statistic part
+        self.cell_components_key: str = "cell_components"
+        self.cell_co_occurrence_key: str = "cell_co_occurrence"
+        self.cell_density_key: str = "cell_density"
+        self.cell_morphology_key: str = "cell_morphology"
+
+        # spatial part
+        self.spatial_distribution_key: str = "spatial_distribution"
+        self.spatial_heterogeneity_key: str = "spatial_heterogeneity"
+        self.hotspot_key: str = "hotspot"
+        self.community_key: str = "communities"
+        self.neighborhood_analysis_key: str = "neighborhood_analysis"
+        self.spatial_enrichment_analysis_key: str = "spatial_enrichment_analysis"
+        self.neighbors_key: str = "cell_neighbors"
+        self.neighbors_count_key: str = "neighbors_count"
+        self.exp_neighcell_key: str = "exp_neighcell"
+        self.exp_neighexp_key: str = "exp_neighexp"
 
     @property
     def EXP_OBS(self):
@@ -58,16 +78,16 @@ class _CONFIG(object):
             self._EXP_OBS = obs
         else:
             raise ValueError
-        self._ROI_KEY = self._EXP_OBS[-1]
+        self.ROI_KEY = self._EXP_OBS[-1]
 
     @property
-    def CELL_TYPE_COL(self):
-        return self._CELL_TYPE_COL
+    def CELL_TYPE_KEY(self):
+        return self._CELL_TYPE_KEY
 
-    @CELL_TYPE_COL.setter
-    def CELL_TYPE_COL(self, type_col):
-        if isinstance(type_col, (str, int, float)):
-            self._CELL_TYPE_COL = type_col
+    @CELL_TYPE_KEY.setter
+    def CELL_TYPE_KEY(self, type_key):
+        if isinstance(type_key, (str, int, float)):
+            self._CELL_TYPE_KEY = type_key
         else:
             raise ValueError
 
@@ -83,16 +103,16 @@ class _CONFIG(object):
             self.PROGRESS_BAR = False
 
     @property
-    def CPU_USED(self):
-        return self._CPU_USED
+    def CPU_ALLOC(self):
+        return self._CPU_ALLOC
 
-    @CPU_USED.setter
-    def CPU_USED(self, num):
+    @CPU_ALLOC.setter
+    def CPU_ALLOC(self, num):
         # auto run ray.init when running on Linux and MacOS
         if not isinstance(num, int):
             raise ValueError("The number of CPU must be integer.")
 
-        self._CPU_USED = num
+        self._CPU_ALLOC = num
 
         if self.OS in ["Linux", "Darwin"]:
             import logging
@@ -101,7 +121,7 @@ class _CONFIG(object):
             ray.init(
                 logging_level=logging.FATAL,
                 ignore_reinit_error=True,
-                num_cpus=self._CPU_USED,
+                num_cpus=self._CPU_ALLOC,
             )
         else:
             warnings.warn("Multi processing not supported on Windows platform")
@@ -113,9 +133,9 @@ CONFIG.OS = system_os
 # set default cpu number
 cpu_count = os.cpu_count()
 if cpu_count is not None:
-    CONFIG.CPU_USED = int(cpu_count / 2)
+    CONFIG.CPU_ALLOC = int(cpu_count / 2)
 else:
-    CONFIG.CPU_USED = 2
+    CONFIG.CPU_ALLOC = 2
 
 # can be override in plotting function
 # ['jupyter', 'zepplin', None]
