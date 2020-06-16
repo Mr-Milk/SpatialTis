@@ -5,7 +5,7 @@ import spatialtis.plotting as sp
 from spatialtis import CONFIG
 
 CONFIG.EXP_OBS = ["Patients", "Sample", "ROI"]
-CONFIG.CELL_TYPE_COL = "leiden"
+CONFIG.CELL_TYPE_KEY = "leiden"
 
 
 def test_cell_map(shared_datadir):

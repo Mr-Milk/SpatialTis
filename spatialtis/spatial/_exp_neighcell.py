@@ -42,17 +42,22 @@ if CONFIG.OS in ["Linux", "Darwin"]:
 
 def exp_neighcells(
     n: Neighbors,
-    marker_col: Optional[str] = None,
+    marker_key: Optional[str] = None,
     std: float = 2.0,
     importance: float = 0.7,
     export: bool = True,
-    export_key: str = "exp_neighcells",
+    export_key: Optional[str] = None,
     return_df: bool = False,
     mp: bool = False,
     **kwargs,
 ):
-    if marker_col is None:
-        marker_col = CONFIG.MARKER_COL
+    if marker_key is None:
+        marker_key = CONFIG.MARKER_KEY
+
+    if export_key is None:
+        export_key = CONFIG.exp_neighcell_key
+    else:
+        CONFIG.exp_neighcell_key
 
     check_neighbors(n)
 
@@ -64,7 +69,7 @@ def exp_neighcells(
 
     for name, roi in adata.obs.groupby(n.expobs):
         neighbors = neighbors_data[name]
-        type_map = dict(zip(range(len(roi)), roi[n.type_col]))
+        type_map = dict(zip(range(len(roi)), roi[n.type_key]))
 
         for (center, neighs), exp in zip(neighbors.items(), adata[roi.index].X):
             t = type_map[center]
@@ -76,7 +81,7 @@ def exp_neighcells(
         df = pd.DataFrame(d, columns=t_cols).fillna(0)
         X[t] = (df / df.sum()).fillna(0).to_numpy()
 
-    markers = adata.var[marker_col]
+    markers = adata.var[marker_key]
 
     results = (
         list()

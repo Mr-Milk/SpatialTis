@@ -8,8 +8,8 @@ import spatialtis.plotting as sp
 from spatialtis import CONFIG, Neighbors
 
 CONFIG.EXP_OBS = ["Patient", "Part", "ROI"]
-CONFIG.CELL_TYPE_COL = "leiden"
-CONFIG.MARKER_COL = "Markers"
+CONFIG.CELL_TYPE_KEY = "leiden"
+CONFIG.MARKER_KEY = "Markers"
 
 
 def test_spatial_dist(shared_datadir):

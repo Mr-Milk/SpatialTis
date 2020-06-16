@@ -10,7 +10,7 @@ from tqdm import tqdm
 from spatialtis.config import CONFIG
 
 from ..sta.statistics import type_counter
-from ..utils import df2adata_uns
+from ..utils import df2adata_uns, timer
 
 if CONFIG.OS in ["Linux", "Darwin"]:
     try:
@@ -32,17 +32,18 @@ if CONFIG.OS in ["Linux", "Darwin"]:
         return e.entropy
 
 
+@timer(prefix="Running spatial heterogeneity")
 def spatial_heterogeneity(
     adata: AnnData,
     groupby: Union[Sequence, str, None] = None,
-    type_col: Optional[str] = None,
-    centroid_col: Optional[str] = None,
-    method: str = "altieri",  # shannon, leibovici, altieri
+    type_key: Optional[str] = None,
+    centroid_key: Optional[str] = None,
+    method: str = "leibovici",  # shannon, leibovici, altieri
     base: Union[int, float, None] = None,
     d: Optional[int] = None,
     cut: Union[int, Sequence, None] = None,
     compare: Optional[str] = None,
-    export_key: str = "spatial_heterogeneity",
+    export_key: Optional[str] = None,
     return_df: bool = False,
     mp: Optional[bool] = None,
 ) -> Optional[pd.DataFrame]:
@@ -54,8 +55,8 @@ def spatial_heterogeneity(
     Args:
         adata: anndata object to perform analysis
         groupby: list of names describes your experiments
-        type_col: name of the cell types column
-        centroid_col:
+        type_key: name of the cell types column
+        centroid_key:
         method:
         base:
         d:
@@ -68,10 +69,16 @@ def spatial_heterogeneity(
     """
     if groupby is None:
         groupby = CONFIG.EXP_OBS
-    if type_col is None:
-        type_col = CONFIG.CELL_TYPE_COL
-    if centroid_col is None:
-        centroid_col = CONFIG.CENTROID_COL
+    if type_key is None:
+        type_key = CONFIG.CELL_TYPE_KEY
+    if centroid_key is None:
+        centroid_key = CONFIG.CENTROID_KEY
+
+    if export_key is None:
+        export_key = CONFIG.spatial_heterogeneity_key
+    else:
+        CONFIG.spatial_heterogeneity_key = export_key
+
     if mp is None:
         mp = CONFIG.MULTI_PROCESSING
 
@@ -81,7 +88,7 @@ def spatial_heterogeneity(
         )
 
     if method == "shannon":
-        df = type_counter(adata, groupby, type_col)
+        df = type_counter(adata, groupby, type_key)
 
         if len(df.columns) == 1:
             print("No heterogeneity, only one type of cell found.")
@@ -112,7 +119,7 @@ def spatial_heterogeneity(
         roi_heterogeneity = pd.DataFrame(data=data, index=df.index)
 
     else:
-        df = adata.obs[groupby + [type_col, centroid_col]]
+        df = adata.obs[groupby + [type_key, centroid_key]]
 
         ent = list()
         mindex = list()
@@ -128,8 +135,8 @@ def spatial_heterogeneity(
             results = list()
 
             for i, (n, g) in enumerate(groups):
-                types = list(g[type_col])
-                points = [eval(i) for i in g[centroid_col]]
+                types = list(g[type_key])
+                points = [eval(i) for i in g[centroid_key]]
                 if method == "altieri":
                     results.append(
                         altieri_entropy_mp.remote(points, types, cut=cut, base=base)
@@ -168,8 +175,8 @@ def spatial_heterogeneity(
                     disable=(not CONFIG.PROGRESS_BAR),
                 )
             ):
-                types = list(g[type_col])
-                points = [eval(i) for i in g[centroid_col]]
+                types = list(g[type_key])
+                points = [eval(i) for i in g[centroid_key]]
                 if method == "altieri":
                     e = altieri_entropy(points, types, cut=cut, base=base)
                 else:

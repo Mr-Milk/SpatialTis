@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Optional, Sequence, Union
 
 import matplotlib.patches as mpatches
@@ -21,6 +22,7 @@ def heatmap(
     row_colors_legend_bbox: Optional[Sequence[float]] = None,
     col_colors_legend_bbox: Optional[Sequence[float]] = None,
     colorbar_bbox: Optional[Sequence[float]] = None,
+    save: Union[Path, str, None] = None,
     display: bool = True,
     return_plot: bool = False,
     **kwargs,
@@ -198,6 +200,9 @@ def heatmap(
         remove_xtlabel = ax.set_xticklabels("")
         remove_xlabel = ax.set_xlabel("")
         remove_xticks = ax.set_xticks([])
+
+    if save:
+        h.savefig(save, dpi=300)
 
     if not display:
         plt.close()

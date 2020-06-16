@@ -90,27 +90,32 @@ if CONFIG.OS in ["Linux", "Darwin"]:
 def hotspot(
     adata: AnnData,
     groupby: Union[Sequence, str, None] = None,
-    type_col: Optional[str] = None,
-    centroid_col: Optional[str] = None,
+    type_key: Optional[str] = None,
+    centroid_key: Optional[str] = None,
     selected_types: Optional[Sequence] = None,
     search_level: int = 1,
     grid_size: int = 50,
     pval: float = 0.01,
-    export_key: str = "hotspot",
+    export_key: Optional[str] = None,
     mp: bool = False,
 ):
     if groupby is None:
         groupby = CONFIG.EXP_OBS
-    if type_col is None:
-        type_col = CONFIG.CELL_TYPE_COL
-    if centroid_col is None:
-        centroid_col = CONFIG.CENTROID_COL
+    if type_key is None:
+        type_key = CONFIG.CELL_TYPE_KEY
+    if centroid_key is None:
+        centroid_key = CONFIG.CENTROID_KEY
+
+    if export_key is None:
+        export_key = CONFIG.hotspot_key
+    else:
+        CONFIG.hotspot_key = export_key
 
     df = filter_adata(
         adata,
         groupby,
-        type_col,
-        centroid_col,
+        type_key,
+        centroid_key,
         selected_types=selected_types,
         reset_index=False,
     )
@@ -127,9 +132,9 @@ def hotspot(
         indexs = []
         hotcells = []
         for name, group in groups:
-            for t, tg in group.groupby(type_col):
+            for t, tg in group.groupby(type_key):
                 if len(tg) > 1:
-                    cells = [eval(c) for c in tg[centroid_col]]
+                    cells = [eval(c) for c in tg[centroid_key]]
                     results.append(
                         _hotspot_mp.remote(cells, grid_size, search_level, pval)
                     )
@@ -156,9 +161,9 @@ def hotspot(
         for name, group in tqdm(
             groups, bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)
         ):
-            for t, tg in group.groupby(type_col):
+            for t, tg in group.groupby(type_key):
                 if len(tg) > 1:
-                    cells = [eval(c) for c in tg[centroid_col]]
+                    cells = [eval(c) for c in tg[centroid_key]]
                     hots = _hotspot(cells, grid_size, search_level, pval)
                     hotcells.append(pd.Series(hots, index=tg.index))
                 elif len(tg) == 1:

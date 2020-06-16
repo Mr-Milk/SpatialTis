@@ -26,7 +26,7 @@ def cell_map(
     return_plot: bool = False,
 ):
     if type_col is None:
-        type_col = CONFIG.CELL_TYPE_COL
+        type_col = CONFIG.CELL_TYPE_KEY
     if shape_col is None:
         shape_col = CONFIG.SHAPE_COL
 

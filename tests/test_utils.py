@@ -4,7 +4,7 @@ from spatialtis import CONFIG
 from spatialtis.utils import prepare_svca
 
 CONFIG.EXP_OBS = ["Patient", "Part", "ROI"]
-CONFIG.CELL_TYPE_COL = "leiden"
+CONFIG.CELL_TYPE_KEY = "leiden"
 
 
 def test_svca(shared_datadir, tmpdir):

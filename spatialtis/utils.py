@@ -1,14 +1,80 @@
+import logging
 import shutil
+import sys
 from pathlib import Path
-from typing import Sequence, Union
+from time import time
+from typing import Optional, Sequence, Union
 
 import pandas as pd
 from anndata import AnnData
+from colorama import Fore
 
 from spatialtis.config import CONFIG
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+console = logging.StreamHandler(sys.stdout)
+console.setLevel(logging.DEBUG)
+formatter = logging.Formatter("%(message)s")
+console.setFormatter(formatter)
+logger.addHandler(console)
 
-def df2adata_uns(df: pd.DataFrame, adata: AnnData, key: str):
+
+def pretty_time(t):
+    if t < 1:
+        return f"{int(t * 1000)}ms"
+    elif 1 <= t < 60:
+        ms = t * 1000 % 1000
+        return f"{int(t)}s{int(ms)}ms"
+    elif 60 <= t < 3600:
+        minute = t // 60
+        second = t % 60
+        return f"{minute}m{int(second)}s"
+    elif t >= 3600:
+        hour = t // 3600
+        minute = (t - (hour * 3600)) // 60
+        second = t % 60
+        return f"{hour}h{minute}m{int(second)}s"
+
+
+def timer(prefix=None, suffix=None, verbose=None):
+    """
+    Timer decorator to measure the time a function used
+
+    Args:
+        prefix: content to add at the front
+        suffix: content to add at the tail
+        verbose: whether to print
+
+    Returns:
+
+    """
+    if verbose is None:
+        verbose = CONFIG.VERBOSE
+
+    def timeit(func):
+        def timed(*args, **kw):
+            if (prefix is not None) & verbose:
+                logger.info(f"{Fore.GREEN}{prefix}{Fore.RESET}")
+            ts = time()
+            result = func(*args, **kw)
+            te = time()
+            if (suffix is not None) & verbose:
+                logger.info(f"{Fore.GREEN}{suffix}{Fore.RESET}")
+            if verbose:
+                logger.info(
+                    f"{Fore.GREEN}Finished! Used {Fore.CYAN}{pretty_time(te - ts)}{Fore.RESET}"
+                )
+            return result
+
+        return timed
+
+    return timeit
+
+
+def df2adata_uns(
+    df: pd.DataFrame, adata: AnnData, key: str, verbose: Optional[bool] = None
+):
     """Preserve all info in pd.DataFrame as dict, and write to anndata.uns
     The anndata object haven't fully support read/write of a pandas.Dataframe object,
     this is an solution to store all the information in a dicts
@@ -22,6 +88,7 @@ def df2adata_uns(df: pd.DataFrame, adata: AnnData, key: str):
         df: the pandas.DataFrame object you want to write to the anndata.uns field
         adata: the anndata object to work with
         key: which anndata.uns key you want to write to
+        verbose: whether to print message
 
     """
     container = dict(
@@ -30,15 +97,17 @@ def df2adata_uns(df: pd.DataFrame, adata: AnnData, key: str):
 
     adata.uns[key] = container
 
-    print(
-        f"""Finished!
-    Add to AnnData object
-    uns: '{key}' """
-    )
+    if verbose is None:
+        verbose = CONFIG.VERBOSE
+
+    if verbose:
+        logger.info(
+            f"""{Fore.GREEN}Added to AnnData, uns: {Fore.CYAN}'{key}'{Fore.RESET}"""
+        )
 
 
 def col2adata_obs(
-    col: Sequence, adata: AnnData, key: str,
+    col: Sequence, adata: AnnData, key: str, verbose: Optional[bool] = None
 ):
     """Write a Sequence to anndata.obs
 
@@ -46,15 +115,18 @@ def col2adata_obs(
         col: the Sequence object
         adata: the anndata object to work with
         key: which anndata.obs key you want to write to
+        verbose: whether to print message
 
     """
     adata.obs[key] = col
 
-    print(
-        f"""Finished!
-    Add to AnnData object
-    obs: '{key}' """
-    )
+    if verbose is None:
+        verbose = CONFIG.VERBOSE
+
+    if verbose:
+        logger.info(
+            f"""{Fore.GREEN}Added to AnnData, obs: {Fore.CYAN}'{key}'{Fore.RESET}"""
+        )
 
 
 def adata_uns2df(

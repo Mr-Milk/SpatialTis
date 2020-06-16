@@ -38,13 +38,18 @@ def exp_neighexp(
     marker_col: Optional[str] = None,
     importance: float = 0.5,
     export: bool = True,
-    export_key: str = "exp_neighexp",
+    export_key: Optional[str] = None,
     return_df: bool = False,
     mp: bool = False,
     **kwargs,
 ):
     if marker_col is None:
-        marker_col = CONFIG.MARKER_COL
+        marker_col = CONFIG.MARKER_KEY
+
+    if export_key is None:
+        export_key = CONFIG.exp_neighexp_key
+    else:
+        CONFIG.exp_neighexp_key = export_key
 
     check_neighbors(n)
 
@@ -54,7 +59,7 @@ def exp_neighexp(
     markers = adata.var[marker_col]
     markers_mapper = dict(zip(markers, range(len(markers))))
 
-    interactions = adata_uns2df(adata, "exp_neighcells")
+    interactions = adata_uns2df(adata, CONFIG.exp_neighcell_key)
     cc_mapper = dict()
     cexp_mapper = dict()
     X = dict(
@@ -85,7 +90,7 @@ def exp_neighexp(
 
     for name, roi in adata.obs.groupby(n.expobs):
         neighbors = neighbors_data[name]
-        type_map = dict(zip(range(len(roi)), roi[n.type_col]))
+        type_map = dict(zip(range(len(roi)), roi[n.type_key]))
         roi_exp = adata[roi.index].X
 
         for (center, neighs), exp in zip(neighbors.items(), roi_exp):

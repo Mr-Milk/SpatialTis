@@ -8,7 +8,7 @@ import spatialtis.plotting as sp
 from spatialtis import CONFIG
 
 CONFIG.EXP_OBS = ["Patient", "Part", "ROI"]
-CONFIG.CELL_TYPE_COL = "leiden"
+CONFIG.CELL_TYPE_KEY = "leiden"
 
 
 def test_cell_components(shared_datadir):
