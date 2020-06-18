@@ -1,4 +1,3 @@
-import logging
 from itertools import cycle
 
 import bokeh.palettes as pl

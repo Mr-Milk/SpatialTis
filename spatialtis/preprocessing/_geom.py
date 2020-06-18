@@ -2,7 +2,6 @@ from pathlib import Path
 from typing import Optional, Sequence, Union
 
 import alphashape
-import numpy as np
 from shapely.geometry import MultiPoint
 from skimage.io import imread
 from skimage.measure import label, regionprops

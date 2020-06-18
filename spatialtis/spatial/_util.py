@@ -1,8 +1,7 @@
 from collections import OrderedDict
 from typing import Any
 
-import numpy as np
-from shapely.geometry import MultiPoint, box
+from shapely.geometry import MultiPoint
 
 from ._neighbors import Neighbors
 

@@ -1,6 +1,6 @@
+import functools
 import logging
 import shutil
-import sys
 from pathlib import Path
 from time import time
 from typing import Optional, Sequence, Union
@@ -12,12 +12,16 @@ from colorama import Fore
 from spatialtis.config import CONFIG
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-console = logging.StreamHandler(sys.stdout)
-console.setLevel(logging.DEBUG)
-formatter = logging.Formatter("%(message)s")
-console.setFormatter(formatter)
-logger.addHandler(console)
+
+
+def lprint(text, color="green", verbose=None):
+    cmap = {"green": Fore.GREEN, "red": Fore.RED}
+
+    if verbose is None:
+        verbose = CONFIG.VERBOSE.INFO
+
+    if verbose:
+        logger.info(f"{cmap[color]}{text}{Fore.RESET}")
 
 
 def pretty_time(t):
@@ -50,17 +54,18 @@ def timer(prefix=None, suffix=None, verbose=None):
 
     """
     if verbose is None:
-        verbose = CONFIG.VERBOSE
+        verbose = CONFIG.VERBOSE.INFO
 
     def timeit(func):
+        @functools.wraps(func)
         def timed(*args, **kw):
             if (prefix is not None) & verbose:
-                logger.info(f"{Fore.GREEN}{prefix}{Fore.RESET}")
+                lprint(prefix, verbose=verbose)
             ts = time()
             result = func(*args, **kw)
             te = time()
             if (suffix is not None) & verbose:
-                logger.info(f"{Fore.GREEN}{suffix}{Fore.RESET}")
+                lprint(suffix, verbose=verbose)
             if verbose:
                 logger.info(
                     f"{Fore.GREEN}Finished! Used {Fore.CYAN}{pretty_time(te - ts)}{Fore.RESET}"
@@ -98,7 +103,7 @@ def df2adata_uns(
     adata.uns[key] = container
 
     if verbose is None:
-        verbose = CONFIG.VERBOSE
+        verbose = CONFIG.VERBOSE.ANNDATA
 
     if verbose:
         logger.info(
@@ -121,7 +126,7 @@ def col2adata_obs(
     adata.obs[key] = col
 
     if verbose is None:
-        verbose = CONFIG.VERBOSE
+        verbose = CONFIG.VERBOSE.ANNDATA
 
     if verbose:
         logger.info(

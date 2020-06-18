@@ -122,11 +122,7 @@ def exp_neighexp(
             combs.append(comb)
 
         for _ in tqdm(
-            exec_iterator(results),
-            total=len(results),
-            desc="fit model",
-            bar_format=CONFIG.PBAR_FORMAT,
-            disable=(not CONFIG.PROGRESS_BAR),
+            exec_iterator(results), **CONFIG.tqdm(total=len(results), desc="fit model")
         ):
             pass
 
@@ -138,12 +134,7 @@ def exp_neighexp(
 
     else:
         results = []
-        for comb, arr in tqdm(
-            X.items(),
-            desc="fit model",
-            bar_format=CONFIG.PBAR_FORMAT,
-            disable=(not CONFIG.PROGRESS_BAR),
-        ):
+        for comb, arr in tqdm(X.items(), **CONFIG.tqdm(desc="fit model"),):
             [max_ix, max_weights] = _max_feature(arr, Y[comb], **kwargs)
             if max_weights > importance:
                 results.append((markers[max_ix], *comb, max_weights))

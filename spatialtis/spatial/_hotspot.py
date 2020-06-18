@@ -1,4 +1,3 @@
-from collections import OrderedDict
 from typing import Optional, Sequence, Union
 
 import numpy as np
@@ -10,7 +9,7 @@ from tqdm import tqdm
 
 from spatialtis.config import CONFIG
 
-from ..utils import filter_adata
+from ..utils import filter_adata, timer
 from ._util import quad_sta
 
 
@@ -87,6 +86,7 @@ if CONFIG.OS in ["Linux", "Darwin"]:
     _hotspot_mp = ray.remote(_hotspot)
 
 
+@timer(prefix="Running hotspot detection")
 def hotspot(
     adata: AnnData,
     groupby: Union[Sequence, str, None] = None,
@@ -144,10 +144,7 @@ def hotspot(
 
         for _ in tqdm(
             exec_iterator(results),
-            total=len(results),
-            desc="hotspot analysis",
-            bar_format=CONFIG.PBAR_FORMAT,
-            disable=(not CONFIG.PROGRESS_BAR),
+            **CONFIG.tqdm(total=len(results), desc="hotspot analysis",)
         ):
             pass
 
@@ -158,10 +155,10 @@ def hotspot(
 
     else:
         hotcells = []
-        for name, group in tqdm(
-            groups, bar_format=CONFIG.PBAR_FORMAT, disable=(not CONFIG.PROGRESS_BAR)
-        ):
-            for t, tg in group.groupby(type_key):
+        for name, group in tqdm(groups, CONFIG.tqdm()):
+            for t, tg in tqdm(
+                group.groupby(type_key), **CONFIG.tqdm(desc="hotspot analysis",)
+            ):
                 if len(tg) > 1:
                     cells = [eval(c) for c in tg[centroid_key]]
                     hots = _hotspot(cells, grid_size, search_level, pval)

@@ -1,7 +1,5 @@
-from pathlib import Path
-from typing import Mapping, Optional, Sequence, Union
+from typing import Mapping, Optional, Sequence
 
-import pandas as pd
 import pyecharts.options as opts
 from anndata import AnnData
 from pyecharts.charts import Bar3D, Scatter3D, Tab
@@ -25,6 +23,25 @@ def expression_map(
     # save: Union[str, Path, None] = None, # save multi plots is not allowed in pyecharts
     return_plot: bool = False,
 ):
+    """
+
+    Args:
+        adata:
+        query:
+        marker_col:
+        centroid_col:
+        order:
+        method:
+        renderer:
+        axis_size:
+        size:
+        palette:
+        display:
+        return_plot:
+
+    Returns:
+
+    """
     if marker_col is None:
         marker_col = CONFIG.MARKER_COL
     if centroid_col is None:

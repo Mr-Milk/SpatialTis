@@ -1,3 +1,6 @@
+from pathlib import Path
+from typing import Optional, Sequence, Union
+
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.collections import PatchCollection
@@ -14,15 +17,17 @@ D   1
 
 
 def tri_dotplot(
-    diagnol_arr,
-    labels,
-    annotate=False,
-    xlabel_rotation=90,
-    ylabel_rotation=0,
-    return_plot=False,
-    display=True,
+    diagnol_arr: np.array,
+    labels: Sequence,
+    annotate: bool = False,
+    xlabel_rotation: int = 90,
+    ylabel_rotation: int = 0,
+    color: Union[str, Sequence] = "#376B6D",
+    return_plot: bool = False,
+    display: bool = True,
+    title: Optional[str] = None,
+    save: Union[str, Path, None] = None,
 ):
-
     all_max = list()
     for arr in diagnol_arr:
         all_max.append(max(arr))
@@ -41,7 +46,7 @@ def tri_dotplot(
                 if annotate:
                     ax.annotate(v, xy=(i + 0.5, t + 0.5), ha="center", va="center")
 
-    circ_col = PatchCollection(circles, alpha=0.5, facecolor="#2E5C6E")
+    circ_col = PatchCollection(circles, alpha=0.5, facecolor=color)
 
     ax.add_collection(circ_col)
 
@@ -60,8 +65,14 @@ def tri_dotplot(
     ax.xaxis.set_ticks_position("none")
     ax.yaxis.set_ticks_position("none")
 
-    if display:
-        plt.show()
+    if title:
+        plt.title(title)
+
+    if save:
+        fig.savefig(save, dpi=300)
+
+    if not display:
+        plt.close()
 
     if return_plot:
         return fig, ax

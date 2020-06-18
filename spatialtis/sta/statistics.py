@@ -237,10 +237,14 @@ def cell_morphology(
         CONFIG.cell_morphology_key = export_key
 
     key = groupby + [type_key, metrics_key]
-    df = adata.obs[key]
+    df = adata.obs.loc[:, key]
+    df = df.reset_index()
+    df.rename(
+        columns={type_key: "type", metrics_key: "value", "index": "id"}, inplace=True
+    )
 
-    df.index = pd.MultiIndex.from_frame(df[groupby + [type_key]])
-    df = df.drop(groupby + [type_key], axis=1)
+    # df = df.set_index(groupby + ['type', 'id'], drop=True)
+    # df = df.drop(groupby + ['type', 'id'], axis=1)
 
     if export:
         df2adata_uns(df, adata, export_key)

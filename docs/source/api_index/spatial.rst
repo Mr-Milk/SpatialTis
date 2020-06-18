@@ -17,25 +17,25 @@ Neighbors
 neighborhood_analysis
 #######################
 
-.. autofunction:: spatialtis.spatial.neighborhood_analysis
-.. autofunction:: spatialtis.spatial.spatial_enrichment_analysis
+.. autofunction:: spatialtis.neighborhood_analysis
+.. autofunction:: spatialtis.spatial_enrichment_analysis
 
 spatial_distribution
 ######################
 
-.. autofunction:: spatialtis.spatial.spatial_distribution
+.. autofunction:: spatialtis.spatial_distribution
 
 spatial_heterogeneity
 ######################
 
-.. autofunction:: spatialtis.spatial.spatial_heterogeneity
+.. autofunction:: spatialtis.spatial_heterogeneity
 
 hotspot
 ##################
 
-.. autofunction:: spatialtis.spatial.hotspot
+.. autofunction:: spatialtis.hotspot
 
 communities
 ######################
 
-.. autofunction:: spatialtis.spatial.communities
+.. autofunction:: spatialtis.communities

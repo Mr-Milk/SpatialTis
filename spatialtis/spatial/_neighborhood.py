@@ -7,7 +7,7 @@ import pandas as pd
 from tqdm import tqdm
 
 from spatialtis.config import CONFIG
-from spatialtis.utils import df2adata_uns
+from spatialtis.utils import df2adata_uns, timer
 
 from ._neighbors import Neighbors
 from ._util import check_neighbors
@@ -131,11 +131,7 @@ def _main(
 
         for _ in tqdm(
             exec_iterator(counts),
-            total=len(counts),
-            unit="ROI",
-            desc="neighborhood analysis",
-            bar_format=CONFIG.PBAR_FORMAT,
-            disable=(not CONFIG.PROGRESS_BAR),
+            **CONFIG.tqdm(total=len(counts), desc="neighborhood analysis"),
         ):
             pass
 
@@ -146,11 +142,7 @@ def _main(
 
     else:
         for name, value in tqdm(
-            n.neighbors.items(),
-            unit="ROI",
-            desc="neighborhood analysis",
-            bar_format=CONFIG.PBAR_FORMAT,
-            disable=(not CONFIG.PROGRESS_BAR),
+            n.neighbors.items(), **CONFIG.tqdm(desc="neighborhood analysis"),
         ):
             [perm_count, real_count] = _bootstrap(
                 n.types[name], value, cellcomb, resample
@@ -166,6 +158,7 @@ def _main(
     return results_df
 
 
+@timer(prefix="Running neighborhood analysis")
 def neighborhood_analysis(
     n: Neighbors,
     resample: int = 50,
@@ -211,6 +204,7 @@ def neighborhood_analysis(
         return df
 
 
+@timer(prefix="Running spatial enrichment analysis")
 def spatial_enrichment_analysis(
     n: Neighbors,
     resample: int = 50,

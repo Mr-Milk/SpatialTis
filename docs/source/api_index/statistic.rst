@@ -7,17 +7,17 @@ Statistic
 cell_components
 ################
 
-.. autofunction:: spatialtis.sta.cell_components
+.. autofunction:: spatialtis.cell_components
 
 cell_co_occurrence
 ###################
 
-.. autofunction:: spatialtis.sta.cell_co_occurrence
+.. autofunction:: spatialtis.cell_co_occurrence
 
 cell_density
 #############
-.. autofunction:: spatialtis.sta.cell_density
+.. autofunction:: spatialtis.cell_density
 
 cell_morphology
 ###############
-.. autofunction:: spatialtis.sta.cell_morphology
+.. autofunction:: spatialtis.cell_morphology

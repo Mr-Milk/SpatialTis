@@ -13,7 +13,7 @@ from shapely.wkt import dumps, loads
 from tqdm import tqdm
 
 from spatialtis.config import CONFIG
-from spatialtis.utils import col2adata_obs, timer
+from spatialtis.utils import col2adata_obs, lprint, timer
 
 
 def _polygonize_cells(shapekey, group):
@@ -174,6 +174,11 @@ class Neighbors(object):
             if scale < 1:
                 raise ValueError("Can't shrink cell, 'scale' must >= 1")
 
+        if self.__geom == "point":
+            lprint("Cell resolved as point data, searching neighbors using KD-tree")
+        if self.__geom == "shape":
+            lprint("Cell resolved as shape data, searching neighbors using R-tree")
+
         # parallel processing
         if mp & (CONFIG.OS in ["Linux", "Darwin"]):
 
@@ -196,10 +201,7 @@ class Neighbors(object):
 
                 for _ in tqdm(
                     exec_iterator(results),
-                    total=len(results),
-                    desc="polygonize cells",
-                    bar_format=CONFIG.PBAR_FORMAT,
-                    disable=(not CONFIG.PROGRESS_BAR),
+                    **CONFIG.tqdm(total=len(results), desc="polygonize cells",),
                 ):
                     pass
 
@@ -219,10 +221,7 @@ class Neighbors(object):
                     names.append(n)
                 for _ in tqdm(
                     exec_iterator(results),
-                    total=len(results),
-                    desc="find neighbors",
-                    bar_format=CONFIG.PBAR_FORMAT,
-                    disable=(not CONFIG.PROGRESS_BAR),
+                    **CONFIG.tqdm(total=len(results), desc="find neighbors"),
                 ):
                     pass
                 results = ray.get(results)
@@ -238,10 +237,7 @@ class Neighbors(object):
 
                 for _ in tqdm(
                     exec_iterator(results),
-                    total=len(results),
-                    desc="find neighbors",
-                    bar_format=CONFIG.PBAR_FORMAT,
-                    disable=(not CONFIG.PROGRESS_BAR),
+                    **CONFIG.tqdm(total=len(results), desc="find neighbors"),
                 ):
                     pass
                 results = ray.get(results)
@@ -253,10 +249,7 @@ class Neighbors(object):
         else:
             if (self.__geom == "shape") & (not self.__polycells):
                 for n, g in tqdm(
-                    self.__groups,
-                    desc="polygonize cells",
-                    bar_format=CONFIG.PBAR_FORMAT,
-                    disable=(not CONFIG.PROGRESS_BAR),
+                    self.__groups, **CONFIG.tqdm(desc="polygonize cells"),
                 ):
                     polycells = _polygonize_cells(self.__shapekey, g)
                     self.__polycellsdb[n] = polycells
@@ -269,21 +262,13 @@ class Neighbors(object):
             # shape neighbor search
             if self.__geom == "shape":
                 for n, polycells in tqdm(
-                    self.__polycellsdb.items(),
-                    desc="find neighbors",
-                    bar_format=CONFIG.PBAR_FORMAT,
-                    disable=(not CONFIG.PROGRESS_BAR),
+                    self.__polycellsdb.items(), **CONFIG.tqdm(desc="find neighbors"),
                 ):
                     nbcells = _neighborshapes(polycells, scale, expand)
                     self.__neighborsdb[n] = nbcells
             # point neighbor search
             else:
-                for n, g in tqdm(
-                    self.__groups,
-                    desc="find neighbors",
-                    bar_format=CONFIG.PBAR_FORMAT,
-                    disable=(not CONFIG.PROGRESS_BAR),
-                ):
+                for n, g in tqdm(self.__groups, **CONFIG.tqdm(desc="find neighbors"),):
                     nbcells = _neighborpoints(g[self.__centkey], expand)
                     self.__neighborsdb[n] = nbcells
 
@@ -401,10 +386,12 @@ class Neighbors(object):
 
     @property
     def neighborsbuilt(self):
+        """Check if the neighbors have been built"""
         return self.__neighborsbuilt
 
     @property
     def unitypes(self):
+        """The unique cell types"""
         if self.__typekey is not None:
             return self.__uniquetypes
         else:
@@ -412,6 +399,7 @@ class Neighbors(object):
 
     @property
     def types(self):
+        """Cell types order by their index number in anndata"""
         if self.__typekey is not None:
             return self.__types
         else:
@@ -419,14 +407,17 @@ class Neighbors(object):
 
     @property
     def type_key(self):
+        """key in anndata.uns use to store cell type info"""
         return self.__typekey
 
     @property
     def data(self):
+        """the info in anndata.obs"""
         return self.__data
 
     @property
     def adata(self):
+        """soft link to anndata object"""
         return self.__adata
 
     @property
@@ -436,4 +427,5 @@ class Neighbors(object):
 
     @property
     def expobs(self):
+        """the experiment observations used to process neighbors"""
         return self.__groupby

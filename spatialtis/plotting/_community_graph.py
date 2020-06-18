@@ -1,4 +1,3 @@
-from collections import Counter
 from pathlib import Path
 from typing import Optional, Sequence, Union
 
@@ -33,7 +32,7 @@ def graph_plot_interactive(
     save: Union[str, Path, None] = None,
 ):
     if palette is not None:
-        palette = get_linear_colors(["Set3"])
+        palette = get_linear_colors(["Set3", "Spectral"])
 
     nodes_data = []
     edges_data = []
@@ -50,9 +49,7 @@ def graph_plot_interactive(
         iedge_category = cols.index(edge_category_col)
         edge_categories = df[edge_category_col]
         edge_types = pd.unique(edge_categories)
-        edges_colors = dict(
-            zip(edge_types, get_colors(len(edge_types), ["Set3", "Spectral"]))
-        )
+        edges_colors = dict(zip(edge_types, palette))
     if edge_info_col is not None:
         iedge_info = cols.index(edge_info_col)
 

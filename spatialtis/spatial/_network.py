@@ -5,11 +5,13 @@ import pandas as pd
 from tqdm import tqdm
 
 from spatialtis.config import CONFIG
+from spatialtis.utils import timer
 
 from ._neighbors import Neighbors
 from ._util import check_neighbors
 
 
+@timer(prefix="Running community detection")
 def communities(
     n: Neighbors, export_key: Optional[str] = None,
 ):
@@ -30,12 +32,7 @@ def communities(
 
     sub_comm = []
     graphs = n.to_graphs()
-    for _, graph in tqdm(
-        graphs.items(),
-        desc="find communities",
-        bar_format=CONFIG.PBAR_FORMAT,
-        disable=(not CONFIG.PROGRESS_BAR),
-    ):
+    for _, graph in tqdm(graphs.items(), **CONFIG.tqdm(desc="find communities"),):
         part = leidenalg.find_partition(graph, leidenalg.ModularityVertexPartition)
         sub_comm += part.membership
 

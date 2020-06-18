@@ -16,7 +16,6 @@ from ._cell_cell_interaction import cc_interactions
 from ._community_graph import graph_plot, graph_plot_interactive
 from ._dot_matrixplot import dot_matrix
 from ._dotplot import dotplot
-from ._grouped_pie import grouped_pie
 from ._heatmap_sns import heatmap
 from ._sankey import sankey
 from ._stacked_kde_sns import stacked_kde
@@ -31,6 +30,16 @@ def cell_components(
     key: Optional[str] = None,
     **kwargs,
 ):
+    """(bokeh) plotting function for cell components
+
+    Args:
+        adata: anndata object
+        groupby: how to group your data in plot
+        selected_types: select interested types
+        key: which key to read the data
+        **kwargs: pass to plotting.stacked_bar
+
+    """
     if key is None:
         key = CONFIG.cell_components_key
 
@@ -51,6 +60,16 @@ def cell_density(
     key: Optional[str] = None,
     **kwargs,
 ):
+    """(bokeh) plotting function for cell density
+
+    Args:
+        adata: anndata object
+        groupby: how to group your data in plot
+        selected_types: select interested types
+        key: which key to read the data
+        **kwargs: pass to plotting.violin_plot
+
+    """
     if key is None:
         key = CONFIG.cell_density_key
 
@@ -61,7 +80,10 @@ def cell_density(
 
     df = pd.DataFrame(df.stack(), columns=["density"])
     if groupby is not None:
-        groupby = ["type"] + list(groupby)
+        if "type" not in groupby:
+            groupby = ["type"] + list(groupby)
+        else:
+            groupby = list(groupby)
     else:
         groupby = ["type"]
     p = violin_plot(df, groupby, "density", **kwargs)
@@ -79,6 +101,21 @@ def cell_co_occurrence(
     pval: float = 0.01,
     **kwargs,
 ):
+    """(matplotlib) plotting function for cell co-occurrence
+
+    Args:
+        adata: anndata object
+        groupby: how to group your data in plot
+        compare: The level of co-occurrence, default is on ROI level
+        selected_types: select interested types
+        method: "dot" or "heatmap"
+        key: which key to read the data
+        pval: threhold of pval
+        **kwargs: pass to plotting.tro_dotplot (method="dot") or plotting.heatmap (method="heatmap")
+
+    Returns:
+
+    """
     if key is None:
         key = CONFIG.cell_co_occurrence_key
 
@@ -87,7 +124,7 @@ def cell_co_occurrence(
     if groupby is None:
         groupby = CONFIG.EXP_OBS
     if compare is None:
-        compare = CONFIG.EXP_OBS[0]
+        compare = CONFIG.ROI_KEY
     if selected_types is not None:
         df = df[selected_types]
 
@@ -151,20 +188,40 @@ def cell_co_occurrence(
 
 def cell_morphology(
     adata: AnnData,
-    row: Optional[str] = None,
-    col: Optional[str] = None,
-    selected_types: Optional[str] = None,
-    *,
+    groupby: Optional[Sequence[str]] = None,
+    selected_types: Optional[Sequence] = None,
     key: Optional[str] = None,
     **kwargs,
 ):
+    """(bokeh) plotting function for cell morphology
+
+    Args:
+        adata: anndata object
+        groupby: how to group your data in plot
+        selected_types: select interested types
+        key: which key to read the data
+        **kwargs: pass to plotting.violin_plot
+
+    """
     if key is None:
         key = CONFIG.cell_morphology_key
 
     df = adata_uns2df(adata, key)
-    type_col = CONFIG.CELL_TYPE_KEY
 
-    p = stacked_kde(df.xs(selected_types, level=type_col), row=row, col=col, **kwargs)
+    if selected_types is not None:
+        df = df[df["type"].isin(selected_types)]
+
+    if groupby is not None:
+        df = df.set_index(groupby + ["type", "id"], drop=True)
+        if "type" not in groupby:
+            groupby = ["type"] + list(groupby)
+        else:
+            groupby = list(groupby)
+    else:
+        df = df.set_index(["type", "id"], drop=True)
+        groupby = ["type"]
+    p = violin_plot(df, groupby, "value", **kwargs)
+
     return p
 
 
@@ -172,10 +229,19 @@ def neighborhood_analysis(
     adata: AnnData,
     groupby: Optional[Sequence[str]] = None,
     key: Optional[str] = None,
-    method: str = "graph",  # graph, heatmap, dot_matrix
-    order: bool = False,
+    method: str = "dot_matrix",  # graph, heatmap, dot_matrix
     **kwargs,
 ):
+    """("dot_matrix", "heatmap": matplotlib, "graph": pyechart) plotting function for neighborhood analysis
+
+    Args:
+        adata: anndata object
+        groupby: how to group your data in plot, only work for method="heatmap"
+        key: which key to read the data
+        method: "dot_matrix", "heatmap", "graph"
+        **kwargs: pass to plotting.dot_matrix; plotting.heatmap; plotting.cc_interaction
+
+    """
     if key is None:
         key = CONFIG.neighborhood_analysis_key
 
@@ -241,9 +307,6 @@ def neighborhood_analysis(
         )
 
     elif method == "heatmap":
-
-        return df
-
         plot_kwargs = dict(
             row_colors=groupby,
             col_colors=["Cell type1", "Cell type2"],
@@ -270,6 +333,15 @@ def spatial_enrichment_analysis(
     key: Optional[str] = None,
     **kwargs,
 ):
+    """(matplotlib) plotting function for spatial enrichment analysis
+
+    Args:
+        adata: anndata object
+        groupby: how to group your data in plot
+        key: which key to read the data
+        **kwargs: pass to plotting.heatmap
+
+    """
     if key is None:
         key = CONFIG.spatial_enrichment_analysis_key
 
@@ -296,9 +368,20 @@ def spatial_distribution(
     groupby: Optional[Sequence[str]] = None,
     selected_types: Optional[Sequence] = None,
     key: Optional[str] = None,
-    method: str = "dot",  # pie, heatmap
+    method: str = "dot",  # heatmap
     **kwargs,
 ):
+    """(matplotlib) plotting function for spatial distribution
+
+    Args:
+        adata: anndata object
+        groupby: how to group your data in plot
+        selected_types: select interested types
+        key: which key to read the data
+        method: "dot" or "heatmap"
+        **kwargs: pass to plotting.dotplot or plotting.heatmap
+
+    """
     if key is None:
         key = CONFIG.spatial_distribution_key
 
@@ -362,6 +445,16 @@ def spatial_heterogeneity(
     metric: str = "heterogeneity",
     **kwargs,
 ):
+    """(bokeh) plotting function for cell morphology
+
+    Args:
+        adata: anndata object
+        groupby: how to group your data in plot
+        key: which key to read the data
+        metric: "heterogeneity" or "KL", "KL" only available if you use shannon entropy
+        **kwargs: pass to plotting.violin_plot or plotting.stacked_bar
+
+    """
     if key is None:
         key = CONFIG.spatial_heterogeneity_key
 
@@ -387,10 +480,24 @@ def cell_type_graph(
     centroid_key: Optional[str] = None,
     **kwargs,
 ):
+    """(pyecharts) visualize cell type in ROI
+
+    Args:
+        c
+        type_key: key to cell type
+        neighbors_key: key to neighbors info
+        centroid_key: key to cell centroid
+        **kwargs: pass to plotting.graph_plot_interactive
+
+    Returns:
+
+    """
     if type_key is None:
         type_key = CONFIG.CELL_TYPE_KEY
     if neighbors_key is None:
         neighbors_key = CONFIG.NEIGHBORS_KEY
+        if neighbors_key not in adata.obs.keys():
+            neighbors_key = None
     if centroid_key is None:
         centroid_key = CONFIG.CENTROID_KEY
 
@@ -415,6 +522,20 @@ def cell_communities_graph(
     centroid_key: Optional[str] = None,
     **kwargs,
 ):
+    """("interactive": pyecharts, "static": matplotlib) Visualize cell spatial communiteis
+
+    Args:
+        adata: anndata
+        query: a dict use to select which ROI to display
+        method: "interactive" or "static", for big ROI, "interactive" is much faster using WebGL
+        type_key: key to cell type
+        community_key: key to community
+        neighbors_key: key to neighbors
+        centroid_key: key to cell centroid
+        **kwargs: pass to plotting.graph_plot_interactive or plotting.graph_plot
+
+
+    """
     if type_key is None:
         type_key = CONFIG.CELL_TYPE_KEY
     if community_key is None:
@@ -469,6 +590,15 @@ def exp_neighcells(
     palette: Optional[Sequence] = None,
     **kwargs,
 ):
+    """(pyecharts) plotting function for expression influenced by neighbor cells
+
+    Args:
+        adata: anndata object
+        key: key to read data
+        palette: config the color
+        **kwargs: pass to plotting.sankey
+
+    """
     if key is None:
         key = CONFIG.exp_neighcell_key
 

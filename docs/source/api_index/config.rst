@@ -10,45 +10,91 @@ To set the config::
 
 Here is some useful configurations you will deal with a lot, all the names are *CAPITALIZED*.
 
-To let spatialtis how your experiments are designed, this should be a list of `key` from :code:`anndata.obs`.
-The order of the name do matters. The last element is assumed to be the ROI level.
 
-    - :code:`CONFIG.EXP_OBS`: :code:`None`
++---------------------------------+-------------------+
+| :code:`CONFIG.EXP_OBS`          | :code:`None`      |
++---------------------------------+-------------------+
+| :code:`CONFIG.ROI_KEY`          | :code:`None`      |
++---------------------------------+-------------------+
+| :code:`CONFIG.CELL_TYPE_KEY`    | :code:`None`      |
++---------------------------------+-------------------+
+| :code:`CONFIG.WORKING_ENV`      | :code:`"jupyter"` |
++---------------------------------+-------------------+
+| :code:`CONFIG.OS`               | :code:`None`      |
++---------------------------------+-------------------+
+| :code:`CONFIG.CPU_ALLOC`        | :code:`None`      |
++---------------------------------+-------------------+
+| :code:`CONFIG.VERBOSE`          | :code:`True`      |
++---------------------------------+-------------------+
+| :code:`CONFIG.MULTI_PROCESSING` | :code:`False`     |
++---------------------------------+-------------------+
 
+Storage keys, please explicitly specify for your own data
+
++---------------------------------+------------------------+
+| :code:`CONFIG.CENTROID_KEY`     | :code:`"centroid"`     |
++---------------------------------+------------------------+
+| :code:`CONFIG.SHAPE_KEY`        | :code:`"cell_shape"`   |
++---------------------------------+------------------------+
+| :code:`CONFIG.AREA_KEY`         | :code:`"area"`         |
++---------------------------------+------------------------+
+| :code:`CONFIG.ECCENTRICITY_KEY` | :code:`"eccentricity"` |
++---------------------------------+------------------------+
+| :code:`CONFIG.MARKER_KEY`       | :code:`"markers"`      |
++---------------------------------+------------------------+
+
+
+CONFIG.EXP_OBS
+=================
+To let spatialtis how your experiments are designed, this should be a list of `keys` from :code:`anndata.obs`.
+The order of the name do matters. The last element is assumed to be the ROI level. If not, you must specify using
+:code:`CONFIG.ROI_KEY`.
+
+
+CONFIG.CELL_TYPE_KEY
+=====================
 To let spatialtis know where to find your cell type, this should be a `key` name from :code:`anndata.obs`.
 
-    - :code:`CONFIG.CELL_TYPE_COL`: :code:`None`
 
-To set your working environment and OS. Setting working environment to :code:`None` will auto disable progress bar.
+CONFIG.WORKING_ENV
+===================
 
-    - :code:`CONFIG.WORKING_ENV`: :code:`jupyter` ['jupyter', 'zepplin', None]
-    - :code:`CONFIG.OS`: :code:`None` ['Linux', 'Darwin', 'Windows']
+Available options: :code:`["jupyter", "zepplin", None]`.
+To set working environment to :code:`None` will automatically disable progress bar.
+
+
+CONFIG.OS
+===================
+
+Available options: :code:`["Linux", "Darwin", "Windows"]`.
+Normally, you don't need to specific your system, it will be auto detected by SpatialTis
+
+
+CONFIG.MULTI_PROCESSING
+=========================
 
 To enable paralle processing globally in spatialtis. We used Ray to support this features, which is currently no available
 on Windows platform. But you can try WSL2. (This feature won't work if you run spatialtis on Windows)
 
-    - :code:`CONFIG.MULTI_PROCESSING`: :code:`False`
 
-To allocate how many CPU used in paralle processing, the defualt is to use all available resources.
+CONFIG.CPU_ALLOC
+================
 
-    - :code:`CONFIG.CPU_USED`: :code:`None`
-
-To turn on/off progress bar or you want to config it's appearance.
-
-    - :code:`CONFIG.PROGRESS_BAR`: :code:`True`
-    - :code:`CONFIG.PBAR_FORMAT`: :code:`"%s{l_bar}%s{bar}%s{r_bar}%s" % (Fore.GREEN, Fore.CYAN, Fore.GREEN, Fore.RESET,)`
+Number of CPU to allocate in paralle processing, the defualt is to use all available resources.
 
 
-Information stored in the anndata object
+CONFIG.VERBOSE
+===============
 
-    - :code:`CONFIG.CENTROID_COL`: :code:`"centroid"`
-    - :code:`CONFIG.COMMUNITY_COL`: :code:`"communities"`
-    - :code:`CONFIG.NEIGHBORS_COL`: :code:`"cell_neighbors"`
-    - :code:`CONFIG.NEIGHBORS_COUNT_COL`: :code:`"neighbors_count"`
-    - :code:`CONFIG.AREA_COL`: :code:`"area"`
-    - :code:`CONFIG.SHAPE_COL`: :code:`"cell_shape"`
-    - :code:`CONFIG.ECCENTRICITY_COL`: :code:`"eccentricity"`
-    - :code:`CONFIG.MARKER_COL`: :code:`"markers"`
-    - :code:`CONFIG.CHANNEL_COL`: :code:`"channels"`
+Config the amount of information print by SpatialTis
 
+It will c
+
+
+CONFIG.PBAR_FORMAT
+====================
+
+Default value: :code:`"%s{l_bar}%s{bar}%s{r_bar}%s" % (Fore.GREEN, Fore.CYAN, Fore.GREEN, Fore.RESET,)`
+
+To configure the appearance of progress bar
 

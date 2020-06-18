@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, Sequence, Union
+from typing import Mapping, Optional, Sequence, Union
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -8,26 +8,33 @@ from matplotlib.collections import PatchCollection
 from matplotlib.lines import Line2D
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
+from .palette import get_linear_colors
+
 
 def dot_matrix(
-    matrix,
-    dot_color,
-    dot_size,
-    xlabels,
-    ylabels,
-    xlabel_rotation=90,
-    ylabel_rotation=0,
-    cbar_mapper=None,
-    cbar_legend_title=None,
-    size_legend_title=None,
-    color_legend_title=None,
-    color_legend_text=None,
+    matrix: np.array,
+    dot_color: np.array,
+    dot_size: np.array,
+    xlabels: Sequence,
+    ylabels: Sequence,
+    xlabel_rotation: int = 90,
+    ylabel_rotation: int = 0,
+    cbar_mapper: Mapping = None,
+    cbar_legend_title: Optional[str] = None,
+    size_legend_title: Optional[str] = None,
+    color_legend_title: Optional[str] = None,
+    color_legend_text: Optional[Sequence[str]] = None,
     palette: Optional[Sequence] = None,
     display: bool = True,
     return_plot: bool = False,
     title: Optional[str] = None,
     save: Union[str, Path, None] = None,
 ):
+    if palette is not None:
+        cmap = get_linear_colors(palette)
+    else:
+        cmap = "RdYlGn"
+
     N, M = np.asarray(matrix).shape
     x, y = np.meshgrid(np.arange(M), np.arange(N))
 
@@ -39,10 +46,10 @@ def dot_matrix(
     R = s / s.max() / 2 * 0.9
 
     circles = [plt.Circle((j, i), radius=r,) for r, j, i in zip(R.flat, x.flat, y.flat)]
-    circ_col = PatchCollection(circles, array=c.flatten(), cmap="RdYlGn", alpha=0.5)
+    circ_col = PatchCollection(circles, array=c.flatten(), cmap=cmap, alpha=0.5)
 
     rects = [plt.Rectangle((j - 0.5, i - 0.5), 1, 1,) for j, i in zip(x.flat, y.flat)]
-    rect_col = PatchCollection(rects, array=matrix.flatten(), cmap="RdYlGn", alpha=0.5)
+    rect_col = PatchCollection(rects, array=matrix.flatten(), cmap=cmap, alpha=0.5)
 
     ax.add_collection(rect_col)
     ax.add_collection(circ_col)
@@ -73,7 +80,7 @@ def dot_matrix(
             color="white",
             marker="o",
             markerfacecolor="black",
-            label=f"{int(sm/4*3)}",
+            label=f"{int(sm / 4 * 3)}",
             markersize=0.75,
         ),
         Line2D(
@@ -82,7 +89,7 @@ def dot_matrix(
             color="white",
             marker="o",
             markerfacecolor="black",
-            label=f"{int(sm/2)}",
+            label=f"{int(sm / 2)}",
             markersize=0.5,
         ),
         Line2D(
@@ -183,5 +190,14 @@ def dot_matrix(
     cbar.ax.yaxis.set_tick_params(length=0)  # hide ticks
     cbar.set_alpha(0.5)  # be consistent with color in plot
 
+    if title:
+        plt.title(title)
+
+    if save:
+        fig.savefig(save, dpi=300)
+
     if not display:
         plt.close()
+
+    if return_plot:
+        return fig, ax
