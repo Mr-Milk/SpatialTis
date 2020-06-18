@@ -15,9 +15,9 @@ from .palette import get_colors
 def cell_map(
     adata: AnnData,
     query: Mapping,
-    type_col: Optional[str] = None,
+    type_key: Optional[str] = None,
     selected_types: Optional[Sequence] = None,
-    shape_col: Optional[str] = None,
+    shape_key: Optional[str] = None,
     size: Optional[Sequence[int]] = None,
     title: Optional[str] = None,
     palette: Union[Sequence[str], str, None] = None,
@@ -25,13 +25,31 @@ def cell_map(
     save: Union[str, Path, None] = None,
     return_plot: bool = False,
 ):
-    if type_col is None:
-        type_col = CONFIG.CELL_TYPE_KEY
-    if shape_col is None:
-        shape_col = CONFIG.SHAPE_COL
+    """(bokeh) Visualize cells in ROI with shape
+    If you don't have cell shape info, see plotting.cell_type_graph
+
+    Args:
+        adata: anndata
+        query: a dict use to select which ROI to display
+        type_key: key to cell type
+        selected_types: select which types to show, others will be muted in grey
+        shape_key: key to cell shape
+        size: size of plot in pixels
+        title: title of plot
+        palette: config the color, sequence of color in hex, or
+        sequence of names of palettes https://docs.bokeh.org/en/latest/docs/reference/palettes.html
+        display: whether to display the plot
+        save: path to save your plot
+        return_plot: whether to return the plot instance
+
+    """
+    if type_key is None:
+        type_key = CONFIG.CELL_TYPE_KEY
+    if shape_key is None:
+        shape_key = CONFIG.SHAPE_COL
 
     df = adata.obs.query("&".join([f"({k}=='{v}')" for k, v in query.items()]))
-    groups = df.groupby(type_col)
+    groups = df.groupby(type_key)
 
     default_palette = ["Spectral", "Category20"]
     if palette is None:
@@ -61,8 +79,8 @@ def cell_map(
     legends_name: List[str] = list()
 
     def add_patches(name, fill_color=None, fill_alpha=None):
-        x = [[c[0] for c in eval(cell)] for cell in data[shape_col]]
-        y = [[c[1] for c in eval(cell)] for cell in data[shape_col]]
+        x = [[c[0] for c in eval(cell)] for cell in data[shape_key]]
+        y = [[c[1] for c in eval(cell)] for cell in data[shape_key]]
         plot_data = dict(x=x, y=y, name=[name for i in range(0, len(x))])
         b = p.patches(
             "x",

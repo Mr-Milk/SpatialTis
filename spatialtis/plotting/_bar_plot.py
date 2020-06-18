@@ -1,4 +1,4 @@
-from typing import Any, Dict, Mapping, Optional, Sequence, Union
+from typing import Any, Dict, Optional, Sequence, Union
 
 import pandas as pd
 from bokeh.io import output_notebook
@@ -17,7 +17,7 @@ def stacked_bar(
     percentage: bool = True,
     sort_type: Optional[str] = None,
     ascending: bool = True,
-    group_order: Optional[tuple] = None,
+    group_order: Optional[dict] = None,
     direction: Union[str] = "vertical",
     size: Optional[Sequence[int]] = None,
     title: Optional[str] = None,
@@ -26,14 +26,32 @@ def stacked_bar(
     save: Optional[str] = None,
     return_plot: bool = False,
 ):
+    """(bokeh) Plot stacked bar
+
+    Args:
+        df: Input data
+        groupby: how to group data on the plot
+        percentage: whether to normalize to 100%
+        sort_type: sort the type
+        ascending: the order of sort
+        group_order: use this to control the order of axis-label
+        direction: 'vertical' or 'horizontal'
+        size: size of plot in pixels
+        title: title of the plot
+        palette: config the color, sequence of color in hex, or
+        name of palettes https://docs.bokeh.org/en/latest/docs/reference/palettes.html
+        display: whether to display the plot
+        save: the path to save your plot
+        return_plot: whether to return the plot instance
+
+    """
     if direction not in ["vertical", "horizontal"]:
         raise ValueError(f"Unrecognized direction '{direction}'")
 
     gl = len(groupby)
 
     if gl > 3:
-        print("Only support 3 levels depth categorical data")
-        return None
+        raise ValueError("Only support 3 levels depth categorical data")
 
     df = df.groupby(level=groupby).sum()
 
@@ -44,29 +62,8 @@ def stacked_bar(
         df = df.sort_values(sort_type, ascending=ascending)
 
     if group_order is not None:
-        mapper = dict()
-        reorder_index = []
-        na_value = max([len(i) for i in group_order.values()])
-        for ix in df.index:
-            nums = []
-            if isinstance(ix, str):
-                nums.append(group_order[groupby[0]].index(ix))
-            else:
-                for i, e in enumerate(ix):
-                    try:
-                        nums.append(group_order[groupby[i]].index(e))
-                    except:
-                        nums.append(na_value + 1)
-            try:
-                mapper[tuple(nums)].append(ix)
-            except:
-                mapper[tuple(nums)] = []
-                mapper[tuple(nums)].append(ix)
-
-        for i in sorted(list(mapper.keys())):
-            for t in mapper[i]:
-                reorder_index.append(t)
-        df = df.loc[reorder_index, :]
+        for level, order in group_order.items():
+            df = df.reindex(index=order, level=level)
 
     factors = list()
     for i in list(df.index):

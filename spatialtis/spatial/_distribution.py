@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 from spatialtis.config import CONFIG
 
-from ..utils import df2adata_uns, filter_adata, timer
+from ..utils import df2adata_uns, filter_adata, lprint, timer
 from ._util import quad_sta
 
 
@@ -18,14 +18,7 @@ def _wrapper(groups, types, type_key, centroid_key, patch_func, *args):
     names = [n for n, _ in groups]
     patterns = {n: {t: 0 for t in types} for n in names}
 
-    for name, group in tqdm(
-        groups,
-        unit="ROI",
-        desc="find distribution pattern",
-        bar_format=CONFIG.PBAR_FORMAT,
-        disable=(not CONFIG.PROGRESS_BAR),
-        file=sys.stdout,
-    ):
+    for name, group in tqdm(groups, **CONFIG.tqdm(desc="find distribution pattern"),):
         for t, tg in group.groupby(type_key):
             if len(tg) > 1:
                 cells = [eval(c) for c in tg[centroid_key]]
@@ -198,10 +191,13 @@ def spatial_distribution(
     groups = df.groupby(groupby)
 
     if method == "vmr":
+        lprint("Method: Variance-to-mean ratio")
         patterns = _wrapper(groups, types, type_key, centroid_key, VMR, resample, r)
     elif method == "quad":
+        lprint("Method: Quadratic statistic")
         patterns = _wrapper(groups, types, type_key, centroid_key, QUAD, quad, pval)
     elif method == "nns":
+        lprint("Method: Nearest neighbors search")
         patterns = _wrapper(groups, types, type_key, centroid_key, NNS, pval)
     else:
         raise ValueError(

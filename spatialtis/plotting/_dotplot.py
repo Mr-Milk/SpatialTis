@@ -1,17 +1,25 @@
+from pathlib import Path
+from typing import Optional, Sequence, Union
+
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from matplotlib.collections import PatchCollection
 from matplotlib.lines import Line2D
 
 
 def dotplot(
-    df,
-    x=None,
-    y=None,
-    annotated=True,
-    xlabel_rotation=90,
-    ylabel_rotation=0,
-    color="#2E5C6E",
+    df: pd.DataFrame,
+    x: Optional[str] = None,
+    y: Optional[str] = None,
+    annotated: bool = True,
+    xlabel_rotation: int = 90,
+    ylabel_rotation: int = 0,
+    color: Union[str, Sequence] = "#376B6D",
+    display: bool = True,
+    return_plot: bool = False,
+    title: Optional[str] = None,
+    save: Union[str, Path, None] = None,
 ):
     xlabels = df.columns.get_level_values(x)
     ylabels = df.index.get_level_values(y)
@@ -102,4 +110,14 @@ def dotplot(
     )
     ax.add_artist(legend)
 
-    plt.show()
+    if title:
+        plt.title(title)
+
+    if save:
+        fig.savefig(save, dpi=300)
+
+    if not display:
+        plt.close()
+
+    if return_plot:
+        return fig, ax

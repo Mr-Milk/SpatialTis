@@ -57,7 +57,7 @@ def exp_neighcells(
     if export_key is None:
         export_key = CONFIG.exp_neighcell_key
     else:
-        CONFIG.exp_neighcell_key
+        CONFIG.exp_neighcell_key = export_key
 
     check_neighbors(n)
 
@@ -107,11 +107,7 @@ def exp_neighcells(
                     c1_.append(c1)
 
         for _ in tqdm(
-            exec_iterator(results),
-            total=len(results),
-            desc="fit model",
-            bar_format=CONFIG.PBAR_FORMAT,
-            disable=(not CONFIG.PROGRESS_BAR),
+            exec_iterator(results), **CONFIG.tqdm(total=len(results), desc="fit model")
         ):
             pass
 
@@ -126,10 +122,7 @@ def exp_neighcells(
 
     else:
         with tqdm(
-            total=len(n.unitypes) * len(markers),
-            desc="fit model",
-            bar_format=CONFIG.PBAR_FORMAT,
-            disable=(not CONFIG.PROGRESS_BAR),
+            **CONFIG.tqdm(total=len(n.unitypes) * len(markers), desc="fit model")
         ) as pbar:
             for c1 in n.unitypes:
                 y = np.asarray(Y[c1]).T

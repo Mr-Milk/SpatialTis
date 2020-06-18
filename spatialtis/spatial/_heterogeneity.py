@@ -1,6 +1,6 @@
+import warnings
 from typing import Optional, Sequence, Union
 
-import numpy as np
 import pandas as pd
 from anndata import AnnData
 from scipy.stats import entropy
@@ -10,7 +10,7 @@ from tqdm import tqdm
 from spatialtis.config import CONFIG
 
 from ..sta.statistics import type_counter
-from ..utils import df2adata_uns, timer
+from ..utils import df2adata_uns, lprint, timer
 
 if CONFIG.OS in ["Linux", "Darwin"]:
     try:
@@ -88,10 +88,13 @@ def spatial_heterogeneity(
         )
 
     if method == "shannon":
+        lprint("Method: Shannon entropy")
         df = type_counter(adata, groupby, type_key)
 
         if len(df.columns) == 1:
-            print("No heterogeneity, only one type of cell found.")
+            warnings.warn(
+                "No heterogeneity, you only have one type of cell.", UserWarning
+            )
             return None
 
         KL_div = dict()
@@ -119,6 +122,11 @@ def spatial_heterogeneity(
         roi_heterogeneity = pd.DataFrame(data=data, index=df.index)
 
     else:
+        if method == "altieri":
+            lprint("Method: Altieri entropy")
+        if method == "leibovici":
+            lprint("Method: Leibovici entropy")
+
         df = adata.obs[groupby + [type_key, centroid_key]]
 
         ent = list()
@@ -154,10 +162,7 @@ def spatial_heterogeneity(
 
             for _ in tqdm(
                 exec_iterator(results),
-                total=len(results),
-                desc="heterogeneity",
-                bar_format=CONFIG.PBAR_FORMAT,
-                disable=(not CONFIG.PROGRESS_BAR),
+                **CONFIG.tqdm(total=len(results), desc="heterogeneity")
             ):
                 pass
 
@@ -168,12 +173,7 @@ def spatial_heterogeneity(
 
         else:
             for i, (n, g) in enumerate(
-                tqdm(
-                    groups,
-                    desc="heterogeneity",
-                    bar_format=CONFIG.PBAR_FORMAT,
-                    disable=(not CONFIG.PROGRESS_BAR),
-                )
+                tqdm(groups, **CONFIG.tqdm(desc="heterogeneity",))
             ):
                 types = list(g[type_key])
                 points = [eval(i) for i in g[centroid_key]]

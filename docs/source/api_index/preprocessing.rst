@@ -8,4 +8,4 @@ read_ROIs
 #########
 
 .. autoclass:: spatialtis.read_ROIs
-    :members: config, config_file, to_anndata
+    :members: to_anndata

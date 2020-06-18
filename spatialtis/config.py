@@ -3,8 +3,9 @@ Setting Global config for whole processing level
 """
 import os
 import platform
+import sys
 import warnings
-from typing import Mapping, Optional, Sequence
+from typing import Any, Mapping, Optional, Sequence
 
 from colorama import Fore
 
@@ -15,18 +16,32 @@ if system_os in ["Linux", "Darwin"]:
     import logging
     import ray
 
+    ray.init(
+        logging_level=logging.FATAL, ignore_reinit_error=True,
+    )
+
+
+class _VERBOSE(object):
+    def __init__(self):
+        self.PBAR = True
+        self.ANNDATA = True
+        self.INFO = True
+
+    def __repr__(self):
+        return f"pbar: {self.PBAR} anndata: {self.ANNDATA} info: {self.INFO}"
+
 
 class _CONFIG(object):
     def __init__(self):
         self._EXP_OBS: Optional[Sequence[str]] = None
-        self.ROI_KEY: Optional[str] = None
         self._CELL_TYPE_KEY: Optional[str] = None
         self._WORKING_ENV: Optional[str] = "jupyter"
-        self.OS: Optional[str] = None
         self._CPU_ALLOC: Optional[int] = None
-        self.PROGRESS_BAR: bool = True
+        self._CONFIG_VERBOSE: Any = _VERBOSE()
+
+        self._ROI_KEY: Optional[str] = None
+        self.OS: Optional[str] = None
         self.MULTI_PROCESSING: bool = False
-        self.VERBOSE: bool = True
 
         # set tqdm bar foramt
         self.PBAR_FORMAT = "%s{l_bar}%s{bar}%s{r_bar}%s" % (
@@ -38,14 +53,10 @@ class _CONFIG(object):
 
         # used key name to store info in anndata
         self.CENTROID_KEY: str = "centroid"
-        self.COMMUNITY_KEY: str = "communities"
-        self.NEIGHBORS_KEY: str = "cell_neighbors"
-        self.NEIGHBORS_COUNT_KEY: str = "neighbors_count"
         self.AREA_KEY: str = "area"
         self.SHAPE_KEY: str = "cell_shape"
         self.ECCENTRICITY_KEY: str = "eccentricity"
         self.MARKER_KEY: str = "markers"
-        self.CHANNEL_KEY: str = "channels"
 
         # export key, the key name used to store results, private to user
         # statistic part
@@ -66,19 +77,47 @@ class _CONFIG(object):
         self.exp_neighcell_key: str = "exp_neighcell"
         self.exp_neighexp_key: str = "exp_neighexp"
 
+    def tqdm(self, **kwargs):
+        all_kwargs = dict(
+            unit="ROI",
+            bar_format=self.PBAR_FORMAT,
+            disable=(not self.VERBOSE.PBAR),
+            file=sys.stdout,
+        )
+        for k, v in kwargs.items():
+            all_kwargs[k] = v
+        return all_kwargs
+
+    @property
+    def ROI_KEY(self):
+        return self._ROI_KEY
+
+    @ROI_KEY.setter
+    def ROI_KEY(self, key):
+        if key not in self.EXP_OBS:
+            raise ValueError("The ROI_KEY is not in your EXP_OBS")
+        else:
+            if self.EXP_OBS[-1] != key:
+                exp_obs = self.EXP_OBS
+                exp_obs.remove(key)
+                exp_obs.append(key)
+                self.EXP_OBS = exp_obs
+            else:
+                self._ROI_KEY = key
+
     @property
     def EXP_OBS(self):
         return self._EXP_OBS
 
     @EXP_OBS.setter
     def EXP_OBS(self, obs):
-        if isinstance(obs, str):
+        if isinstance(obs, (str, int, float)):
             self._EXP_OBS = [obs]
         elif isinstance(obs, Sequence):
             self._EXP_OBS = obs
         else:
-            raise ValueError
-        self.ROI_KEY = self._EXP_OBS[-1]
+            raise ValueError("")
+        self._ROI_KEY = self._EXP_OBS[-1]
 
     @property
     def CELL_TYPE_KEY(self):
@@ -100,7 +139,7 @@ class _CONFIG(object):
         if env not in ["jupyter", "zepplin", None]:
             warnings.warn("Unknown working environments", UserWarning)
         if env is None:
-            self.PROGRESS_BAR = False
+            self.VERBOSE.PBAR = False
 
     @property
     def CPU_ALLOC(self):
@@ -126,16 +165,26 @@ class _CONFIG(object):
         else:
             warnings.warn("Multi processing not supported on Windows platform")
 
+    @property
+    def VERBOSE(self):
+        return self._CONFIG_VERBOSE
+
+    @VERBOSE.setter
+    def VERBOSE(self, v):
+        if v:
+            self._CONFIG_VERBOSE.PBAR = True
+            self._CONFIG_VERBOSE.ANNDATA = True
+            self._CONFIG_VERBOSE.INFO = True
+        elif not v:
+            self._CONFIG_VERBOSE.PBAR = False
+            self._CONFIG_VERBOSE.ANNDATA = False
+            self._CONFIG_VERBOSE.INFO = False
+        else:
+            raise ValueError("CONFIG.verbose only accept bool value")
+
 
 CONFIG = _CONFIG()
 CONFIG.OS = system_os
-
-# set default cpu number
-cpu_count = os.cpu_count()
-if cpu_count is not None:
-    CONFIG.CPU_ALLOC = int(cpu_count / 2)
-else:
-    CONFIG.CPU_ALLOC = 2
 
 # can be override in plotting function
 # ['jupyter', 'zepplin', None]

@@ -59,33 +59,45 @@ def _violin_patches(
     for i, (_, g) in enumerate(groups):
         data = g[target_col].to_numpy()
         if not len(data) > 1:
-            raise ValueError("Can't plot with only one point for each group")
-        split_interval = round(len(data) / 4)
-        split_interval = split_interval if split_interval >= 100 else 100
-        points = np.linspace(np.min(data), np.max(data), split_interval)
-        curvepoint = _kde_points(data, points)
-        # set endpoints to zero to close violin patches
-        norm_curve = (
-            (curvepoint - np.min(curvepoint))
-            / (np.max(curvepoint) - np.min(curvepoint))
-        ) * 0.3
-        norm_curve[0] = 0
-        norm_curve[-1] = 0
-        if side == "both":
             violins.append(
                 [
-                    np.hstack((-norm_curve + i + padding, norm_curve + i + padding,)),
-                    np.hstack((points, points,)),
+                    np.asarray([i + padding, i + padding]),
+                    np.asarray([data[0], data[0]]),
                 ]
             )
-        elif side == "+":
-            violins.append(
-                [np.hstack((norm_curve + i + padding,)), np.hstack((points,)),]
-            )
-        elif side == "-":
-            violins.append(
-                [np.hstack((-norm_curve + i + padding,)), np.hstack((points,)),]
-            )
+            pass
+
+            # print(violins)
+            # raise ValueError("Can't plot with only one point for each group")
+        else:
+            split_interval = round(len(data) / 4)
+            split_interval = split_interval if split_interval >= 100 else 100
+            points = np.linspace(np.min(data), np.max(data), split_interval)
+            curvepoint = _kde_points(data, points)
+            # set endpoints to zero to close violin patches
+            norm_curve = (
+                (curvepoint - np.min(curvepoint))
+                / (np.max(curvepoint) - np.min(curvepoint))
+            ) * 0.3
+            norm_curve[0] = 0
+            norm_curve[-1] = 0
+            if side == "both":
+                violins.append(
+                    [
+                        np.hstack(
+                            (-norm_curve + i + padding, norm_curve + i + padding,)
+                        ),
+                        np.hstack((points, points,)),
+                    ]
+                )
+            elif side == "+":
+                violins.append(
+                    [np.hstack((norm_curve + i + padding,)), np.hstack((points,)),]
+                )
+            elif side == "-":
+                violins.append(
+                    [np.hstack((-norm_curve + i + padding,)), np.hstack((points,)),]
+                )
 
     return violins
 
@@ -131,7 +143,7 @@ def _violin_main(violins, target_col, figure_config, colors, direction="vertical
             )
         else:
             p.patch(
-                x, y, fill_color=colors[s.factors[i]], line_color=colors[s.factors[i]]
+                x, y, fill_color=colors[s.factors[0]], line_color=colors[s.factors[0]]
             )
 
     q23 = s.q2[target_col] - s.q3[target_col]
@@ -230,7 +242,8 @@ def _set_colors(palette, mapper=False):
 def violin_plot(
     df: pd.DataFrame,
     groupby: Sequence,
-    target_col: str,
+    target_key: str,
+    group_order: Optional[dict] = None,
     split: Optional[str] = None,
     direction: Union[str] = "vertical",
     display: bool = True,
@@ -247,6 +260,10 @@ def violin_plot(
 
     s.gl = len(groupby)
 
+    if group_order is not None:
+        for level, order in group_order.items():
+            df = df.reindex(index=order, level=level)
+
     if isinstance(split, str):
         if split in groupby:
             s.splits = np.unique(dict(zip(df.index.names, df.index.levels))[split])
@@ -262,13 +279,13 @@ def violin_plot(
                     "Only support 3 levels depth categorical data, maybe too much group_by elements"
                 )
 
-            groups = df.loc[:, [target_col]].groupby(level=split)
+            groups = df.loc[:, [target_key]].groupby(level=split)
 
             subg_a = groups.get_group(s.splits[0]).groupby(level=groupby)
-            violins_a = _violin_patches(subg_a, target_col, side="-")
+            violins_a = _violin_patches(subg_a, target_key, side="-")
 
             subg_b = groups.get_group(s.splits[1]).groupby(level=groupby)
-            violins_b = _violin_patches(subg_b, target_col, side="+")
+            violins_b = _violin_patches(subg_b, target_key, side="+")
 
             s.factors = [n for n, _ in subg_a]
             figure_config = _set_figure_config(
@@ -286,23 +303,25 @@ def violin_plot(
         if s.gl > 3:
             raise Exception("Only support 3 levels depth categorical data")
 
-        groups = df.loc[:, [target_col]].groupby(level=groupby)
-        _quantilefy(groups, target_col)
+        groups = df.loc[:, [target_key]].groupby(level=groupby)
+        _quantilefy(groups, target_key)
 
-        violins = _violin_patches(groups, target_col)
+        violins = _violin_patches(groups, target_key)
         s.factors = [n for n, _ in groups]
         figure_config = _set_figure_config(title=title, size=size, direction=direction)
         colors = _set_colors(palette, mapper=True)
 
         p = _violin_main(
-            violins, target_col, figure_config, colors, direction=direction
+            violins, target_key, figure_config, colors, direction=direction
         )
 
     if direction == "vertical":
         p.xgrid.grid_line_color = None
+        p.xaxis.major_label_orientation = 1
         p.ygrid.grid_line_alpha = 0.7
     elif direction == "horizontal":
         p.ygrid.grid_line_color = None
+        p.yaxis.major_label_orientation = 1
         p.xgrid.grid_line_alpha = 0.7
 
     # save something

@@ -33,7 +33,7 @@ release = "Unrelease"
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
-    "sphinx_autodoc_typehints",
+    # "sphinx_autodoc_typehints",
     "sphinx.ext.autosectionlabel",
     #'sphinx_autodoc_napoleon_typehints',
     "sphinx.ext.mathjax",
@@ -41,7 +41,7 @@ extensions = [
     "sphinx_rtd_theme",
     "nbsphinx",
 ]
-autodoc_typehints = "none"
+autodoc_typehints = "description"
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 

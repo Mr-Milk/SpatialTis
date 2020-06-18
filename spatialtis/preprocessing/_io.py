@@ -58,6 +58,23 @@ if CONFIG.OS in ["Linux", "Darwin"]:
 
 
 class read_ROIs:
+    """Extract single cell expression matrix and geometry information frrom stacked images and masks
+
+            Args:
+                entry: the root folder to start with
+                obs_names: array of names correspond to each level of your folders
+                var: usually use to describe the order of layers in your stacked image
+                mask_pattern: name pattern for all of your mask
+                img_pattern: name pattern for all of your image
+
+            Attributes:
+                obs: will pass to anndata obs
+                var: will pass to anndata var
+                anndata: get the processed anndata object
+
+
+    """
+
     def __init__(
         self,
         entry: Union[Path, str],
@@ -71,6 +88,8 @@ class read_ROIs:
         self._mask_img = []
         self._exp_img = []
         self._exhaust_dir(entry)
+
+        self.anndata = None
         self.obs = []
         self.var = var
         # anndata require str index, hard set everything to str
@@ -178,11 +197,7 @@ class read_ROIs:
 
             for _ in tqdm(
                 exec_iterator(results),
-                total=len(results),
-                desc="process images",
-                unit="ROI",
-                bar_format=CONFIG.PBAR_FORMAT,
-                disable=(not CONFIG.PROGRESS_BAR),
+                **CONFIG.tqdm(total=len(self._tree), desc="process images"),
             ):
                 pass
 
@@ -199,11 +214,7 @@ class read_ROIs:
         else:
             for exp_img, mask_img, obs in tqdm(
                 zip(self._exp_img, self._mask_img, self.obs),
-                total=len(self._tree),
-                desc="process images",
-                unit="ROI",
-                bar_format=CONFIG.PBAR_FORMAT,
-                disable=(not CONFIG.PROGRESS_BAR),
+                **CONFIG.tqdm(total=len(self._tree), desc="process images"),
             ):
                 [exp, cells] = get_roi(exp_img, mask_img, bg, method, polygonize, alpha)
                 X += exp
@@ -227,4 +238,6 @@ class read_ROIs:
 
         X = np.asarray(X, dtype=float)
 
-        return ad.AnnData(X, obs=ann_obs, var=self.var, dtype="float")
+        self.anndata = ad.AnnData(X, obs=ann_obs, var=self.var, dtype="float")
+
+        return self.anndata

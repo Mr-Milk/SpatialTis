@@ -29,6 +29,27 @@ def cc_interactions(
     save: Union[str, Path, None] = None,
     return_plot: bool = False,
 ):
+    """(pyecharts) wrapper function for cell-cell interaction in graph
+
+    Args:
+        df: input data
+        mapper: how to map your data to certain string
+        repulsion: the force that push the node away
+        gravity: the force that draw the node close
+        threshold: the threhold to control vertice to display
+        layout: "circular" or "force"
+        renderer: "canvas" or "svg"
+        theme: https://pyecharts.org/#/zh-cn/themes
+        edges_colors:
+        size: size of plot in pixels
+        title: title of the plot
+        display: whether to display the plot
+        save: the path to save your plot
+        return_plot: whether to return the plot instance
+
+    Returns:
+
+    """
     if edges_colors is None:
         edges_colors = ["RdBu"]
 
