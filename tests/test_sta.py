@@ -9,6 +9,7 @@ from spatialtis import CONFIG
 
 CONFIG.EXP_OBS = ["Patient", "Part", "ROI"]
 CONFIG.CELL_TYPE_KEY = "leiden"
+CONFIG.WORKING_ENV = None
 
 
 def test_cell_components(shared_datadir):
@@ -54,4 +55,4 @@ def test_cell_morphology():
 
 def test_cell_morphology_plot():
     data = pytest.data
-    sp.cell_morphology(data, "Patient", "Part", "4", display=False)
+    sp.cell_morphology(data, display=False)

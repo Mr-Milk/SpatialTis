@@ -42,6 +42,7 @@ def heatmap(
         col_colors_legend_bbox: adjust the locations of col colors legend
         colorbar_bbox: adjust the locations of colorbar
         display: whether to show the plot
+        save:
         return_plot: whether to return the plot
 
     the order of cateforical_colorbar_text match to the order of palette

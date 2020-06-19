@@ -231,10 +231,10 @@ class read_ROIs:
             columns=self._obs_names,
             index=[str(i) for i in range(0, len(ann_obs))],
         )
-        ann_obs[CONFIG.AREA_COL] = areas
-        ann_obs[CONFIG.SHAPE_COL] = shapes
-        ann_obs[CONFIG.CENTROID_COL] = centroids
-        ann_obs[CONFIG.ECCENTRICITY_COL] = eccentricities
+        ann_obs[CONFIG.AREA_KEY] = areas
+        ann_obs[CONFIG.SHAPE_KEY] = shapes
+        ann_obs[CONFIG.CENTROID_KEY] = centroids
+        ann_obs[CONFIG.ECCENTRICITY_KEY] = eccentricities
 
         X = np.asarray(X, dtype=float)
 
