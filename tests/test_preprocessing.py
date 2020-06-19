@@ -1,9 +1,10 @@
 import pandas as pd
 import pytest
 
-from spatialtis import read_ROIs
+from spatialtis import CONFIG, read_ROIs
 
 conditions = ["Patients", "Sample", "ROI"]
+CONFIG.WORKING_ENV = None
 
 
 def test_read_rois(shared_datadir):

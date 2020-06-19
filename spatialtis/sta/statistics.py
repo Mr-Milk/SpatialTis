@@ -1,9 +1,11 @@
 from collections import Counter
+from itertools import combinations_with_replacement
 from typing import Optional, Sequence, Union
 
 import numpy as np
 import pandas as pd
 from anndata import AnnData
+from scipy.stats import chisquare
 
 from spatialtis.config import CONFIG
 from spatialtis.utils import df2adata_uns, timer
@@ -39,6 +41,10 @@ def type_counter(
 
     if type_key is None:
         type_key = CONFIG.CELL_TYPE_KEY
+        if type_key is None:
+            raise ValueError(
+                "Either specific the key of cell type using `type_key` or `CONFIG.CELL_TYPE_KEY`"
+            )
 
     df = adata.obs[groupby + [type_key]]
 
@@ -108,10 +114,11 @@ def cell_components(
 def cell_co_occurrence(
     adata: AnnData,
     groupby: Union[Sequence, str, None] = None,
+    threshold: int = 50,
+    pval: float = 0.01,
     type_key: Optional[str] = None,
     export: bool = True,
     export_key: Optional[str] = None,
-    threshold: int = 50,
     return_df: bool = False,
 ):
     """The probability of two type of cells occur simultaneously
@@ -119,10 +126,12 @@ def cell_co_occurrence(
         Args:
             adata: anndata object to perform analysis
             groupby: how your experiments grouped, (Default: read from spatialtis.CONFIG.EXP_OBS)
+            threshold: this value determines the presence/absence of a cell type in ROI
+            pval: the threshold of p-value to determine significance
             type_key: the key name of cell type in anndata.obs (Default: read from spatialtis.CONFIG.CELL_TYPE_KEY)
             export: whether to export to anndata.uns field
             export_key: the key name that used to record the results in anndata.uns field
-            threshold: this value determines the presence/absence of a cell type in ROI
+
             return_df: whether to return an pandas.DataFrame
 
         Return:
@@ -134,15 +143,39 @@ def cell_co_occurrence(
     else:
         CONFIG.cell_co_occurrence_key = export_key
 
+    if groupby is None:
+        groupby = CONFIG.EXP_OBS
+
     counter = type_counter(adata, groupby, type_key)
 
-    occurrence = counter.gt(threshold)
+    df = counter.gt(threshold)
+
+    groups = df.astype(int).groupby(level=groupby)
+    X = []
+    for n, g in groups:
+        c = (g.sum() / len(g)).fillna(0)
+        data = []
+        for comb in combinations_with_replacement(c, 2):
+            if (comb[0] == 0) | (comb[1] == 0):
+                p = 0
+            else:
+                p = chisquare(comb).pvalue
+            data.append(p)
+        X.append(data)
+    pdf = (pd.DataFrame(X) > (1 - pval)).astype(int)
+    pdf.index = pd.MultiIndex.from_frame(
+        df.index.to_frame(index=False)[groupby].drop_duplicates()
+    )
+    pdf.columns = pd.MultiIndex.from_arrays(
+        np.asarray([i for i in combinations_with_replacement(df.columns, 2)]).T,
+        names=["Cell type1", "Cell type2"],
+    )
 
     if export:
-        df2adata_uns(occurrence, adata, export_key)
+        df2adata_uns(pdf, adata, export_key)
 
     if return_df:
-        return occurrence
+        return pdf
 
 
 @timer(prefix="Running cell density")

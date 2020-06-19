@@ -46,7 +46,7 @@ def cell_map(
     if type_key is None:
         type_key = CONFIG.CELL_TYPE_KEY
     if shape_key is None:
-        shape_key = CONFIG.SHAPE_COL
+        shape_key = CONFIG.SHAPE_KEY
 
     df = adata.obs.query("&".join([f"({k}=='{v}')" for k, v in query.items()]))
     groups = df.groupby(type_key)

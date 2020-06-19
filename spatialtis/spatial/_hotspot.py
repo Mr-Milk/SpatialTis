@@ -144,7 +144,7 @@ def hotspot(
 
         for _ in tqdm(
             exec_iterator(results),
-            **CONFIG.tqdm(total=len(results), desc="hotspot analysis",)
+            **CONFIG.tqdm(total=len(results), desc="hotspot analysis"),
         ):
             pass
 
@@ -155,10 +155,8 @@ def hotspot(
 
     else:
         hotcells = []
-        for name, group in tqdm(groups, CONFIG.tqdm()):
-            for t, tg in tqdm(
-                group.groupby(type_key), **CONFIG.tqdm(desc="hotspot analysis",)
-            ):
+        for name, group in tqdm(groups, **CONFIG.tqdm(desc="hotspot analysis")):
+            for t, tg in group.groupby(type_key):
                 if len(tg) > 1:
                     cells = [eval(c) for c in tg[centroid_key]]
                     hots = _hotspot(cells, grid_size, search_level, pval)

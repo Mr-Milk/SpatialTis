@@ -94,11 +94,9 @@ def cell_density(
 def cell_co_occurrence(
     adata: AnnData,
     groupby: Optional[Sequence[str]] = None,
-    compare: Optional[str] = None,
     selected_types: Optional[Sequence] = None,
     method: str = "dot",  # dot, heatmap
     key: Optional[str] = None,
-    pval: float = 0.01,
     **kwargs,
 ):
     """(matplotlib) plotting function for cell co-occurrence
@@ -106,11 +104,9 @@ def cell_co_occurrence(
     Args:
         adata: anndata object
         groupby: how to group your data in plot
-        compare: The level of co-occurrence, default is on ROI level
         selected_types: select interested types
         method: "dot" or "heatmap"
         key: which key to read the data
-        pval: threhold of pval
         **kwargs: pass to plotting.tro_dotplot (method="dot") or plotting.heatmap (method="heatmap")
 
     Returns:
@@ -123,32 +119,11 @@ def cell_co_occurrence(
 
     if groupby is None:
         groupby = CONFIG.EXP_OBS
-    if compare is None:
-        compare = CONFIG.ROI_KEY
     if selected_types is not None:
         df = df[selected_types]
 
-    tdf = df.astype(int).groupby(level=compare)
-    X = []
-    for n, g in tdf:
-        c = (g.sum() / len(g)).fillna(0)
-        data = []
-        for comb in combinations_with_replacement(c, 2):
-            if (comb[0] == 0) | (comb[1] == 0):
-                p = 0
-            else:
-                p = chisquare(comb).pvalue
-            data.append(p)
-        X.append(data)
-    pdf = (pd.DataFrame(X) > (1 - pval)).astype(int)
-    pdf.index = df.index.to_frame(index=False)[compare].drop_duplicates()
-    pdf.columns = pd.MultiIndex.from_arrays(
-        np.asarray([i for i in combinations_with_replacement(df.columns, 2)]).T,
-        names=["Cell type1", "Cell type2"],
-    )
-
     if method == "dot":
-        ndf = pdf.reset_index(drop=True).sum().reset_index()
+        ndf = df.reset_index(drop=True).sum().reset_index()
         labels = pd.unique(ndf["Cell type1"])
         sorted_labels = []
         if selected_types is not None:
@@ -181,7 +156,7 @@ def cell_co_occurrence(
         for k, v in kwargs.items():
             plot_kwargs[k] = v
 
-        p = heatmap(pdf, **plot_kwargs)
+        p = heatmap(df, **plot_kwargs)
 
     return p
 
@@ -293,18 +268,17 @@ def neighborhood_analysis(
         matrix = matrix.to_numpy()
         dot_color = counts.pivot(index="type1", columns="type2", values="%").to_numpy()
         dot_size = counts.pivot(index="type1", columns="type2", values="all").to_numpy()
-        p = dot_matrix(
-            matrix,
-            dot_color,
-            dot_size,
-            xlabels,
-            ylabels,
+
+        plot_kwargs = dict(
             size_legend_title="Sign 'ROI Counts",
             color_legend_title="% of interaction",
             cbar_legend_title="Pearson\nCorrelation",
             cbar_mapper={-1: "-1", 1: "1"},
             color_legend_text=["Association", "", "Avoidance"],
         )
+        for k, v in kwargs.items():
+            plot_kwargs[k] = v
+        p = dot_matrix(matrix, dot_color, dot_size, xlabels, ylabels, **plot_kwargs)
 
     elif method == "heatmap":
         plot_kwargs = dict(
@@ -414,7 +388,7 @@ def spatial_distribution(
         tb.index.name = "Cell"
         tb.columns.name = "Pattern"
         tb = tb[["No Cell", "Random", "Regular", "Cluster"]]
-        p = dotplot(tb, y="Cell", x="Pattern", annotated=False)
+        p = dotplot(tb, y="Cell", x="Pattern", annotated=False, **kwargs)
         # p = dotplot(tb.T, x="Cell", y="Pattern", annotated=False)
     elif method == "heatmap":
         plot_kwargs = dict(
@@ -483,7 +457,8 @@ def cell_type_graph(
     """(pyecharts) visualize cell type in ROI
 
     Args:
-        c
+        adata:
+        query:
         type_key: key to cell type
         neighbors_key: key to neighbors info
         centroid_key: key to cell centroid
@@ -495,9 +470,7 @@ def cell_type_graph(
     if type_key is None:
         type_key = CONFIG.CELL_TYPE_KEY
     if neighbors_key is None:
-        neighbors_key = CONFIG.NEIGHBORS_KEY
-        if neighbors_key not in adata.obs.keys():
-            neighbors_key = None
+        neighbors_key = CONFIG.neighbors_key
     if centroid_key is None:
         centroid_key = CONFIG.CENTROID_KEY
 
@@ -539,9 +512,9 @@ def cell_communities_graph(
     if type_key is None:
         type_key = CONFIG.CELL_TYPE_KEY
     if community_key is None:
-        community_key = CONFIG.COMMUNITY_KEY
+        community_key = CONFIG.community_key
     if neighbors_key is None:
-        neighbors_key = CONFIG.NEIGHBORS_KEY
+        neighbors_key = CONFIG.neighbors_key
     if centroid_key is None:
         centroid_key = CONFIG.CENTROID_KEY
 

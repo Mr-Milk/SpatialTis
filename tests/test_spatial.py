@@ -10,6 +10,7 @@ from spatialtis import CONFIG, Neighbors
 CONFIG.EXP_OBS = ["Patient", "Part", "ROI"]
 CONFIG.CELL_TYPE_KEY = "leiden"
 CONFIG.MARKER_KEY = "Markers"
+CONFIG.WORKING_ENV = None
 
 
 def test_spatial_dist(shared_datadir):

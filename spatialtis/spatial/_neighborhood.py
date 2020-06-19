@@ -1,5 +1,5 @@
 from collections import Counter
-from itertools import product
+from itertools import combinations_with_replacement, product
 from typing import Callable, Mapping, Optional, Sequence
 
 import numpy as np
@@ -17,6 +17,7 @@ class CellComb:
     def __init__(self, types):
         self.types = types
         self.comb = [k for k in product(types, repeat=2)]
+        self.unicomb = [k for k in combinations_with_replacement(types, 2)]
         self.relationships = {t1: [(t1, t2) for t2 in types] for t1 in types}
 
     def get_comb(self, t):
@@ -26,8 +27,7 @@ class CellComb:
 def _count_neighbors(
     types: Sequence, relationships: Mapping, cellcomb: CellComb, storage_object: Mapping
 ):
-    cells = len(relationships)
-    if cells > 0:
+    if len(relationships) > 0:
         for k, v in relationships.items():
             if len(v) > 0:
                 counts = Counter([types[i] for i in v])
@@ -36,30 +36,47 @@ def _count_neighbors(
                 for (t1, t2) in cellcomb.get_comb(center_type):
                     try:
                         c = counts[t2]
-                    except ValueError:
+                    except (KeyError, ValueError):
                         c = 0
-                    storage_object[(t1, t2)].append(c)
+                    try:
+                        storage_object[(t1, t2)].append(c)
+                    except (KeyError, ValueError):
+                        storage_object[(t2, t1)].append(c)
     itr = storage_object.keys()
     counts = [np.mean(v) if len(v) > 0 else 0 for v in storage_object.values()]
     return dict(zip(itr, counts))
 
 
 def _bootstrap(
-    cell_types: list, cell_neighbors: Mapping, cellcomb: CellComb, resample: int,
+    cell_types: list,
+    cell_neighbors: Mapping,
+    cellcomb: CellComb,
+    resample: int,
+    order: bool,
 ):
-    tmp_storage = {k: [] for k in cellcomb.comb}
+
+    tmp_storage = (
+        {k: [] for k in cellcomb.comb} if order else {k: [] for k in cellcomb.unicomb}
+    )
     real_count = _count_neighbors(cell_types, cell_neighbors, cellcomb, tmp_storage)
 
-    perm_count = {k: [] for k in cellcomb.comb}
+    perm_count = (
+        {k: [] for k in cellcomb.comb} if order else {k: [] for k in cellcomb.unicomb}
+    )
     shuffle_types = cell_types.copy()
     for attempt in range(resample):
         np.random.shuffle(shuffle_types)
-        tmp_storage = {k: [] for k in cellcomb.comb}
+        tmp_storage = (
+            {k: [] for k in cellcomb.comb}
+            if order
+            else {k: [] for k in cellcomb.unicomb}
+        )
         perm = _count_neighbors(shuffle_types, cell_neighbors, cellcomb, tmp_storage)
         for itr, m in perm.items():
             perm_count[itr].append(m)
-    perm_count = pd.DataFrame(perm_count, columns=cellcomb.comb)
-    real_count = pd.DataFrame(real_count, index=[0], columns=cellcomb.comb)
+    columns = cellcomb.comb if order else cellcomb.unicomb
+    perm_count = pd.DataFrame(perm_count, columns=columns)
+    real_count = pd.DataFrame(real_count, index=[0], columns=columns)
     return [perm_count, real_count]
 
 
@@ -85,8 +102,6 @@ def _patch_neighborhood(
     p = p_gt * direction + p_lt * redirection
     sig = p < pval
     sigv = (sig * np.sign(direction - 0.5)).astype(int)
-    # for i in range(3):
-    #    print(p_gt[i], direction[i], p_lt[i], redirection[i], p[i], sig[i], sigv[i])
 
     return pd.Series(sigv, index=sig.index)
 
@@ -106,6 +121,7 @@ def _main(
     patch_func: Callable,
     resample: int = 50,
     pval: float = 0.01,
+    order: bool = True,
     mp: Optional[bool] = None,
 ):
     if mp is None:
@@ -125,7 +141,7 @@ def _main(
         counts = []
         names = []
         for name, value in n.neighbors.items():
-            id1 = _bootstrap_mp.remote(n.types[name], value, cellcomb, resample)
+            id1 = _bootstrap_mp.remote(n.types[name], value, cellcomb, resample, order)
             counts.append(id1)
             names.append(name)
 
@@ -145,7 +161,7 @@ def _main(
             n.neighbors.items(), **CONFIG.tqdm(desc="neighborhood analysis"),
         ):
             [perm_count, real_count] = _bootstrap(
-                n.types[name], value, cellcomb, resample
+                n.types[name], value, cellcomb, resample, order
             )
             results[name] = patch_func(perm_count, real_count, resample, pval)
 
@@ -158,11 +174,12 @@ def _main(
     return results_df
 
 
-@timer(prefix="Running neighborhood analysis")
+# @timer(prefix="Running neighborhood analysis")
 def neighborhood_analysis(
     n: Neighbors,
     resample: int = 50,
     pval: float = 0.01,
+    order: bool = True,
     export: bool = True,
     export_key: Optional[str] = None,
     return_df: bool = False,
@@ -178,6 +195,7 @@ def neighborhood_analysis(
         n: A spatialtis.Neighbors object, neighbors are already computed
         resample: perform resample for how many times
         pval: if smaller than pval, reject null hypothesis (No relationship)
+        order: if False, Cell A - Cell B and Cell B - Cell A are the same interaction.
         export: whether export to anndata object uns field
         export_key: which key used to export
         return_df: whether to return result dataframe
@@ -193,7 +211,7 @@ def neighborhood_analysis(
     else:
         CONFIG.neighborhood_analysis_key = export_key
 
-    df = _main(n, _patch_neighborhood, resample=resample, pval=pval, mp=mp)
+    df = _main(n, _patch_neighborhood, resample=resample, pval=pval, order=order, mp=mp)
 
     df = df.T.astype(int)
 

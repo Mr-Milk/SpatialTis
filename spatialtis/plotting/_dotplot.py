@@ -114,7 +114,7 @@ def dotplot(
         plt.title(title)
 
     if save:
-        fig.savefig(save, dpi=300)
+        plt.savefig(save, dpi=300, bbox_inches="tight")
 
     if not display:
         plt.close()

@@ -11,8 +11,8 @@ from .palette import get_linear_colors
 def expression_map(
     adata: AnnData,
     query: Mapping,
-    marker_col: Optional[str] = None,
-    centroid_col: Optional[str] = None,
+    marker_key: Optional[str] = None,
+    centroid_key: Optional[str] = None,
     order: Optional[Sequence] = None,
     method: str = "bar3d",  # 'bar3d', 'scatter3d'
     renderer: str = "canvas",
@@ -28,8 +28,8 @@ def expression_map(
     Args:
         adata:
         query:
-        marker_col:
-        centroid_col:
+        marker_key:
+        centroid_key:
         order:
         method:
         renderer:
@@ -42,10 +42,10 @@ def expression_map(
     Returns:
 
     """
-    if marker_col is None:
-        marker_col = CONFIG.MARKER_COL
-    if centroid_col is None:
-        centroid_col = CONFIG.CENTROID_COL
+    if marker_key is None:
+        marker_key = CONFIG.MARKER_KEY
+    if centroid_key is None:
+        centroid_key = CONFIG.CENTROID_KEY
     if method not in ["bar3d", "scatter3d"]:
         raise ValueError(
             "No such plot method, available options are 'bar3d' and 'scatter3d'."
@@ -55,9 +55,9 @@ def expression_map(
         palette = ["RdYlBu"]
     default_color = get_linear_colors(palette)
 
-    gene_names = list(adata.var[marker_col])
+    gene_names = list(adata.var[marker_key])
     data = adata.obs.query("&".join([f"({k}=='{v}')" for k, v in query.items()]))
-    coord = data[centroid_col]
+    coord = data[centroid_key]
     if order is not None:
         exp_index = [gene_names.index(i) for i in order]
         gene_names = order

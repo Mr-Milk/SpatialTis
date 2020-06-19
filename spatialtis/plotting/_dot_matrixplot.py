@@ -194,7 +194,7 @@ def dot_matrix(
         plt.title(title)
 
     if save:
-        fig.savefig(save, dpi=300)
+        fig.savefig(save, dpi=300, bbox_inches="tight")
 
     if not display:
         plt.close()
