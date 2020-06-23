@@ -21,7 +21,7 @@ def cc_interactions(
     threshold: float = 0.5,
     layout: str = "circular",
     renderer: str = "canvas",
-    theme: str = "dark",
+    theme: str = "light",
     edges_colors: Optional[Sequence] = None,
     size: Sequence = (800, 800),
     title: Optional[str] = None,
