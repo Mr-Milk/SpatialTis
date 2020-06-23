@@ -13,7 +13,7 @@ from sklearn.ensemble import RandomForestRegressor
 from tqdm import tqdm
 
 from spatialtis.config import CONFIG
-from spatialtis.utils import df2adata_uns
+from spatialtis.utils import df2adata_uns, timer
 
 from ._neighbors import Neighbors
 from ._util import check_neighbors
@@ -40,6 +40,7 @@ if CONFIG.OS in ["Linux", "Darwin"]:
     _max_feature_mp = ray.remote(_max_feature)
 
 
+@timer(prefix="Finding marker expression influenced by neighbor cells")
 def exp_neighcells(
     n: Neighbors,
     marker_key: Optional[str] = None,

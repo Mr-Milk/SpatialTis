@@ -174,7 +174,7 @@ def _main(
     return results_df
 
 
-# @timer(prefix="Running neighborhood analysis")
+@timer(prefix="Running neighborhood analysis")
 def neighborhood_analysis(
     n: Neighbors,
     resample: int = 50,
@@ -216,7 +216,7 @@ def neighborhood_analysis(
     df = df.T.astype(int)
 
     if export:
-        df2adata_uns(df, n.adata, export_key)
+        df2adata_uns(df, n.adata, export_key, params={"order": order})
 
     if return_df:
         return df

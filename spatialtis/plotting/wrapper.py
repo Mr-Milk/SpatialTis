@@ -221,10 +221,15 @@ def neighborhood_analysis(
         key = CONFIG.neighborhood_analysis_key
 
     df = adata_uns2df(adata, key)
+    order = True  # params['order']
 
     if method == "graph":
         p = cc_interactions(df, {-1: "Avoidance", 1: "Association"}, **kwargs)
     elif method == "dot_matrix":
+        if not order:
+            raise ValueError(
+                "Unordered cell-interaction couldn't be visualized using dot matrix plot"
+            )
         try:
             cc = adata_uns2df(adata, CONFIG.cell_components_key)
         except KeyError:
@@ -294,6 +299,13 @@ def neighborhood_analysis(
             col_cluster=None,
         )
         # allow user to overwrite the default plot config
+        unique_values = np.unique(df.to_numpy())
+        if 1 not in unique_values:
+            plot_kwargs["palette"] = ["#2f71ab", "#f7f7f7"]
+            plot_kwargs["categorical_colorbar_text"] = ["Avoidance", "no-sign"]
+        if -1 not in unique_values:
+            plot_kwargs["palette"] = ["#f7f7f7", "#ba262b"]
+            plot_kwargs["categorical_colorbar_text"] = ["no-sign", "Association"]
         for k, v in kwargs.items():
             plot_kwargs[k] = v
 

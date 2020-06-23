@@ -3,13 +3,15 @@ import logging
 import shutil
 from pathlib import Path
 from time import time
-from typing import Optional, Sequence, Union
+from typing import Any, Optional, Sequence, Union
 
 import pandas as pd
 from anndata import AnnData
-from colorama import Fore
+from colorama import Fore, init
 
 from spatialtis.config import CONFIG
+
+init()
 
 logger = logging.getLogger(__name__)
 
@@ -20,8 +22,13 @@ def lprint(text, color="green", verbose=None):
     if verbose is None:
         verbose = CONFIG.VERBOSE.INFO
 
+    if CONFIG.WORKING_ENV is None:
+        msg = f"{text}"
+    else:
+        msg = f"{cmap[color]}{text}{Fore.RESET}"
+
     if verbose:
-        logger.info(f"{cmap[color]}{text}{Fore.RESET}")
+        logger.info(msg)
 
 
 def pretty_time(t):
@@ -33,12 +40,12 @@ def pretty_time(t):
     elif 60 <= t < 3600:
         minute = t // 60
         second = t % 60
-        return f"{minute}m{int(second)}s"
+        return f"{int(minute)}m{int(second)}s"
     elif t >= 3600:
         hour = t // 3600
         minute = (t - (hour * 3600)) // 60
         second = t % 60
-        return f"{hour}h{minute}m{int(second)}s"
+        return f"{int(hour)}h{int(minute)}m{int(second)}s"
 
 
 def timer(prefix=None, suffix=None, verbose=None):
@@ -67,9 +74,12 @@ def timer(prefix=None, suffix=None, verbose=None):
             if (suffix is not None) & verbose:
                 lprint(suffix, verbose=verbose)
             if verbose:
-                logger.info(
-                    f"{Fore.GREEN}Finished! Used {Fore.CYAN}{pretty_time(te - ts)}{Fore.RESET}"
-                )
+                if CONFIG.WORKING_ENV is not None:
+                    logger.info(
+                        f"{Fore.GREEN}Finished! Used {Fore.CYAN}{pretty_time(te - ts)}{Fore.RESET}"
+                    )
+                else:
+                    logger.info(f"Finished! Used {pretty_time(te - ts)}")
             return result
 
         return timed
@@ -78,7 +88,11 @@ def timer(prefix=None, suffix=None, verbose=None):
 
 
 def df2adata_uns(
-    df: pd.DataFrame, adata: AnnData, key: str, verbose: Optional[bool] = None
+    df: pd.DataFrame,
+    adata: AnnData,
+    key: str,
+    params: Optional[Any] = None,
+    verbose: Optional[bool] = None,
 ):
     """Preserve all info in pd.DataFrame as dict, and write to anndata.uns
     The anndata object haven't fully support read/write of a pandas.Dataframe object,
@@ -93,6 +107,7 @@ def df2adata_uns(
         df: the pandas.DataFrame object you want to write to the anndata.uns field
         adata: the anndata object to work with
         key: which anndata.uns key you want to write to
+        params: add parameters
         verbose: whether to print message
 
     """
@@ -100,15 +115,21 @@ def df2adata_uns(
         df=str(df.to_dict()), iname=df.index.names, colname=list(df.columns.names),
     )
 
+    if params is not None:
+        container["params"] = params
+
     adata.uns[key] = container
 
     if verbose is None:
         verbose = CONFIG.VERBOSE.ANNDATA
 
     if verbose:
-        logger.info(
-            f"""{Fore.GREEN}Added to AnnData, uns: {Fore.CYAN}'{key}'{Fore.RESET}"""
-        )
+        if CONFIG.WORKING_ENV is not None:
+            logger.info(
+                f"""{Fore.GREEN}Added to AnnData, uns: {Fore.CYAN}'{key}'{Fore.RESET}"""
+            )
+        else:
+            logger.info(f"""Added to AnnData, uns: '{key}'""")
 
 
 def col2adata_obs(
@@ -129,19 +150,23 @@ def col2adata_obs(
         verbose = CONFIG.VERBOSE.ANNDATA
 
     if verbose:
-        logger.info(
-            f"""{Fore.GREEN}Added to AnnData, obs: {Fore.CYAN}'{key}'{Fore.RESET}"""
-        )
+        if CONFIG.WORKING_ENV is not None:
+            logger.info(
+                f"""{Fore.GREEN}Added to AnnData, obs: {Fore.CYAN}'{key}'{Fore.RESET}"""
+            )
+        else:
+            logger.info(f"""Added to AnnData, obs: '{key}'""")
 
 
 def adata_uns2df(
-    adata: AnnData, key: str,
+    adata: AnnData, key: str, params: bool = False,
 ):
     """Read pandas.DataFrame object from anndata.uns if written by df2adata_uns
 
     Args:
         adata: the anndata object to work with
         key: which anndata.uns key you want to read from
+        params: whether to return parameters
 
     """
 
@@ -150,7 +175,10 @@ def adata_uns2df(
     df.index.set_names(container["iname"], inplace=True)
     df.columns.set_names(container["colname"], inplace=True)
 
-    return df
+    if params:
+        return df, container["params"]
+    else:
+        return df
 
 
 def filter_adata(
@@ -171,13 +199,11 @@ def filter_adata(
 
 def prepare_svca(
     adata: AnnData,
-    export: Union[Path, str] = "/",
-    marker_col: str = "Markers",
-    *,
-    groupby: Union[Sequence, str, None] = None,
-    centroid_col: str = "centroid",
+    export: Union[Path, str],
     entry_folder: str = "svca_data",
-    overwrite: bool = True,
+    groupby: Union[Sequence, str, None] = None,
+    marker_key: Optional[str] = None,
+    centroid_key: Optional[str] = None,
 ):
     """export anndata to SVCA analysis input formats
 
@@ -187,32 +213,32 @@ def prepare_svca(
     Args:
         adata: AnnData object
         export: where to store the data
-        marker_col: which key in anndata var is used in the header of the expressions.txt
-        groupby:
-        centroid_col:
         entry_folder:
-        overwrite: whether overwrite the export folder when already exists
+        marker_key: which key in anndata var is used in the header of the expressions.txt
+        groupby:
+        centroid_key:
 
     """
-    if marker_col not in adata.var.keys():
-        raise ValueError(f"{marker_col} not in anndata object's var field")
-    else:
-        marker_info = adata.var[marker_col]
-
     if groupby is None:
         groupby = CONFIG.EXP_OBS
+    if marker_key is None:
+        marker_key = CONFIG.MARKER_KEY
+    if centroid_key is None:
+        centroid_key = CONFIG.CENTROID_KEY
 
-    keys = list(groupby) + [centroid_col]
+    if marker_key not in adata.var.keys():
+        raise ValueError(f"{marker_key} not in anndata object's var field")
+    else:
+        marker_info = adata.var[marker_key]
+
+    keys = list(groupby) + [centroid_key]
 
     groups = adata.obs[keys].groupby(groupby)
 
     p = Path(export) / entry_folder
 
     if p.exists():
-        if overwrite:
-            shutil.rmtree(p)
-        else:
-            raise FileExistsError(f"Folder `{entry_folder}` is already exists")
+        shutil.rmtree(p)
 
     p.mkdir(exist_ok=True)
 
@@ -231,7 +257,7 @@ def prepare_svca(
 
         # export to positions.txt
         cents = []
-        for c in g[centroid_col]:
+        for c in g[centroid_key]:
             c = eval(c)
             cents.append([c[0], c[1]])
         pd.DataFrame(cents).to_csv(position_path, sep="\t", index=False, header=False)

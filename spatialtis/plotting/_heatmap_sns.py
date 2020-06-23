@@ -143,7 +143,7 @@ def heatmap(
                 "'categorical_colorbar_text' should be set if use categorical colorbar"
             )
         else:
-            texts = list(categorical_colorbar_text)
+            texts = categorical_colorbar_text
             cbar_mapper = zip(
                 texts, [cmap[int(i)] for i in np.linspace(0, len(cmap) - 1, len(texts))]
             )

@@ -28,7 +28,8 @@ class _VERBOSE(object):
         self.INFO = True
 
     def __repr__(self):
-        return f"pbar: {self.PBAR} anndata: {self.ANNDATA} info: {self.INFO}"
+        info = [f"PBAR: {self.PBAR}", f"ANNDATA: {self.ANNDATA}", f"INFO: {self.INFO}"]
+        return "\n".join(info)
 
 
 class _CONFIG(object):
@@ -44,12 +45,13 @@ class _CONFIG(object):
         self.MULTI_PROCESSING: bool = False
 
         # set tqdm bar foramt
-        self.PBAR_FORMAT = "%s{l_bar}%s{bar}%s{r_bar}%s" % (
+        self._INBUILT_PBAT_FORMAT = "%s{l_bar}%s{bar}%s{r_bar}%s" % (
             Fore.GREEN,
             Fore.CYAN,
             Fore.GREEN,
             Fore.RESET,
         )
+        self.PBAR_FORMAT = self._INBUILT_PBAT_FORMAT
 
         # used key name to store info in anndata
         self.CENTROID_KEY: str = "centroid"
@@ -76,6 +78,22 @@ class _CONFIG(object):
         self.neighbors_count_key: str = "neighbors_count"
         self.exp_neighcell_key: str = "exp_neighcell"
         self.exp_neighexp_key: str = "exp_neighexp"
+
+    def __repr__(self):
+        head = "Configuration of SpatialTis:"
+        info = [
+            f"EXP_OBS: {self.EXP_OBS}",
+            f"CELL_TYPE_KEY: {self.CELL_TYPE_KEY}",
+            f"OS: {self.OS}",
+            f"MULTI_PROCESSING: {self.MULTI_PROCESSING}",
+            f"CPU_ALLOC: {self.CPU_ALLOC}",
+            f"WORKING_ENV: {self.WORKING_ENV}",
+            f"VERBOSE.PBAR: {self.VERBOSE.PBAR}",
+            f"VERBOSE.ANNDATA: {self.VERBOSE.ANNDATA}",
+            f"VERBOSE.INFO: {self.VERBOSE.INFO}",
+        ]
+        info = "\t" + "\n\t".join(info)
+        return f"{head}\n{info}"
 
     def tqdm(self, **kwargs):
         all_kwargs = dict(
@@ -138,8 +156,13 @@ class _CONFIG(object):
     def WORKING_ENV(self, env):
         if env not in ["jupyter", "zepplin", None]:
             warnings.warn("Unknown working environments", UserWarning)
+        self._WORKING_ENV = env
         if env is None:
             self.VERBOSE.PBAR = False
+            self.PBAR_FORMAT = "{l_bar}{bar}{r_bar}"
+        else:
+            self.VERBOSE.PBAR = True
+            self.PBAR_FORMAT = self._INBUILT_PBAT_FORMAT
 
     @property
     def CPU_ALLOC(self):
