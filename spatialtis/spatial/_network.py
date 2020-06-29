@@ -1,5 +1,6 @@
 from typing import Optional
 
+import igraph as ig
 import leidenalg
 import pandas as pd
 from tqdm import tqdm
@@ -11,7 +12,7 @@ from ._neighbors import Neighbors
 from ._util import check_neighbors
 
 
-@timer(prefix="Running community detection")
+# @timer(prefix="Running community detection")
 def communities(
     n: Neighbors, export_key: Optional[str] = None,
 ):
@@ -33,7 +34,9 @@ def communities(
     sub_comm = []
     graphs = n.to_graphs()
     for _, graph in tqdm(graphs.items(), **CONFIG.tqdm(desc="find communities"),):
-        part = leidenalg.find_partition(graph, leidenalg.ModularityVertexPartition)
+        part = leidenalg.find_partition(
+            graph, leidenalg.CPMVertexPartition, resolution_parameter=0.05
+        )
         sub_comm += part.membership
 
     sub_comm = pd.Series(sub_comm, index=n.data.index)

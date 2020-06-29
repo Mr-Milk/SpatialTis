@@ -5,7 +5,7 @@ from spatialtis.config import CONFIG
 
 from ._bar_plot import stacked_bar
 from ._cell_map import cell_map
-from ._expression3d import expression_map
+from ._expression_map import expression_map
 from ._heatmap_sns import heatmap
 from ._stacked_kde_sns import stacked_kde
 from ._violin_plot import violin_plot
@@ -13,11 +13,11 @@ from .palette import colorcycle, get_colors, get_linear_colors, view_palette
 from .wrapper import (
     cc_interactions,
     cell_co_occurrence,
-    cell_communities_graph,
+    cell_communities,
     cell_components,
     cell_density,
     cell_morphology,
-    cell_type_graph,
+    cell_neighbors,
     exp_neighcells,
     neighborhood_analysis,
     spatial_distribution,

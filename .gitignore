@@ -6,6 +6,7 @@ tmp/test.h5ad
 tmp/test_adata.h5ad
 tutorial/
 
+*.pptx
 *.ipynb
 
 tissue.yml

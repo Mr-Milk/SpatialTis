@@ -123,7 +123,9 @@ def exp_neighcells(
 
     else:
         with tqdm(
-            **CONFIG.tqdm(total=len(n.unitypes) * len(markers), desc="fit model")
+            **CONFIG.tqdm(
+                total=len(n.unitypes) * len(markers), desc="fit model", unit="regressor"
+            )
         ) as pbar:
             for c1 in n.unitypes:
                 y = np.asarray(Y[c1]).T

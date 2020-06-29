@@ -139,7 +139,7 @@ class Neighbors(object):
         self.__uniquetypes = np.unique(self.__data[type_key])
         self.__types = {n: 0 for n in self.__names}
 
-    @timer(prefix="Finding cell neighbors")
+    # @timer(prefix="Finding cell neighbors")
     def find_neighbors(
         self,
         expand: Optional[float] = None,
@@ -307,7 +307,7 @@ class Neighbors(object):
                     neighs = neighdict[i]
                 except KeyError:
                     neighs = []
-                neighbors.append(neighs)
+                neighbors.append(str(neighs))
         col2adata_obs(neighbors, self.__adata, export_key)
 
     def neighbors_count(
@@ -369,17 +369,29 @@ class Neighbors(object):
         new_graphs = {n: 0 for n in self.__names}
         for n, g in self.__groups:
             centroids = [eval(c) for c in g[self.__centkey]]
+            # X = [c[0] for c in centroids]
+            # Y = [c[1] for c in centroids]
+            vertices = [
+                {"name": i, "x": x, "y": y} for i, (x, y) in enumerate(centroids)
+            ]
             edges = self.__neighborsdb[n]
             graph_edges = []
             for k, vs in edges.items():
                 if len(vs) > 0:
                     for v in vs:
                         distance = euclidean(centroids[k], centroids[v])
-                        graph_edges.append((str(k), str(v), distance))
-                else:
-                    graph_edges.append((str(k), str(k), 0))
-            g = ig.Graph.TupleList(graph_edges, weights=True).simplify()
-            g.vs["type"] = self.__types
+                        # graph_edges.append((k, v, distance))
+                        graph_edges.append(
+                            {"source": k, "target": v, "weight": distance}
+                        )
+                # else:
+                # graph_edges.append((k, k, 0))
+                # graph_edges.append({"source": k, "target": k, "weight": 0})
+            # g = ig.Graph.TupleList(graph_edges, weights=True).simplify()
+            g = ig.Graph.DictList(vertices, graph_edges)
+            # g.vs["type"] = self.__types
+            # g.vs["x"] = X
+            # g.vs["y"] = Y
             new_graphs[n] = g
 
         return new_graphs

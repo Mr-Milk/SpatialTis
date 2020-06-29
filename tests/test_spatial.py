@@ -25,7 +25,7 @@ def test_spatial_dist_plot():
     data = pytest.data
     sp.spatial_distribution(data, ["Patient", "Part"], save="test.png")
     os.remove('test.png')
-    sp.spatial_distribution(data, ["Patient", "Part"], method="heatmap", display=False)
+    sp.spatial_distribution(data, ["Patient", "Part"], use="heatmap", display=False)
 
 
 def test_spatial_hetero():
@@ -72,14 +72,14 @@ def test_community():
 def test_community_graph():
     data = pytest.data
     ROI = {"Patient": "HPAP005", "Part": "Tail", "ROI": "ROI1"}
-    sp.cell_communities_graph(data, ROI)
-    sp.cell_communities_graph(data, ROI, method="static", display=False)
+    sp.cell_communities(data, ROI)
+    sp.cell_communities(data, ROI, use="static", display=False)
 
 
 def test_cell_type_graph():
     data = pytest.data
     ROI = {"Patient": "HPAP005", "Part": "Tail", "ROI": "ROI1"}
-    sp.cell_type_graph(data, ROI)
+    sp.cell_neighbors(data, ROI)
 
 
 def test_neighborhood_analysis():
@@ -89,12 +89,12 @@ def test_neighborhood_analysis():
 
 def test_neighborhood_analysis_plot():
     data = pytest.data
-    sp.neighborhood_analysis(data, method="graph", save="test.png")
+    sp.neighborhood_analysis(data, use="graph", save="test.png")
     os.remove('test.png')
-    sp.neighborhood_analysis(data, ['Patient', 'Part'], method="heatmap", display=False)
+    sp.neighborhood_analysis(data, ['Patient', 'Part'], use="heatmap", display=False)
 
     st.cell_components(data)
-    sp.neighborhood_analysis(data, method="dot_matrix", display=False)
+    sp.neighborhood_analysis(data, use="dot_matrix", display=False)
 
 
 def test_spatial_enrichment_analysis():

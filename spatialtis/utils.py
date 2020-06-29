@@ -1,6 +1,7 @@
 import functools
 import logging
 import shutil
+from collections import Counter
 from pathlib import Path
 from time import time
 from typing import Any, Optional, Sequence, Union
@@ -11,7 +12,8 @@ from colorama import Fore, init
 
 from spatialtis.config import CONFIG
 
-init()
+if CONFIG.OS is "Windows":
+    init(convert=True)
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +28,6 @@ def lprint(text, color="green", verbose=None):
         msg = f"{text}"
     else:
         msg = f"{cmap[color]}{text}{Fore.RESET}"
-
     if verbose:
         logger.info(msg)
 
