@@ -8,6 +8,9 @@ import warnings
 from typing import Any, Mapping, Optional, Sequence
 
 from colorama import Fore
+from pyecharts.globals import WarningType
+
+WarningType.ShowWarning = False
 
 # get system os
 system_os = platform.system()

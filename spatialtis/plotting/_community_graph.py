@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from matplotlib.collections import LineCollection
+from matplotlib.lines import Line2D
 from pyecharts import options as opts
 from pyecharts.charts import Graph
 
@@ -13,13 +14,10 @@ from .palette import get_colors, get_linear_colors
 
 
 def graph_plot_interactive(
-    df: pd.DataFrame,
-    node_col: Optional[str] = None,  # centroid_col
-    node_category_col: Optional[str] = None,  # cell type / communities
-    node_info_col: Optional[str] = None,
-    edge_col: Optional[str] = None,  # neighbors relationship
-    edge_category_col: Optional[str] = None,
-    edge_info_col: Optional[str] = None,
+    nodes,
+    edges,
+    nodes_types=None,
+    edges_types=None,
     node_size: Union[float, int] = 1,
     edge_size: Union[float, int] = 0.5,
     size: Sequence = (800, 800),
@@ -31,64 +29,48 @@ def graph_plot_interactive(
     title: Optional[str] = None,
     save: Union[str, Path, None] = None,
 ):
-    if palette is not None:
-        palette = get_linear_colors(["Set3"])
 
     nodes_data = []
     edges_data = []
     categories = []
 
-    cols = list(df.columns)
-    ixy = cols.index(node_col)
-    iedge = cols.index(edge_col)
-    if node_category_col is not None:
-        inode_category = cols.index(node_category_col)
-    if node_info_col is not None:
-        inode_info = cols.index(node_info_col)
-    if edge_category_col is not None:
-        iedge_category = cols.index(edge_category_col)
-        edge_categories = df[edge_category_col]
-        edge_types = pd.unique(edge_categories)
-        edges_colors = dict(
-            zip(edge_types, get_colors(len(edge_types), ["Set3", "Spectral"]))
-        )
-    if edge_info_col is not None:
-        iedge_info = cols.index(edge_info_col)
+    if nodes_types is not None:
+        n_unitypes = np.unique(nodes_types)
+        for c in n_unitypes:
+            categories.append(opts.GraphCategory(name=c, symbol="circle"))
 
-    for i, (_, c) in enumerate(df.iterrows()):
-        xy = eval(c[ixy])
+    if edges_types is not None:
+        e_unitypes = np.unique(edges_types)
+        edges_colors = get_colors(len(e_unitypes), ["Set3"])
+        edges_colormap = dict(zip(e_unitypes, edges_colors))
+
+    for i, (x, y) in enumerate(nodes):
+
         node_config = dict(
             name=str(i),
-            x=xy[1],
-            y=xy[0],
+            x=x,
+            y=-y,
             label_opts=opts.LabelOpts(is_show=False),
             symbol_size=node_size,
         )
-        if node_category_col is not None:
-            category = str(c[inode_category])
-            node_config["category"] = category
-            categories.append(opts.GraphCategory(name=category))
-        if node_info_col is not None:
-            node_config["value"] = str(c[inode_info])
+
+        if nodes_types is not None:
+            node_config["category"] = nodes_types[i]
 
         nodes_data.append(opts.GraphNode(**node_config))
 
-        for n in c[iedge]:
-            if edge_category_col is not None:
-                source_category = edge_categories[n]
-                target_category = edge_categories[i]
-                if source_category == target_category:
-                    edges_data.append(
-                        opts.GraphLink(
-                            source=str(n),
-                            target=str(i),
-                            linestyle_opts=opts.LineStyleOpts(
-                                width=edge_size, color=edges_colors[source_category],
-                            ),
-                        )
-                    )
-            else:
-                edges_data.append(opts.GraphLink(source=str(n), target=str(i)))
+    for i, (source, target) in enumerate(edges):
+
+        edge_config = dict(source=str(source), target=str(target),)
+
+        if edges_types is not None:
+            edge_config["linestyle_opts"] = opts.LineStyleOpts(
+                width=edge_size, color=edges_colormap[edges_types[i]],
+            )
+        else:
+            edge_config["linestyle_opts"] = opts.LineStyleOpts(width=edge_size,)
+
+        edges_data.append(opts.GraphLink(**edge_config))
 
     g = Graph(
         init_opts=opts.InitOpts(
@@ -108,7 +90,14 @@ def graph_plot_interactive(
         title_opts=opts.TitleOpts(title=title),
         # visualmap_opts=opts.VisualMapOpts(range_color=palette),
         legend_opts=opts.LegendOpts(
-            type_="scroll", orient="vertical", pos_left="2%", pos_top="20%"
+            type_="scroll",
+            orient="vertical",
+            pos_left="left",
+            pos_top="center",
+            item_width=5,
+            legend_icon="circle",
+            padding=3,
+            textstyle_opts={"fontSize": 8},
         ),
         toolbox_opts=opts.ToolboxOpts(
             feature={
@@ -135,7 +124,9 @@ def graph_plot(
     edges,
     nodes_types=None,
     edges_types=None,
-    size: Sequence = (10, 10),
+    node_size: Union[float, int] = 1,
+    edge_size: Union[float, int] = 0.7,
+    size: Sequence = (15, 15),
     palette: Optional[Sequence] = None,
     display: bool = True,
     return_plot: bool = False,
@@ -144,11 +135,25 @@ def graph_plot(
 ):
     if nodes_types is not None:
         n_unitypes = np.unique(nodes_types)
-        nodes_colors = get_colors(len(n_unitypes), ["Spectral"])
+        nodes_colors = get_colors(len(n_unitypes), ["Category20"])
         nodes_colormap = dict(zip(n_unitypes, nodes_colors))
+
+        nodes_legend = []
+        for label in n_unitypes:
+            nodes_legend.append(
+                Line2D(
+                    (),
+                    (),
+                    color="white",
+                    marker="o",
+                    markerfacecolor=nodes_colormap[label],
+                    label=label,
+                    markersize=8,
+                ),
+            )
     if edges_types is not None:
         e_unitypes = np.unique(edges_types)
-        edges_colors = get_colors(len(e_unitypes), ["Set3"])
+        edges_colors = get_colors(len(e_unitypes), ["Spectral", "Set3"])
         edges_colormap = dict(zip(e_unitypes, edges_colors))
 
     fig, ax = plt.subplots(figsize=size)
@@ -161,18 +166,30 @@ def graph_plot(
         if edges_types is not None:
             line_color = edges_colormap[edges_types[i]]
         else:
-            line_color = "#51A8DD"
+            line_color = "#cccccc"
         line_colors.append(line_color)
-    segs = LineCollection(line_cols, zorder=-1, linewidth=0.7, colors=line_colors)
+    segs = LineCollection(line_cols, zorder=-1, linewidth=edge_size, colors=line_colors)
 
     ax.add_collection(segs)
 
     for i, (n1, n2) in enumerate(nodes):
+        plot_config = dict(s=node_size)
         if nodes_types is not None:
-            point_color = nodes_colormap[nodes_types[i]]
+            plot_config["c"] = nodes_colormap[nodes_types[i]]
         else:
-            point_color = "#CB1B45"
-        ax.scatter(n1, n2, c=point_color, s=1)
+            plot_config["c"] = "#CB1B45"
+        ax.scatter(n1, n2, **plot_config)
+
+    if nodes_types is not None:
+        nlegend = ax.legend(
+            handles=nodes_legend,
+            loc="center left",
+            bbox_to_anchor=(1, 0.5),
+            frameon=False,
+            labelspacing=1.2,
+        )
+        # nlegend._legend_box.align = "left"
+        ax.add_artist(nlegend)
 
     plt.axis("off")
     if not display:

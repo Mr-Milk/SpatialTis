@@ -1,3 +1,4 @@
+import warnings
 from pathlib import Path
 from typing import List, Mapping, Optional, Sequence, Union
 
@@ -15,9 +16,11 @@ from .palette import get_colors
 def cell_map(
     adata: AnnData,
     query: Mapping,
-    type_key: Optional[str] = None,
+    geom: str = "shape",
     selected_types: Optional[Sequence] = None,
+    type_key: Optional[str] = None,
     shape_key: Optional[str] = None,
+    centroid_key: Optional[str] = None,
     size: Optional[Sequence[int]] = None,
     title: Optional[str] = None,
     palette: Union[Sequence[str], str, None] = None,
@@ -31,9 +34,11 @@ def cell_map(
     Args:
         adata: anndata
         query: a dict use to select which ROI to display
-        type_key: key to cell type
+        geom:
         selected_types: select which types to show, others will be muted in grey
+        type_key: key to cell type
         shape_key: key to cell shape
+        centroid_key: key to cell centroid
         size: size of plot in pixels
         title: title of plot
         palette: config the color, sequence of color in hex, or
@@ -47,6 +52,17 @@ def cell_map(
         type_key = CONFIG.CELL_TYPE_KEY
     if shape_key is None:
         shape_key = CONFIG.SHAPE_KEY
+    if centroid_key is None:
+        centroid_key = CONFIG.CENTROID_KEY
+
+    if geom == "shape":
+        if shape_key not in adata.obs.keys():
+            geom = "point"
+            warnings.warn("Shape key not exist, try to resolve cell as point")
+
+    if geom == "point":
+        if centroid_key not in adata.obs.keys():
+            raise KeyError("Centroid key not exist")
 
     df = adata.obs.query("&".join([f"({k}=='{v}')" for k, v in query.items()]))
     groups = df.groupby(type_key)
@@ -81,7 +97,7 @@ def cell_map(
     def add_patches(name, fill_color=None, fill_alpha=None):
         x = [[c[0] for c in eval(cell)] for cell in data[shape_key]]
         y = [[c[1] for c in eval(cell)] for cell in data[shape_key]]
-        plot_data = dict(x=x, y=y, name=[name for i in range(0, len(x))])
+        plot_data = dict(x=x, y=y, name=[name for _ in range(len(x))])
         b = p.patches(
             "x",
             "y",
@@ -95,15 +111,45 @@ def cell_map(
             legends_name.append(name)
             legends.append(LegendItem(label=name, renderers=[b]))
 
+    def add_circle(name, fill_color=None, fill_alpha=None):
+        cent = [eval(cell) for cell in data[centroid_key]]
+        x = [c[0] for c in cent]
+        y = [c[1] for c in cent]
+        plot_data = dict(x=x, y=y, name=[name for _ in range(len(x))])
+
+        b = p.circle(
+            "x",
+            "y",
+            source=plot_data,
+            fill_color=fill_color,
+            fill_alpha=fill_alpha,
+            line_color="white",
+            line_width=0.5,
+            size=5,
+        )
+        if name not in legends_name:
+            legends_name.append(name)
+            legends.append(LegendItem(label=name, renderers=[b]))
+
     if selected_types is None:
-        for ix, (n, data) in enumerate(groups):
-            add_patches(n, fill_color=colors[ix], fill_alpha=0.8)
-    else:
-        for ix, (n, data) in enumerate(groups):
-            if n in selected_types:
-                add_patches(n, fill_color=colors[ix], fill_alpha=0.8)
+        for color, (n, data) in zip(colors, groups):
+            if geom == "shape":
+                add_patches(n, fill_color=color, fill_alpha=0.8)
             else:
-                add_patches("other", fill_color="grey", fill_alpha=0.5)
+                add_circle(n, fill_color=color, fill_alpha=0.8)
+    else:
+        if geom == "shape":
+            for color, (n, data) in zip(colors, groups):
+                if n in selected_types:
+                    add_patches(n, fill_color=color, fill_alpha=0.8)
+                else:
+                    add_patches("other", fill_color="grey", fill_alpha=0.5)
+        else:
+            for color, (n, data) in zip(colors, groups):
+                if n in selected_types:
+                    add_circle(n, fill_color=color, fill_alpha=0.8)
+                else:
+                    add_circle("other", fill_color="grey", fill_alpha=0.8)
 
     if len(legends) >= 16:
         cut = int(len(legends) // 2)
@@ -123,6 +169,7 @@ def cell_map(
     p.legend.click_policy = "hide"
     p.legend.label_text_baseline = "bottom"
     p.legend.spacing = 1
+    p.match_aspect = True
 
     # save something
     if save is not None:

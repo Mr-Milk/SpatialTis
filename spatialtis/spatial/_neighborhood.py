@@ -185,7 +185,7 @@ def neighborhood_analysis(
     return_df: bool = False,
     mp: bool = False,
 ):
-    """Python implementation of histocat's neighborhood analysis
+    """Python implementation of neighborhood analysis
 
     Neighborhood analysis tells you the relationship between different type of cells
 

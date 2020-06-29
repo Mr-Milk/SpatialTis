@@ -1,4 +1,4 @@
-from collections import Counter
+from collections import Counter, OrderedDict
 from itertools import combinations_with_replacement
 from typing import Mapping, Optional, Sequence
 
@@ -95,7 +95,7 @@ def cell_co_occurrence(
     adata: AnnData,
     groupby: Optional[Sequence[str]] = None,
     selected_types: Optional[Sequence] = None,
-    method: str = "dot",  # dot, heatmap
+    use: str = "dot",  # dot, heatmap
     key: Optional[str] = None,
     **kwargs,
 ):
@@ -105,9 +105,9 @@ def cell_co_occurrence(
         adata: anndata object
         groupby: how to group your data in plot
         selected_types: select interested types
-        method: "dot" or "heatmap"
+        use: "dot" or "heatmap"
         key: which key to read the data
-        **kwargs: pass to plotting.tro_dotplot (method="dot") or plotting.heatmap (method="heatmap")
+        **kwargs: pass to plotting.tri_dotplot (use="dot") or plotting.heatmap (use="heatmap")
 
     Returns:
 
@@ -121,25 +121,25 @@ def cell_co_occurrence(
         groupby = CONFIG.EXP_OBS
     if selected_types is not None:
         df = df[selected_types]
+        df = df.iloc[:, df.columns.get_level_values("Cell type2").isin(selected_types)]
 
-    if method == "dot":
+    if use == "dot":
         ndf = df.reset_index(drop=True).sum().reset_index()
         labels = pd.unique(ndf["Cell type1"])
-        sorted_labels = []
         if selected_types is not None:
-            for t in selected_types:
-                if t in labels:
-                    sorted_labels.append(t)
-        else:
-            sorted_labels = labels
+            labels = selected_types
+        combs = [i for i in combinations_with_replacement(labels, 2)]
+        counts = OrderedDict((k, []) for k in labels)
 
-        counts = list()
-        for n, g in ndf.groupby("Cell type1"):
-            arr = list(g[0].to_numpy())
-            counts.append(arr)
+        for comb in combs:
+            v = ndf[(ndf["Cell type1"] == comb[0]) & (ndf["Cell type2"] == comb[1])]
+            if len(v) == 0:
+                v = ndf[(ndf["Cell type1"] == comb[1]) & (ndf["Cell type2"] == comb[0])]
+            v = v[0].tolist()[0]
+            counts[comb[0]].append(v)
 
-        counts = sorted(counts, key=len, reverse=True)
-        p = tri_dotplot(counts, sorted_labels, **kwargs)
+        counts = list(counts.values())
+        p = tri_dotplot(counts, labels, **kwargs)
     else:
         plot_kwargs = dict(
             row_colors=groupby,
@@ -203,29 +203,42 @@ def cell_morphology(
 def neighborhood_analysis(
     adata: AnnData,
     groupby: Optional[Sequence[str]] = None,
+    selected_types: Optional[Sequence] = None,
     key: Optional[str] = None,
-    method: str = "dot_matrix",  # graph, heatmap, dot_matrix
+    use: str = "dot_matrix",  # graph, heatmap, dot_matrix
     **kwargs,
 ):
     """("dot_matrix", "heatmap": matplotlib, "graph": pyechart) plotting function for neighborhood analysis
 
     Args:
         adata: anndata object
-        groupby: how to group your data in plot, only work for method="heatmap"
+        groupby: how to group your data in plot, only work for use="heatmap"
+        selected_types:
         key: which key to read the data
-        method: "dot_matrix", "heatmap", "graph"
+        use: "dot_matrix", "heatmap", "graph"
         **kwargs: pass to plotting.dot_matrix; plotting.heatmap; plotting.cc_interaction
 
     """
     if key is None:
         key = CONFIG.neighborhood_analysis_key
 
-    df = adata_uns2df(adata, key)
-    order = True  # params['order']
+    df, params = adata_uns2df(adata, key, params=True)
+    order = params["order"]
 
-    if method == "graph":
+    if selected_types is not None:
+        combs = [i for i in combinations_with_replacement(selected_types, 2)]
+        cols = df.columns.tolist()
+        colnames = df.columns.names
+        for i, comb in enumerate(cols):
+            if comb not in combs:
+                cols[i] = comb[::-1]
+        df.columns = pd.MultiIndex.from_tuples(cols)
+        df.columns.names = colnames
+        df = df[combs]
+
+    if use == "graph":
         p = cc_interactions(df, {-1: "Avoidance", 1: "Association"}, **kwargs)
-    elif method == "dot_matrix":
+    elif use == "dot_matrix":
         if not order:
             raise ValueError(
                 "Unordered cell-interaction couldn't be visualized using dot matrix plot"
@@ -236,13 +249,12 @@ def neighborhood_analysis(
             raise Exception(
                 "Please run cell_components before plotting the dot matrix plot"
             )
-
         counts = (
             list()
         )  # [cell 1, cell 2, interaction type, No. of sig (both type), % of sign type, p)
-        for i, (label, data) in enumerate(df.items()):
+        for label, data in df.items():
             c_data = sorted(
-                [(k, v) for k, v in Counter(data).items()],
+                [(k, v) for k, v in {**{0: 0, 1: 0, -1: 0}, **Counter(data)}.items()],
                 key=lambda x: x[1],
                 reverse=True,
             )
@@ -255,17 +267,32 @@ def neighborhood_analysis(
 
             # count pearson correlation between cell components
             p = pearsonr(cc[label[0]], cc[label[1]])[0]
-
-            if c_data[0][0] == 0:
-                counts.append([label[0], label[1], all_sign, 0, p])
-            elif c_data[0][0] == 1:
-                counts.append(
-                    [label[0], label[1], all_sign, 1 - c_data[0][1] / all_sign, p]
-                )
+            if all_sign == 0:
+                counts.append([label[0], label[1], 0, 0, p])
             else:
-                counts.append(
-                    [label[0], label[1], all_sign, c_data[0][1] / all_sign, p]
-                )
+                if c_data[0][0] == 0:
+                    if c_data[1][0] == 1:
+                        counts.append(
+                            [label[0], label[1], all_sign, c_data[1][1] / all_sign, p]
+                        )
+                    else:
+                        counts.append(
+                            [
+                                label[0],
+                                label[1],
+                                all_sign,
+                                1 - c_data[1][1] / all_sign,
+                                p,
+                            ]
+                        )
+                elif c_data[0][0] == 1:
+                    counts.append(
+                        [label[0], label[1], all_sign, c_data[0][1] / all_sign, p]
+                    )
+                else:
+                    counts.append(
+                        [label[0], label[1], all_sign, 1 - c_data[0][1] / all_sign, p]
+                    )
         counts = pd.DataFrame(counts, columns=["type1", "type2", "all", "%", "p"])
         matrix = counts.pivot(index="type1", columns="type2", values="p")
         xlabels = matrix.columns
@@ -285,7 +312,7 @@ def neighborhood_analysis(
             plot_kwargs[k] = v
         p = dot_matrix(matrix, dot_color, dot_size, xlabels, ylabels, **plot_kwargs)
 
-    elif method == "heatmap":
+    elif use == "heatmap":
         plot_kwargs = dict(
             row_colors=groupby,
             col_colors=["Cell type1", "Cell type2"],
@@ -354,7 +381,7 @@ def spatial_distribution(
     groupby: Optional[Sequence[str]] = None,
     selected_types: Optional[Sequence] = None,
     key: Optional[str] = None,
-    method: str = "dot",  # heatmap
+    use: str = "dot",  # heatmap
     **kwargs,
 ):
     """(matplotlib) plotting function for spatial distribution
@@ -364,7 +391,7 @@ def spatial_distribution(
         groupby: how to group your data in plot
         selected_types: select interested types
         key: which key to read the data
-        method: "dot" or "heatmap"
+        use: "dot" or "heatmap"
         **kwargs: pass to plotting.dotplot or plotting.heatmap
 
     """
@@ -382,7 +409,7 @@ def spatial_distribution(
         mapper = {0: "No cell", 1: "Random", 2: "Regular", 3: "Cluster"}
         p = grouped_pie(df, mapper, order=order, **kwargs)
     """
-    if method == "dot":
+    if use == "dot":
         names = []
         counts = []
         for n, col in df.iteritems():
@@ -400,9 +427,16 @@ def spatial_distribution(
         tb.index.name = "Cell"
         tb.columns.name = "Pattern"
         tb = tb[["No Cell", "Random", "Regular", "Cluster"]]
-        p = dotplot(tb, y="Cell", x="Pattern", annotated=False, **kwargs)
+        colors = np.array(["#FFC408", "#c54a52", "#4a89b9", "#5a539d"] * len(tb))
+
+        plot_kwargs = dict(annotated=False, color=colors, alpha=1,)
+
+        for k, v in kwargs:
+            plot_kwargs[k] = v
+
+        p = dotplot(tb, y="Cell", x="Pattern", **plot_kwargs)
         # p = dotplot(tb.T, x="Cell", y="Pattern", annotated=False)
-    elif method == "heatmap":
+    elif use == "heatmap":
         plot_kwargs = dict(
             row_colors=groupby,
             col_colors=["Cell type"],
@@ -420,7 +454,7 @@ def spatial_distribution(
 
         p = heatmap(df, **plot_kwargs)
     else:
-        raise ValueError("Support methods are 'dot' and 'heatmap'.")
+        raise ValueError("Support plotting methods are 'dot' and 'heatmap'.")
     return p
 
 
@@ -458,9 +492,10 @@ def spatial_heterogeneity(
     return p
 
 
-def cell_type_graph(
+def cell_neighbors(
     adata: AnnData,
     query: Mapping,
+    use: str = "interactive",
     type_key: Optional[str] = None,
     neighbors_key: Optional[str] = None,
     centroid_key: Optional[str] = None,
@@ -487,20 +522,29 @@ def cell_type_graph(
         centroid_key = CONFIG.CENTROID_KEY
 
     df = adata.obs.query("&".join([f"({k}=='{v}')" for k, v in query.items()]))
-    p = graph_plot_interactive(
-        df,
-        node_col=centroid_key,
-        node_category_col=type_key,
-        edge_col=neighbors_key,
-        **kwargs,
-    )
+    df = df.reset_index()
+
+    nodes = [eval(n) for n in df[centroid_key]]
+    nodes_types = [str(n) for n in df[type_key]]
+
+    neighs = [eval(n) for n in df[neighbors_key]]
+    edges = []
+    for i, n in zip(df.index, neighs):
+        for x in n:
+            edges.append((i, x))
+
+    if use == "interactive":
+        p = graph_plot_interactive(nodes, edges, nodes_types=nodes_types, node_size=3)
+    else:
+        p = graph_plot(nodes, edges, nodes_types=nodes_types, node_size=4)
     return p
 
 
-def cell_communities_graph(
+def cell_communities(
     adata: AnnData,
     query: Mapping,
-    method: str = "interactive",
+    min_cell: int = 10,
+    use: str = "interactive",
     type_key: Optional[str] = None,
     community_key: Optional[str] = None,
     neighbors_key: Optional[str] = None,
@@ -512,7 +556,8 @@ def cell_communities_graph(
     Args:
         adata: anndata
         query: a dict use to select which ROI to display
-        method: "interactive" or "static", for big ROI, "interactive" is much faster using WebGL
+        min_cell: only show communities that have certain number of cells
+        use: "interactive" or "static", for big ROI, "interactive" is much faster using WebGL
         type_key: key to cell type
         community_key: key to community
         neighbors_key: key to neighbors
@@ -541,30 +586,51 @@ def cell_communities_graph(
 
     df = adata.obs.query("&".join([f"({k}=='{v}')" for k, v in query.items()]))
 
-    if method == "interactive":
-        p = graph_plot_interactive(
-            df,
-            node_col=centroid_key,
-            node_info_col=type_key,
-            edge_col=neighbors_key,
-            edge_category_col=community_key,
-            **kwargs,
-        )
+    nodes_types = df[community_key].tolist()
+    commus = []
+    for commu, count in Counter(nodes_types).items():
+        if count >= min_cell:
+            commus.append(commu)
 
-    else:
-        nodes = [eval(n) for n in df[centroid_key]]
-        neighs = df[neighbors_key]
-        nodes_types = list(df[community_key])
+    df = df.reset_index(drop=True)
+    xdf = df[df[community_key].isin(commus)]
+    xdf = xdf.reset_index()
 
-        edges = []
-        edges_types = []
-        for i, n in enumerate(neighs):
-            for x in n:
-                if nodes_types[i] == nodes_types[x]:
+    nodes = [eval(n) for n in xdf[centroid_key]]
+    neighs = [eval(n) for n in xdf[neighbors_key]]
+    nodes_types = xdf[community_key]
+
+    edges = []
+    edges_types = []
+    for i, n in zip(xdf.index, neighs):
+        for x in n:
+            new_x = xdf[xdf["index"] == x].index
+            if len(new_x) == 1:
+                new_x = new_x[0]
+                if nodes_types[i] == nodes_types[new_x]:
+                    edges.append((i, new_x))
                     edges_types.append(nodes_types[i])
-                    edges.append((i, x))
 
-        p = graph_plot(nodes, edges, edges_types=edges_types)
+    """
+    nodes = []
+    edges = []
+    edges_types = []
+    for i, d in xdf.iterrows():
+        nodes.append(eval(d[centroid_key]))
+        neighs = eval(d[neighbors_key])
+        t = d[community_key]
+
+        for n in neighs:
+            info = xdf[xdf['index'] == n][community_key]
+            if len(info) == 1:
+                if t == info.tolist()[0]:
+                    edges.append((i, info.index[0]))
+                    edges_types.append(t)
+"""
+    if use == "interactive":
+        p = graph_plot_interactive(nodes, edges, edges_types=edges_types, **kwargs)
+    else:
+        p = graph_plot(nodes, edges, edges_types=edges_types, **kwargs)
 
     return p
 

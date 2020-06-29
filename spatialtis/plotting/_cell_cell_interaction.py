@@ -133,7 +133,7 @@ def cc_interactions(
                 value=f"{mapper[v[0]]}:{round(v[1], 2)} {e[0]}-{e[1]}",
                 # symbol_size=link_width[e] * 2,
                 linestyle_opts=opts.LineStyleOpts(
-                    width=1, curve=0.2, color=link_color[e]
+                    width=3, curve=0.2, color=link_color[e]
                 ),
                 label_opts=opts.LabelOpts(is_show=False,),
             )

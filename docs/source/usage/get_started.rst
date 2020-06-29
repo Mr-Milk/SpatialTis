@@ -167,7 +167,7 @@ Please don't import those function individually, it will cause conflicts.::
     sp.cell_components(data)
 
 Now that you've learn some basic of spatialtis, it can start playing around. If you want to know more about analysis and
-visualization with spatialtis, go on with our `tutorial <tutorial>`_.
+visualization with spatialtis, go on with our tutorial.
 
 
 

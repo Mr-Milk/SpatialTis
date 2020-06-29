@@ -303,7 +303,7 @@ def violin_plot(
         if s.gl > 3:
             raise Exception("Only support 3 levels depth categorical data")
 
-        groups = df.loc[:, [target_key]].groupby(level=groupby)
+        groups = df.loc[:, [target_key]].groupby(level=groupby, sort=False)
         _quantilefy(groups, target_key)
 
         violins = _violin_patches(groups, target_key)

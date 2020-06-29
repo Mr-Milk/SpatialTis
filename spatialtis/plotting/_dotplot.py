@@ -16,6 +16,7 @@ def dotplot(
     xlabel_rotation: int = 90,
     ylabel_rotation: int = 0,
     color: Union[str, Sequence] = "#376B6D",
+    alpha: float = 0.5,
     display: bool = True,
     return_plot: bool = False,
     title: Optional[str] = None,
@@ -40,7 +41,11 @@ def dotplot(
         for v, j, i in zip(size.flat, X.flat, Y.flat):
             if v != 0:
                 ax.annotate(v, xy=(j + 0.5, i + 0.5), ha="center", va="center")
-    circ_col = PatchCollection(circles, alpha=0.5, facecolor=color)
+    if isinstance(color, str):
+        circ_col = PatchCollection(circles, alpha=alpha, facecolor=color)
+    else:
+        color = np.array(color)
+        circ_col = PatchCollection(circles, alpha=alpha, facecolor=color.flat)
 
     ax.add_collection(circ_col)
 
