@@ -30,6 +30,28 @@ def dot_matrix(
     title: Optional[str] = None,
     save: Union[str, Path, None] = None,
 ):
+    """(matplotlib) Dot matrix plot
+
+    Args:
+        matrix: the value to control the color of matrix
+        dot_color: the value to control the dot color
+        dot_size: the value to control the dot size
+        xlabels: the labels marked on x axis
+        ylabels: the labels marked on y axis
+        xlabel_rotation: rotate the x label
+        ylabel_rotation: rotate the y label
+        cbar_mapper: how to map the colorbar to annotation text
+        cbar_legend_title: title of colorbar
+        size_legend_title: title of size legend
+        color_legend_title: title of color legend
+        color_legend_text: the text in the color legend
+        palette: the color
+        display: whether to show the plot
+        return_plot: whether to return the plot
+        title: title of the plot
+        save: the path to save your plot
+
+    """
     if palette is not None:
         cmap = get_linear_colors(palette)
     else:

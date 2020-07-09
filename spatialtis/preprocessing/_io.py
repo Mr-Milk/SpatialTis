@@ -60,18 +60,17 @@ if CONFIG.OS in ["Linux", "Darwin"]:
 class read_ROIs:
     """Extract single cell expression matrix and geometry information frrom stacked images and masks
 
-            Args:
-                entry: the root folder to start with
-                obs_names: array of names correspond to each level of your folders
-                var: usually use to describe the order of layers in your stacked image
-                mask_pattern: name pattern for all of your mask
-                img_pattern: name pattern for all of your image
+        Args:
+            entry (Union[Path, str]): the root folder to start with
+            obs_names (Sequence): array of names correspond to each level of your folders
+            var (pandas.DataFrame): usually use to describe the order of layers in your stacked image
+            mask_pattern (Optional[str]): name pattern for all of your mask
+            img_pattern (Optional[str]): name pattern for all of your image
 
-            Attributes:
-                obs: will pass to anndata obs
-                var: will pass to anndata var
-                anndata: get the processed anndata object
-
+        Attributes:
+            obs: will pass to anndata obs
+            var: will pass to anndata var
+            anndata: get the processed anndata object
 
     """
 
@@ -147,10 +146,12 @@ class read_ROIs:
         alpha: Optional[float] = None,
         mp: bool = False,
     ):
-        """get anndata object
+        """Get anndata object
+
+        You must explicitly call this method to trigger the computation.
 
         Args:
-            bg:
+            bg: the background pixel value
             method: how to compute the expression level. ("mean", "sum", "median")
             polygonize: how to compute the cell shape.("convex", "concave")
             alpha: the alpha value for polygonize="concave"
@@ -158,14 +159,14 @@ class read_ROIs:
 
         .. note:: "convex" or "concave"
 
-        The cell shape is represent by the border points to simplify the following analysis process.
+                    The cell shape is represent by the border points to simplify the following analysis process.
 
-        "convex" will apply the convex hull algorithm to each cell, this is much faster
-        than "concave", but less accurate.
+                    "convex" will apply the convex hull algorithm to each cell, this is much faster
+                    than "concave", but less accurate.
 
-        "concave" uses alphashape algorithm to get as close to the cell shape in mask image as possible,
-        but it's slower, don't change the alpha value if you don't know what it is. Leave it as default
-        and we will determine an optimized one for you.
+                    "concave" uses alphashape algorithm to get as close to the cell shape in mask image as possible,
+                    but it's slower, don't change the alpha value if you don't know what it is. Leave it as default
+                    and we will determine an optimized one for you.
 
 
         """

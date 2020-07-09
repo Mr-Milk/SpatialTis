@@ -16,16 +16,16 @@ Num = Union[int, float]
 def type_counter(
     adata: AnnData,
     groupby: Union[Sequence, str, None] = None,
-    type_key: Optional[str] = None,
     selected_types: Optional[Sequence] = None,
+    type_key: Optional[str] = None,
 ) -> pd.DataFrame:
     """(private) To count how many type of value
 
     Args:
         adata: anndata object to perform analysis
-        groupby: how your experiments grouped, (Default: read from spatialtis.CONFIG.EXP_OBS)
-        type_key: the key name of cell type in anndata.obs (Default: read from spatialtis.CONFIG.CELL_TYPE_KEY)
+        groupby: how your experiments grouped, (Default: spatialtis.CONFIG.EXP_OBS)
         selected_types: selected cell types you want to count
+        type_key: the key name of cell type in anndata.obs (Default: spatialtis.CONFIG.CELL_TYPE_KEY)
 
     """
     if groupby is None:
@@ -82,15 +82,15 @@ def cell_components(
     export_key: Optional[str] = None,
     return_df: bool = False,
 ):
-    """the proportion of different type of cells
+    """The proportion of different type of cells
 
     Args:
         adata: anndata object to perform analysis
-        groupby: how your experiments grouped, (Default: read from spatialtis.CONFIG.EXP_OBS)
-        type_key: the key name of cell type in anndata.obs (Default: read from spatialtis.CONFIG.CELL_TYPE_KEY)
-        export: whether to export to anndata.uns field
-        export_key: the key name that used to record the results in anndata.uns field
-        return_df: whether to return an pandas.DataFrame
+        groupby: how your experiments grouped, (Default: spatialtis.CONFIG.EXP_OBS)
+        type_key: the key of cell type in anndata.obs (Default: spatialtis.CONFIG.CELL_TYPE_KEY)
+        export: whether to export the result to anndata.uns
+        export_key: the key used to export
+        return_df: whether to return the result
 
     Return:
         pandas.DataFrame
@@ -125,14 +125,13 @@ def cell_co_occurrence(
 
         Args:
             adata: anndata object to perform analysis
-            groupby: how your experiments grouped, (Default: read from spatialtis.CONFIG.EXP_OBS)
+            groupby: how your experiments grouped, (Default: spatialtis.CONFIG.EXP_OBS)
             threshold: this value determines the presence/absence of a cell type in ROI
             pval: the threshold of p-value to determine significance
-            type_key: the key name of cell type in anndata.obs (Default: read from spatialtis.CONFIG.CELL_TYPE_KEY)
-            export: whether to export to anndata.uns field
-            export_key: the key name that used to record the results in anndata.uns field
-
-            return_df: whether to return an pandas.DataFrame
+            type_key: the key of cell type in anndata.obs (Default: spatialtis.CONFIG.CELL_TYPE_KEY)
+            export: whether to export the result to anndata.uns
+            export_key: the key used to export
+            return_df: whether to return the result
 
         Return:
             pandas.DataFrame
@@ -196,11 +195,11 @@ def cell_density(
         size: the size of each ROI, if some ROI is different, please specific each ROI size in a list, the order must
         follow the index order in anndata object.
         ratio: the ratio between pixel and real size, default is 1.0
-        groupby: how your experiments grouped, (Default: read from spatialtis.CONFIG.EXP_OBS)
-        type_key: the key name of cell type in anndata.obs (Default: read from spatialtis.CONFIG.CELL_TYPE_KEY)
-        export: whether to export to anndata.uns field
-        export_key: the key name that used to record the results in anndata.uns field (Default: "cell_density")
-        return_df: whether to return an pandas.DataFrame
+        groupby: how your experiments grouped, (Default: spatialtis.CONFIG.EXP_OBS)
+        type_key: the key of cell type in anndata.obs (Default: spatialtis.CONFIG.CELL_TYPE_KEY)
+        export: whether to export the result to anndata.uns
+        export_key: the key used to export
+        return_df: whether to return the result
 
     Return:
             pandas.DataFrame
@@ -244,12 +243,11 @@ def cell_morphology(
         Args:
             adata: anndata object to perform analysis
             metrics_key: which key was used to measure cell morphology
-            (Default: "eccentricity", Options: "eccentricity", "area")
-            groupby: how your experiments grouped, (Default: read from spatialtis.CONFIG.EXP_OBS)
-            type_key: the key name of cell type in anndata.obs (Default: read from spatialtis.CONFIG.CELL_TYPE_KEY)
-            export: whether to export to anndata.uns field
-            export_key: the key name that used to record the results in anndata.uns field (Default: "cell_morphology")
-            return_df: whether to return an pandas.DataFrame
+            groupby: how your experiments grouped, (Default: spatialtis.CONFIG.EXP_OBS)
+            type_key: the key of cell type in anndata.obs (Default: spatialtis.CONFIG.CELL_TYPE_KEY)
+            export: whether to export the result to anndata.uns
+            export_key: the key used to export
+            return_df: whether to return the result
 
         Return:
                 pandas.DataFrame
@@ -275,9 +273,6 @@ def cell_morphology(
     df.rename(
         columns={type_key: "type", metrics_key: "value", "index": "id"}, inplace=True
     )
-
-    # df = df.set_index(groupby + ['type', 'id'], drop=True)
-    # df = df.drop(groupby + ['type', 'id'], axis=1)
 
     if export:
         df2adata_uns(df, adata, export_key)

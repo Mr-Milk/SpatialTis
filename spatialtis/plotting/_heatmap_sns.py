@@ -27,7 +27,9 @@ def heatmap(
     return_plot: bool = False,
     **kwargs,
 ):
-    """a higher wrapper for seaborn's clustermap
+    """(matplotlib) A higher wrapper for seaborn's clustermap
+
+        the order of cateforical_colorbar_text match to the order of palette
 
     Args:
         df: input data, all data should store in data part, annotations should store in MultiIndex
@@ -36,16 +38,14 @@ def heatmap(
         row_colors: which level to plot row colors
         col_colors: which level to plot col colors
         palette: colors for heatmap part
-        colorbar_type: continuous or categorical
+        colorbar_type: 'continuous' or 'categorical'
         categorical_colorbar_text: if set 'categorical', the text need to be provided
         row_colors_legend_bbox: adjust the locations of row colors legend
         col_colors_legend_bbox: adjust the locations of col colors legend
         colorbar_bbox: adjust the locations of colorbar
         display: whether to show the plot
-        save:
+        save: the path to save your plot
         return_plot: whether to return the plot
-
-    the order of cateforical_colorbar_text match to the order of palette
 
     """
     try:

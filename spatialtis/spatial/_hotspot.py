@@ -96,9 +96,27 @@ def hotspot(
     search_level: int = 1,
     grid_size: int = 50,
     pval: float = 0.01,
+    export: bool = True,
     export_key: Optional[str] = None,
+    return_df: bool = False,
     mp: bool = False,
 ):
+    """Getis ord hotspot detection
+
+    Args:
+        adata: anndata object to perform analysis
+        groupby: how your experiments grouped, (Default: read from spatialtis.CONFIG.EXP_OBS)
+        selected_types: select interested cell types to perform analysis
+        search_level: how deep the level to search
+        grid_size: the length of the side of a square grid
+        pval: the threshold of p-value to determine significance
+        type_key: the key of cell type in anndata.obs (Default: spatialtis.CONFIG.CELL_TYPE_KEY)
+        centroid_key: the key of cell centroid in anndata.obs (Default: spatialtis.CONFIG.CENTROID_KEY)
+        export: whether to export the result to anndata.obs
+        export_key: the key used to export
+        return_df: whether to return the result
+        mp: whether to enable multiprocessing
+    """
     if groupby is None:
         groupby = CONFIG.EXP_OBS
     if type_key is None:
@@ -165,6 +183,11 @@ def hotspot(
                     hotcells.append(pd.Series(["cold"], index=tg.index))
 
     hotcells = pd.concat(hotcells)
-    adata.obs[export_key] = hotcells
-    # Cell map will leave blank if fill with None value
-    adata.obs[export_key].fillna("other")
+
+    if export:
+        adata.obs[export_key] = hotcells
+        # Cell map will leave blank if fill with None value
+        adata.obs[export_key].fillna("other")
+
+    if return_df:
+        return hotcells

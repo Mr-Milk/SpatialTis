@@ -89,10 +89,10 @@ class Neighbors(object):
     Args:
         adata: anndata object to perform analysis
         geom: how to resolve cell data, as "point" or "shape"
-        groupby: how your experiments grouped, (Default: read from spatialtis.CONFIG.EXP_OBS)
-        type_key: the key name of cell type in anndata.obs (Default: read from spatialtis.CONFIG.CELL_TYPE_KEY)
-        shape_key: the key name of cell shape in anndata.obs (Default: "cell_shape")
-        centroid_key: anndata.obs key that store cell centroid info (Default: "centroid")
+        groupby: how your experiments grouped, (Default: spatialtis.CONFIG.EXP_OBS)
+        type_key: the key name of cell type in anndata.obs (Default: spatialtis.CONFIG.CELL_TYPE_KEY)
+        shape_key: the key name of cell shape in anndata.obs (Default: spatialtis.CONFIG.SHAPE_KEY)
+        centroid_key: anndata.obs key that store cell centroid info (Default: spatialtis.CONFIG.CENTROID_KEY)
 
     """
 
@@ -359,7 +359,7 @@ class Neighbors(object):
         self.__groups = self.__data.groupby(self.__groupby)
         neighborsdb = {}
         for n, g in self.__groups:
-            neighborsdb[n] = dict(zip(range(len(g)), g[read_key]))
+            neighborsdb[n] = dict(zip(range(len(g)), [eval(i) for i in g[read_key]]))
         self.__neighborsdb = neighborsdb
         self.__neighborsbuilt = True
 

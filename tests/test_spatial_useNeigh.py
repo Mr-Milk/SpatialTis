@@ -13,42 +13,15 @@ CONFIG.MARKER_KEY = "Markers"
 CONFIG.WORKING_ENV = None
 
 
-def test_spatial_dist(shared_datadir):
+def test_read_data(shared_datadir):
     data = read_h5ad(shared_datadir / 'small.h5ad')
     pytest.data = data
-    st.spatial_distribution(data, r=50)
-    st.spatial_distribution(data, quad=(10, 10), method="quad")
-    st.spatial_distribution(data, method="nns")
-
-
-def test_spatial_dist_plot():
-    data = pytest.data
-    sp.spatial_distribution(data, ["Patient", "Part"], save="test.png")
-    os.remove('test.png')
-    sp.spatial_distribution(data, ["Patient", "Part"], use="heatmap", display=False)
-
-
-def test_spatial_hetero():
-    data = pytest.data
-    st.spatial_heterogeneity(data)
-    st.spatial_heterogeneity(data, method="shannon", compare="Patient")
-    st.spatial_heterogeneity(data, method="leibovici", mp=True)
-
-
-def test_spatial_hetero_plot():
-    data = pytest.data
-    sp.spatial_heterogeneity(data, ['Patient'])
-
-
-def test_hotspot():
-    data = pytest.data
-    st.hotspot(data, grid_size=10)
 
 
 def test_neighbors_shape_data():
     data = pytest.data
     n = Neighbors(data)
-    n.find_neighbors(expand=5)
+    n.find_neighbors(expand=3)
     n.neighbors_count()
     n.export_neighbors()
     n.read_neighbors()
@@ -58,10 +31,17 @@ def test_neighbors_shape_data():
 def test_neighbors_point_data():
     data = pytest.data
     n = Neighbors(data, "point")
-    n.find_neighbors(expand=10)
+    n.find_neighbors(expand=6)
     n.neighbors_count()
     n.export_neighbors()
     n.read_neighbors()
+
+
+def test_neighbors_plot():
+    data = pytest.data
+    ROI = {"Patient": "HPAP005", "Part": "Tail", "ROI": "ROI1"}
+    sp.cell_neighbors(data, ROI)
+    sp.cell_neighbors(data, ROI, use="static", display=False)
 
 
 def test_community():
@@ -117,11 +97,17 @@ def test_exp_neighcell_plot():
     sp.exp_neighcells(data)
 
 
-def test_spatial_mp():
-    data = pytest.data
+def test_exp_neighexp():
     n = pytest.n
+    st.exp_neighexp(n)
+
+
+def test_spatial_mp():
+    n = pytest.n
+    data = pytest.data
+    n_mp = Neighbors(data)
+    n_mp.find_neighbors(expand=3)
     st.neighborhood_analysis(n, resample=50, mp=True)
     st.spatial_enrichment_analysis(n, resample=50, mp=True)
-    st.spatial_heterogeneity(data, mp=True)
-    st.hotspot(data, grid_size=10, mp=True)
     st.exp_neighcells(n, mp=True)
+    st.exp_neighexp(n, mp=True)

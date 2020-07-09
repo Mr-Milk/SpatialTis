@@ -3,14 +3,13 @@ from typing import Optional, Sequence, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 from matplotlib.collections import LineCollection
 from matplotlib.lines import Line2D
 from pyecharts import options as opts
 from pyecharts.charts import Graph
 
 from ._save import save_pyecharts
-from .palette import get_colors, get_linear_colors
+from .palette import get_colors
 
 
 def graph_plot_interactive(
@@ -29,7 +28,25 @@ def graph_plot_interactive(
     title: Optional[str] = None,
     save: Union[str, Path, None] = None,
 ):
+    """(pyecharts) Graph visualization
 
+    Args:
+        nodes:
+        edges:
+        nodes_types:
+        edges_types:
+        node_size:
+        edge_size:
+        size:
+        renderer:
+        theme:
+        palette:
+        display:
+        return_plot:
+        title:
+        save:
+
+    """
     nodes_data = []
     edges_data = []
     categories = []
@@ -133,6 +150,23 @@ def graph_plot(
     title: Optional[str] = None,
     save: Union[str, Path, None] = None,
 ):
+    """(matplotlib) Graph visualization
+
+    Args:
+        nodes:
+        edges:
+        nodes_types:
+        edges_types:
+        node_size:
+        edge_size:
+        size:
+        palette:
+        display:
+        return_plot:
+        title:
+        save:
+
+    """
     if nodes_types is not None:
         n_unitypes = np.unique(nodes_types)
         nodes_colors = get_colors(len(n_unitypes), ["Category20"])

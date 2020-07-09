@@ -1,7 +1,9 @@
-# SpatialTis <img src="docs/source/src/favicon-readme.png" width=5%/>
+<img src="docs/source/src/favicon-readme.png" width=5%/>
+
+# SpatialTis
 ![CI](https://github.com/Mr-Milk/SpatialTis/workflows/CI/badge.svg) ![codecov](https://codecov.io/gh/Mr-Milk/SpatialTis/branch/master/graph/badge.svg?token=DYNZ45IPSQ)
 
-SpatialTis is a toolkit of spatial analysis for spatial single cell data. It support single cell data in single cell solution or sub-cellular resolution.
+SpatialTis is a spatial analysis toolkit for single-cell multiplexed tissue data.
 
-SpatialTis uses [`annData`](https://icb-anndata.readthedocs-hosted.com/en/stable/#) object as input, allow it to integrated with popular single cell analysis library [`Scanpy`](https://scanpy.readthedocs.io/en/latest/index.html).
+ [`AnnData`](https://icb-anndata.readthedocs-hosted.com/en/stable/#) object as input.
 

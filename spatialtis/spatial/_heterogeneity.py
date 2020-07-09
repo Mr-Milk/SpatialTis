@@ -32,39 +32,42 @@ if CONFIG.OS in ["Linux", "Darwin"]:
         return e.entropy
 
 
-@timer(prefix="Running spatial heterogeneity")
+@timer(prefix="Running plotting heterogeneity")
 def spatial_heterogeneity(
     adata: AnnData,
     groupby: Union[Sequence, str, None] = None,
-    type_key: Optional[str] = None,
-    centroid_key: Optional[str] = None,
     method: str = "leibovici",  # shannon, leibovici, altieri
     base: Union[int, float, None] = None,
     d: Optional[int] = None,
     cut: Union[int, Sequence, None] = None,
     compare: Optional[str] = None,
+    type_key: Optional[str] = None,
+    centroid_key: Optional[str] = None,
+    export: bool = True,
     export_key: Optional[str] = None,
     return_df: bool = False,
     mp: Optional[bool] = None,
 ) -> Optional[pd.DataFrame]:
-    """compute spatial heterogeneity
-    Here we use entropy for spatial heterogeneity, which describes the amount of information.
+    """compute plotting heterogeneity
+
+    Here we use entropy for plotting heterogeneity, which describes the amount of information.
     To compare the difference within a group (eg. different samples from same tumor), Kullback–Leibler divergences
     for each sample within the group are computed, smaller value indicates less difference within group.
 
     Args:
         adata: anndata object to perform analysis
         groupby: list of names describes your experiments
-        type_key: name of the cell types column
-        centroid_key:
-        method:
-        base:
-        d:
-        cut:
+        method: Use which entropy: "shannon", "leibovici", "altieri"
+        base: the log base
+        d: the distance threshold to determine co-occurrence events (method="leibovici")
+        cut: distance interval (method="altieri")
         compare: Compute Kullback-Leibler divergences based on which level
-        export_key: the key name to store info, exported to anndata.uns field
-        return_df: whether to return a pandas DataFrame object
-        mp:
+        type_key: the key of cell type in anndata.obs (Default: spatialtis.CONFIG.CELL_TYPE_KEY)
+        centroid_key: the key of cell centroid in anndata.obs (Default: spatialtis.CONFIG.CENTROID_KEY)
+        export: whether to export the result to anndata.uns
+        export_key: the key used to export
+        return_df: whether to return the result
+        mp: whether to enable multiprocessing
 
     """
     if groupby is None:
@@ -195,7 +198,8 @@ def spatial_heterogeneity(
         )
 
     # export to anndata
-    df2adata_uns(roi_heterogeneity, adata, export_key)
+    if export:
+        df2adata_uns(roi_heterogeneity, adata, export_key, params={"method": method})
 
     if return_df:
         return roi_heterogeneity

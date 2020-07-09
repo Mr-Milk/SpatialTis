@@ -1,9 +1,3 @@
-# using random forest to estimate the occurrence of different types of neighbor cells on cell's gene expression level
-# Y is the gene expression, normalize by mean
-# X is the proportion of different cell types, sums up to 1
-# example: for cell type A with gene T 700, the neighbors of cells are type A 3, type B 2, type C 5
-# the Y = 700, X = (0.3, 0.2, 0.5)
-
 from collections import Counter
 from typing import Optional
 
@@ -43,15 +37,41 @@ if CONFIG.OS in ["Linux", "Darwin"]:
 @timer(prefix="Finding marker expression influenced by neighbor cells")
 def exp_neighcells(
     n: Neighbors,
-    marker_key: Optional[str] = None,
     std: float = 2.0,
     importance: float = 0.7,
+    marker_key: Optional[str] = None,
     export: bool = True,
     export_key: Optional[str] = None,
     return_df: bool = False,
     mp: bool = False,
     **kwargs,
 ):
+    """Find the neighbor cell influence on marker expression
+
+    Random forest regressor is built to estimate the occurrence of different types of neighbor cells on
+    cell's gene expression level.
+    Y is the gene expression, normalize by mean.
+    X is the proportion of different cell types, sums up to 1.
+    For example: for cell type A with gene T 700, the neighbors of cells are type A 3, type B 2, type C 5
+    then Y = 700, X = (0.3, 0.2, 0.5)
+
+    A reasonable std should be set, the marker expression need to have certain degree of variance.
+
+    Args:
+        n: a spatialtis.Neighbors object, neighbors are already computed
+        std: threshold for standard deviation of marker expression
+        importance: threshold for importance
+        marker_key: the key of marker in anndata.var (Default: spatialtis.CONFIG.MARKER_KEY)
+        export: whether to export the result to anndata.uns
+        export_key: the key used to export
+        return_df: whether to return the result
+        mp: whether to enable multiprocessing
+        **kwargs: pass to sklearn.ensemble.RandomForestRegressor
+
+    Returns:
+        pandas.DataFrame
+
+    """
     if marker_key is None:
         marker_key = CONFIG.MARKER_KEY
 
@@ -143,7 +163,9 @@ def exp_neighcells(
     df = pd.DataFrame(results, columns=["Affected_by", "Cell", "Marker", "Score "])
 
     if export:
-        df2adata_uns(df, adata, export_key)
+        df2adata_uns(
+            df, adata, export_key, params={"std": std, "importance": importance}
+        )
 
     if return_df:
         return df
