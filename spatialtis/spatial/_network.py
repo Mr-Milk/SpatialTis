@@ -1,12 +1,10 @@
 from typing import Optional
 
-import igraph as ig
 import leidenalg
 import pandas as pd
 from tqdm import tqdm
 
 from spatialtis.config import CONFIG
-from spatialtis.utils import timer
 
 from ._neighbors import Neighbors
 from ._util import check_neighbors
@@ -14,13 +12,18 @@ from ._util import check_neighbors
 
 # @timer(prefix="Running community detection")
 def communities(
-    n: Neighbors, export_key: Optional[str] = None,
+    n: Neighbors,
+    export: bool = True,
+    export_key: Optional[str] = None,
+    return_df: bool = False,
 ):
     """leidenalg algorithm for communities detection
 
     Args:
-        n: spatial.Neighbors instance
-        export_key: the key name to store info, exported to anndata.obs field
+        n: plotting.Neighbors instance
+        export: whether to export the result to anndata.obs
+        export_key: the key used to export
+        return_df: whether to return the result
 
     """
 
@@ -41,5 +44,9 @@ def communities(
 
     sub_comm = pd.Series(sub_comm, index=n.data.index)
     # n.data[export_key] = sub_comm
-    n.adata.obs[export_key] = sub_comm
+    if export:
+        n.adata.obs[export_key] = sub_comm
+
+    if return_df:
+        return sub_comm
     # n.data[export_key]

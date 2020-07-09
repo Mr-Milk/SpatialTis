@@ -21,6 +21,8 @@ def stacked_bar(
     direction: Union[str] = "vertical",
     size: Optional[Sequence[int]] = None,
     title: Optional[str] = None,
+    xaxis_title: Optional[str] = None,
+    yaxis_title: Optional[str] = None,
     palette: Union[Sequence[str], str, None] = None,
     display: bool = True,
     save: Optional[str] = None,
@@ -29,7 +31,7 @@ def stacked_bar(
     """(bokeh) Plot stacked bar
 
     Args:
-        df: Input data
+        df: input data
         groupby: how to group data on the plot
         percentage: whether to normalize to 100%
         sort_type: sort the type
@@ -38,8 +40,10 @@ def stacked_bar(
         direction: 'vertical' or 'horizontal'
         size: size of plot in pixels
         title: title of the plot
+        xaxis_title: the title of x axis
+        yaxis_title: the title of y axis
         palette: config the color, sequence of color in hex, or
-        name of palettes https://docs.bokeh.org/en/latest/docs/reference/palettes.html
+            `name of palettes <https://docs.bokeh.org/en/latest/docs/reference/palettes.html>`_
         display: whether to display the plot
         save: the path to save your plot
         return_plot: whether to return the plot instance
@@ -141,6 +145,8 @@ def stacked_bar(
     )
     p.add_layout(legend, "right")
     p.hover.point_policy = "follow_mouse"
+    p.xaxis.axis_label = xaxis_title
+    p.yaxis.axis_label = yaxis_title
 
     # save something
     if save is not None:

@@ -16,30 +16,33 @@ def expression_map(
     order: Optional[Sequence] = None,
     use: str = "bar3d",  # 'bar3d', 'scatter'
     renderer: str = "canvas",
-    axis_size: Sequence = (100, 100, 80),
-    size: Sequence = (800, 500),
+    axis_size: tuple = (100, 100, 80),
+    size: tuple = (800, 500),
     palette: Optional[Sequence] = None,
     display: bool = True,
     # save: Union[str, Path, None] = None, # save multi plots is not allowed in pyecharts
     return_plot: bool = False,
 ):
-    """
+    """(pyecharts) Visualize marker expression in ROI
+
+    Issue: There are problems in saving this plot even in .html
+        For now please use save bottom.
 
     Args:
-        adata:
-        query:
-        marker_key:
-        centroid_key:
-        order:
-        use:
-        renderer:
-        axis_size:
-        size:
-        palette:
-        display:
-        return_plot:
-
-    Returns:
+        adata: anndata object
+        query: a dict use to select which ROI to display,
+            like {"Patients": "Patient 1", "ROI": "ROI3"}, "Patient" and "ROI" are keys in anndata.obs
+        marker_key: the key of marker in anndata.var (Default: spatialtis.CONFIG.MARKER_KEY)
+        centroid_key: the key of cell centroid in anndata.obs (Default: spatialtis.CONFIG.CENTROID_KEY)
+        order: array of marker name, display as order
+        use: "bar3d" or "scatter"
+        renderer: "canvas" or "svg"
+        axis_size: the length of x,y,z axis
+        size: size of plot in pixels
+        palette: config the color, array of color in hex, or
+            array of `names of palettes <https://docs.bokeh.org/en/latest/docs/reference/palettes.html>`_
+        display: whether to display the plot
+        return_plot: whether to return the plot instance
 
     """
     if marker_key is None:

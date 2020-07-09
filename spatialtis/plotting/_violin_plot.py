@@ -13,75 +13,88 @@ from ._save import save_bokeh
 from .palette import get_colors
 
 
-class Status(object):
-    gl: Optional[float] = None
-    factors: Optional[Sequence] = None
-    q1: pd.DataFrame = None
-    q2: pd.DataFrame = None
-    q3: pd.DataFrame = None
-    upper: pd.DataFrame = None
-    lower: pd.DataFrame = None
-    splits: Optional[list] = None
+def _kde_points(data, points):
+    kernel = kde(data)
+    return kernel.evaluate(points)
 
 
-s = Status()
+class violin_main:
+    def __init__(
+        self,
+        df,
+        groupby,
+        target,
+        direction,
+        title,
+        xaxis_title,
+        yaxis_title,
+        size,
+        palette,
+    ):
 
+        self.gl = len(groupby)
+        self.q1 = None
+        self.q2 = None
+        self.q3 = None
+        self.upper = None
+        self.lower = None
+        self.groups = df.loc[:, [target]].groupby(level=groupby, sort=False)
+        self.factors = [n for n, _ in self.groups]
+        self.target = target
+        self.direction = direction
+        self.title = title
+        self.xaxis_title = xaxis_title
+        self.yaxis_title = yaxis_title
+        self.size = size
+        self.palette = palette
 
-def _quantilefy(groups, target_col):
-    s.q1 = groups.quantile(q=0.25)
-    s.q2 = groups.quantile(q=0.5)
-    s.q3 = groups.quantile(q=0.75)
-    iqr = s.q3 - s.q1
-    s.upper = s.q3 + 1.5 * iqr
-    s.lower = s.q1 - 1.5 * iqr
-    qmin = groups.quantile(q=0.00)
-    qmax = groups.quantile(q=1.00)
-    s.upper[target_col] = [
-        min([x, y])
-        for (x, y) in zip(list(qmax.loc[:, target_col]), s.upper[target_col])
-    ]
-    s.lower[target_col] = [
-        max([x, y])
-        for (x, y) in zip(list(qmin.loc[:, target_col]), s.lower[target_col])
-    ]
+        self._quantilefy()
+        self.figure_config = self._set_figure_config()
+        self.colors = self._set_colors()
+        self.p = self._wrap()
 
+    def _quantilefy(self):
+        self.q1 = self.groups.quantile(q=0.25)
+        self.q2 = self.groups.quantile(q=0.5)
+        self.q3 = self.groups.quantile(q=0.75)
+        iqr = self.q3 - self.q1
+        self.upper = self.q3 + 1.5 * iqr
+        self.lower = self.q1 - 1.5 * iqr
+        qmin = self.groups.quantile(q=0.00)
+        qmax = self.groups.quantile(q=1.00)
+        self.upper[self.target] = [
+            min([x, y])
+            for (x, y) in zip(list(qmax.loc[:, self.target]), self.upper[self.target])
+        ]
+        self.lower[self.target] = [
+            max([x, y])
+            for (x, y) in zip(list(qmin.loc[:, self.target]), self.lower[self.target])
+        ]
 
-def _kde_points(raw_data, plot_points):
-    kernel = kde(raw_data)
-    return kernel.evaluate(plot_points)
-
-
-def _violin_patches(
-    groups: pd.core.groupby.DataFrameGroupBy, target_col: str, side: str = "both",
-):
-    violins = list()
-    padding = 0.5
-    for i, (_, g) in enumerate(groups):
-        data = g[target_col].to_numpy()
-        if not len(data) > 1:
-            violins.append(
-                [
-                    np.asarray([i + padding, i + padding]),
-                    np.asarray([data[0], data[0]]),
-                ]
-            )
-            pass
-
-            # print(violins)
-            # raise ValueError("Can't plot with only one point for each group")
-        else:
-            split_interval = round(len(data) / 4)
-            split_interval = split_interval if split_interval >= 100 else 100
-            points = np.linspace(np.min(data), np.max(data), split_interval)
-            curvepoint = _kde_points(data, points)
-            # set endpoints to zero to close violin patches
-            norm_curve = (
-                (curvepoint - np.min(curvepoint))
-                / (np.max(curvepoint) - np.min(curvepoint))
-            ) * 0.3
-            norm_curve[0] = 0
-            norm_curve[-1] = 0
-            if side == "both":
+    def _violin_patches(self):
+        violins = list()
+        padding = 0.5
+        for i, (_, g) in enumerate(self.groups):
+            data = g[self.target].to_numpy()
+            if not len(data) > 1:
+                violins.append(
+                    [
+                        np.asarray([i + padding, i + padding]),
+                        np.asarray([data[0], data[0]]),
+                    ]
+                )
+            else:
+                split_interval = round(len(data) / 4)
+                split_interval = split_interval if split_interval >= 100 else 100
+                points = np.linspace(np.min(data), np.max(data), split_interval)
+                curvepoint = _kde_points(data, points)
+                # set endpoints to zero to close violin patches
+                norm_curve = (
+                    (curvepoint - np.min(curvepoint))
+                    / (np.max(curvepoint) - np.min(curvepoint))
+                ) * 0.3
+                norm_curve[0] = 0
+                norm_curve[-1] = 0
                 violins.append(
                     [
                         np.hstack(
@@ -90,153 +103,138 @@ def _violin_patches(
                         np.hstack((points, points,)),
                     ]
                 )
-            elif side == "+":
-                violins.append(
-                    [np.hstack((norm_curve + i + padding,)), np.hstack((points,)),]
+
+        return violins
+
+    def _wrap(self):
+        p = figure(**self.figure_config)
+
+        violins = self._violin_patches()
+
+        for i, v in enumerate(violins):
+            if self.direction == "vertical":
+                x, y = v[0], v[1]
+            elif self.direction == "horizontal":
+                x, y = v[1], v[0]
+
+            if self.gl > 1:
+                p.patch(
+                    x,
+                    y,
+                    fill_color=self.colors[self.factors[i][-1]],
+                    line_color=self.colors[self.factors[i][-1]],
                 )
-            elif side == "-":
-                violins.append(
-                    [np.hstack((-norm_curve + i + padding,)), np.hstack((points,)),]
+            else:
+                p.patch(
+                    x,
+                    y,
+                    fill_color=self.colors[self.factors[0]],
+                    line_color=self.colors[self.factors[0]],
                 )
 
-    return violins
+        q23 = self.q2[self.target] - self.q3[self.target]
+        q12 = self.q1[self.target] - self.q2[self.target]
 
+        if self.direction == "vertical":
+            p.segment(
+                self.factors,
+                self.upper[self.target],
+                self.factors,
+                self.lower[self.target],
+                line_color="black",
+            )
 
-def _violin_split(violins_a, violins_b, figure_config, colors, direction="vertical"):
-    p = figure(**figure_config)
+            p.rect(
+                self.factors,
+                self.q3[self.target] + q23 / 2,
+                0.05,
+                q23,
+                fill_color="#E08E79",
+                line_color="black",
+            )
+            p.rect(
+                self.factors,
+                self.q2[self.target] + q12 / 2,
+                0.05,
+                q12,
+                fill_color="#3B8686",
+                line_color="black",
+            )
+        elif self.direction == "horizontal":
+            p.segment(
+                self.upper[self.target],
+                self.factors,
+                self.lower[self.target],
+                self.factors,
+                line_color="black",
+            )
 
-    legends = list()
-    for i, (v1, v2) in enumerate(zip(violins_a, violins_b)):
-        if direction == "vertical":
-            x1, y1 = v1[0], v1[1]
-            x2, y2 = v2[0], v2[1]
-        elif direction == "horizontal":
-            x1, y1 = v1[1], v1[0]
-            x2, y2 = v2[1], v2[0]
+            p.rect(
+                self.q3[self.target] + q23 / 2,
+                self.factors,
+                q23,
+                0.05,
+                fill_color="#E08E79",
+                line_color="black",
+            )
+            p.rect(
+                self.q2[self.target] + q12 / 2,
+                self.factors,
+                q12,
+                0.05,
+                fill_color="#3B8686",
+                line_color="black",
+            )
 
-        b1 = p.patch(x1, y1, fill_color=colors[0], line_color="black", alpha=0.8)
-        b2 = p.patch(x2, y2, fill_color=colors[1], line_color="black", alpha=0.8)
-        if i == 0:
-            legends.append(LegendItem(label=s.splits[0], renderers=[b1]))
-            legends.append(LegendItem(label=s.splits[1], renderers=[b2]))
+        if self.direction == "vertical":
+            p.xgrid.grid_line_color = None
+            p.xaxis.major_label_orientation = 1
+            p.ygrid.grid_line_alpha = 0.7
+        elif self.direction == "horizontal":
+            p.ygrid.grid_line_color = None
+            p.yaxis.major_label_orientation = 1
+            p.xgrid.grid_line_alpha = 0.7
 
-    p.add_layout(Legend(items=legends, location="center_right"), "right")
+        p.xaxis.axis_label = self.xaxis_title
+        p.yaxis.axis_label = self.yaxis_title
 
-    return p
+        return p
 
+    def _set_figure_config(self):
+        # config for figure
+        figure_config = dict(tools="save", toolbar_location=None, title=self.title)
+        franger = FactorRange(*self.factors, group_padding=0, subgroup_padding=0)
+        if self.direction == "vertical":
+            figure_config["x_range"] = self.factors if self.gl == 1 else franger
+        elif self.direction == "horizontal":
+            figure_config["y_range"] = self.factors if self.gl == 1 else franger
 
-def _violin_main(violins, target_col, figure_config, colors, direction="vertical"):
-    p = figure(**figure_config)
+        if self.size is None:
+            if self.direction == "vertical":
+                figure_config["plot_height"] = 400
+            elif self.direction == "horizontal":
+                figure_config["plot_width"] = 400
+        else:
+            figure_config["plot_height"] = self.size[0]
+            figure_config["plot_width"] = self.size[1]
 
-    for i, v in enumerate(violins):
-        if direction == "vertical":
-            x, y = v[0], v[1]
-        elif direction == "horizontal":
-            x, y = v[1], v[0]
+        return figure_config
 
-        if s.gl > 1:
-            p.patch(
-                x,
-                y,
-                fill_color=colors[s.factors[i][-1]],
-                line_color=colors[s.factors[i][-1]],
+    def _set_colors(self):
+        default_palette = ["Set3"]
+        if self.palette is None:
+            self.palette = default_palette
+
+        if self.gl > 1:
+            unique_factor = pd.unique([i[-1] for i in self.factors])
+            colors = dict(
+                zip(unique_factor, get_colors(len(unique_factor), self.palette))
             )
         else:
-            p.patch(
-                x, y, fill_color=colors[s.factors[0]], line_color=colors[s.factors[0]]
+            colors = dict(
+                zip(self.factors, get_colors(len(self.factors), self.palette))
             )
-
-    q23 = s.q2[target_col] - s.q3[target_col]
-    q12 = s.q1[target_col] - s.q2[target_col]
-
-    if direction == "vertical":
-        p.segment(
-            s.factors,
-            s.upper[target_col],
-            s.factors,
-            s.lower[target_col],
-            line_color="black",
-        )
-
-        p.rect(
-            s.factors,
-            s.q3[target_col] + q23 / 2,
-            0.05,
-            q23,
-            fill_color="#E08E79",
-            line_color="black",
-        )
-        p.rect(
-            s.factors,
-            s.q2[target_col] + q12 / 2,
-            0.05,
-            q12,
-            fill_color="#3B8686",
-            line_color="black",
-        )
-    elif direction == "horizontal":
-        p.segment(
-            s.upper[target_col],
-            s.factors,
-            s.lower[target_col],
-            s.factors,
-            line_color="black",
-        )
-
-        p.rect(
-            s.q3[target_col] + q23 / 2,
-            s.factors,
-            q23,
-            0.05,
-            fill_color="#E08E79",
-            line_color="black",
-        )
-        p.rect(
-            s.q2[target_col] + q12 / 2,
-            s.factors,
-            q12,
-            0.05,
-            fill_color="#3B8686",
-            line_color="black",
-        )
-
-    return p
-
-
-def _set_figure_config(title=None, size=None, direction="vertical"):
-    # config for figure
-    figure_config = dict(tools="save", toolbar_location=None, title=title)
-    franger = FactorRange(*s.factors, group_padding=0, subgroup_padding=0)
-    if direction == "vertical":
-        figure_config["x_range"] = s.factors if s.gl == 1 else franger
-    elif direction == "horizontal":
-        figure_config["y_range"] = s.factors if s.gl == 1 else franger
-
-    if size is None:
-        if direction == "vertical":
-            figure_config["plot_height"] = 400
-        elif direction == "horizontal":
-            figure_config["plot_width"] = 400
-    else:
-        figure_config["plot_height"] = size[0]
-        figure_config["plot_width"] = size[1]
-
-    return figure_config
-
-
-def _set_colors(palette, mapper=False):
-    default_palette = ["Set3"]
-    if palette is None:
-        palette = default_palette
-    if not mapper:
-        return get_colors(2, palette)
-
-    if s.gl > 1:
-        unique_factor = pd.unique([i[-1] for i in s.factors])
-        colors = dict(zip(unique_factor, get_colors(len(unique_factor), palette)))
-    else:
-        colors = dict(zip(s.factors, get_colors(len(s.factors), palette)))
-    return colors
+        return colors
 
 
 def violin_plot(
@@ -244,93 +242,66 @@ def violin_plot(
     groupby: Sequence,
     target_key: str,
     group_order: Optional[dict] = None,
-    split: Optional[str] = None,
     direction: Union[str] = "vertical",
     display: bool = True,
     title: Optional[str] = None,
+    xaxis_title: Optional[str] = None,
+    yaxis_title: Optional[str] = None,
     size: Optional[Sequence[int]] = None,
     save: Optional[str] = None,
     palette: Union[Sequence[str], str, None] = None,
     return_plot: bool = False,
 ):
+    """(bokeh) Violin plot
+
+    Args:
+        df: input data
+        groupby: how to group data on the plot
+        target_key: the key used to draw in anndata.obs
+        group_order: use this to control the order of axis-label
+        direction: ‘vertical’ or ‘horizontal’
+        display: whether to display the plot
+        title: title of the plot
+        xaxis_title: the title of x axis
+        yaxis_title: the title of x axis
+        size: size of plot in pixels
+        save: the path to save your plot
+        palette: config the color, sequence of color in hex, or
+            `name of palettes <https://docs.bokeh.org/en/latest/docs/reference/palettes.html>`_
+        return_plot:  whether to return the plot instance
+
+    """
     if direction not in ["vertical", "horizontal"]:
         raise ValueError(
             f"Unrecognized direction '{direction}', available options are `vertical` and `horizontal`."
         )
 
-    s.gl = len(groupby)
+    if len(groupby) > 3:
+        raise Exception("Only support 3 levels depth categorical data")
 
     if group_order is not None:
         for level, order in group_order.items():
             df = df.reindex(index=order, level=level)
 
-    if isinstance(split, str):
-        if split in groupby:
-            s.splits = np.unique(dict(zip(df.index.names, df.index.levels))[split])
-            if len(s.splits) != 2:
-                raise ValueError(
-                    f"Can't split more than 2 distinct elements in column '{split}'"
-                )
-            groupby.remove(split)
-            s.gl = s.gl - 1
-
-            if s.gl > 3:
-                raise ValueError(
-                    "Only support 3 levels depth categorical data, maybe too much group_by elements"
-                )
-
-            groups = df.loc[:, [target_key]].groupby(level=split)
-
-            subg_a = groups.get_group(s.splits[0]).groupby(level=groupby)
-            violins_a = _violin_patches(subg_a, target_key, side="-")
-
-            subg_b = groups.get_group(s.splits[1]).groupby(level=groupby)
-            violins_b = _violin_patches(subg_b, target_key, side="+")
-
-            s.factors = [n for n, _ in subg_a]
-            figure_config = _set_figure_config(
-                title=title, size=size, direction=direction
-            )
-            colors = _set_colors(palette)
-
-            p = _violin_split(
-                violins_a, violins_b, figure_config, colors, direction=direction
-            )
-
-        else:
-            raise Exception(f"Index name not exist, '{split}'")
-    else:
-        if s.gl > 3:
-            raise Exception("Only support 3 levels depth categorical data")
-
-        groups = df.loc[:, [target_key]].groupby(level=groupby, sort=False)
-        _quantilefy(groups, target_key)
-
-        violins = _violin_patches(groups, target_key)
-        s.factors = [n for n, _ in groups]
-        figure_config = _set_figure_config(title=title, size=size, direction=direction)
-        colors = _set_colors(palette, mapper=True)
-
-        p = _violin_main(
-            violins, target_key, figure_config, colors, direction=direction
-        )
-
-    if direction == "vertical":
-        p.xgrid.grid_line_color = None
-        p.xaxis.major_label_orientation = 1
-        p.ygrid.grid_line_alpha = 0.7
-    elif direction == "horizontal":
-        p.ygrid.grid_line_color = None
-        p.yaxis.major_label_orientation = 1
-        p.xgrid.grid_line_alpha = 0.7
+    plot = violin_main(
+        df,
+        groupby,
+        target_key,
+        direction,
+        title,
+        xaxis_title,
+        yaxis_title,
+        size,
+        palette,
+    )
 
     # save something
     if save is not None:
-        save_bokeh(p, save)
+        save_bokeh(plot.p, save)
 
     if (CONFIG.WORKING_ENV is not None) & display:
         output_notebook(hide_banner=True, notebook_type=CONFIG.WORKING_ENV)
-        show(p)
+        show(plot.p)
 
     if return_plot:
-        return p
+        return plot.p

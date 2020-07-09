@@ -47,8 +47,6 @@ def cc_interactions(
         save: the path to save your plot
         return_plot: whether to return the plot instance
 
-    Returns:
-
     """
     if edges_colors is None:
         edges_colors = ["RdBu"]

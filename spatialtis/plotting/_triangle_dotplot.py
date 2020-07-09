@@ -4,6 +4,7 @@ from typing import Optional, Sequence, Union
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.collections import PatchCollection
+from matplotlib.lines import Line2D
 
 # the relationship between label and arr should look like this
 
@@ -17,19 +18,46 @@ D   1
 
 
 def tri_dotplot(
-    diagnol_arr: np.array,
+    diagonal_arr: np.array,
     labels: Sequence,
     annotate: bool = False,
     xlabel_rotation: int = 90,
     ylabel_rotation: int = 0,
-    color: Union[str, Sequence] = "#376B6D",
-    return_plot: bool = False,
+    legend_title: Optional[str] = None,
+    color: str = "#376B6D",
     display: bool = True,
     title: Optional[str] = None,
     save: Union[str, Path, None] = None,
+    return_plot: bool = False,
 ):
+    """(matplotlib) Triangular dot plot
+
+    This input diagnol array should look like this
+
+    .. code-block:: none
+
+               A B C D
+            A  1 2 3 4
+            B  1 2 3
+            C  1 2
+            D  1
+
+    Args:
+        diagonal_arr: the diagonal array
+        labels: labels will be marked in x and y axis
+        annotate: whether to show value on the dot
+        xlabel_rotation: rotate x label
+        ylabel_rotation: rotate y label
+        legend_title: the title of legend
+        color: color of the dot
+        display: whether to show the plot
+        title: title of the plot
+        save: the path to save the plot
+        return_plot: whether to return the plot
+
+    """
     all_max = list()
-    for arr in diagnol_arr:
+    for arr in diagonal_arr:
         all_max.append(max(arr))
 
     M = N = len(labels)
@@ -39,7 +67,7 @@ def tri_dotplot(
 
     circles = list()
 
-    for i, arr in enumerate(diagnol_arr):
+    for i, arr in enumerate(diagonal_arr):
         for t, v in enumerate(arr[::-1]):
             if v != 0:
                 circles.append(plt.Circle((i + 0.5, t + 0.5), radius=v / cm / 2 * 0.9))
@@ -56,6 +84,61 @@ def tri_dotplot(
         xticklabels=labels,
         yticklabels=labels[::-1],
     )
+
+    legends = [
+        Line2D(
+            (),
+            (),
+            color="white",
+            marker="o",
+            markerfacecolor="black",
+            label=f"{int(cm)}",
+            markersize=1.0,
+        ),
+        Line2D(
+            (),
+            (),
+            color="white",
+            marker="o",
+            markerfacecolor="black",
+            label=f"{int(cm / 4 * 3)}",
+            markersize=0.75,
+        ),
+        Line2D(
+            (),
+            (),
+            color="white",
+            marker="o",
+            markerfacecolor="black",
+            label=f"{int(cm / 2)}",
+            markersize=0.5,
+        ),
+        Line2D(
+            (),
+            (),
+            color="white",
+            marker="o",
+            markerfacecolor="none",
+            markeredgecolor="black",
+            label="0",
+            markersize=0.25,
+        ),
+    ]
+
+    if legend_title is None:
+        legend_title = "Size"
+
+    legend = ax.legend(
+        handles=legends,
+        loc="upper left",
+        bbox_to_anchor=(1, -0.1, 0, 1),
+        title=legend_title,
+        markerscale=22,
+        labelspacing=1.2,
+        frameon=False,
+    )
+    ax.add_artist(legend)
+
     plt.xticks(rotation=xlabel_rotation)
     plt.yticks(rotation=ylabel_rotation)
 

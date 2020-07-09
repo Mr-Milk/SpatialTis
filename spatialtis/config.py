@@ -61,7 +61,7 @@ class _CONFIG(object):
         self.AREA_KEY: str = "area"
         self.SHAPE_KEY: str = "cell_shape"
         self.ECCENTRICITY_KEY: str = "eccentricity"
-        self.MARKER_KEY: str = "markers"
+        self.MARKER_KEY: str = "marker"
 
         # export key, the key name used to store results, private to user
         # statistic part
@@ -70,7 +70,7 @@ class _CONFIG(object):
         self.cell_density_key: str = "cell_density"
         self.cell_morphology_key: str = "cell_morphology"
 
-        # spatial part
+        # plotting part
         self.spatial_distribution_key: str = "spatial_distribution"
         self.spatial_heterogeneity_key: str = "spatial_heterogeneity"
         self.hotspot_key: str = "hotspot"
@@ -83,10 +83,10 @@ class _CONFIG(object):
         self.exp_neighexp_key: str = "exp_neighexp"
 
     def __repr__(self):
-        head = "Configuration of SpatialTis:"
+        head = "Current configurations of SpatialTis:"
         info = [
+            "\n======CONFIGURATIONS======",
             f"EXP_OBS: {self.EXP_OBS}",
-            f"CELL_TYPE_KEY: {self.CELL_TYPE_KEY}",
             f"OS: {self.OS}",
             f"MULTI_PROCESSING: {self.MULTI_PROCESSING}",
             f"CPU_ALLOC: {self.CPU_ALLOC}",
@@ -94,8 +94,15 @@ class _CONFIG(object):
             f"VERBOSE.PBAR: {self.VERBOSE.PBAR}",
             f"VERBOSE.ANNDATA: {self.VERBOSE.ANNDATA}",
             f"VERBOSE.INFO: {self.VERBOSE.INFO}",
+            "\n======KEYS======",
+            f"CELL_TYPE_KEY: {self.CELL_TYPE_KEY}",
+            f"CENTROID_KEY: {self.CENTROID_KEY}",
+            f"AREA_KEY: {self.AREA_KEY}",
+            f"SHAPE_KEY: {self.SHAPE_KEY}",
+            f"ECCENTRICITY_KEY: {self.ECCENTRICITY_KEY}",
+            f"MARKER_KEY: {self.MARKER_KEY}",
         ]
-        info = "\t" + "\n\t".join(info)
+        info = "\n".join(info)
         return f"{head}\n{info}"
 
     def tqdm(self, **kwargs):

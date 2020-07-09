@@ -19,7 +19,7 @@ def sankey(
     save: Union[str, Path, None] = None,
     return_plot: bool = False,
 ):
-    """
+    """(pyecharts) sankey plot
 
     Args:
         nodes:

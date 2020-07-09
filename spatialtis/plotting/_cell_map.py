@@ -28,21 +28,21 @@ def cell_map(
     save: Union[str, Path, None] = None,
     return_plot: bool = False,
 ):
-    """(bokeh) Visualize cells in ROI with shape
-    If you don't have cell shape info, see plotting.cell_type_graph
+    """(bokeh) Visualize cells in ROI
 
     Args:
-        adata: anndata
-        query: a dict use to select which ROI to display
-        geom:
+        adata: anndata object
+        query: a dict use to select which ROI to display,
+            like {"Patients": "Patient 1", "ROI": "ROI3"}, "Patient" and "ROI" are keys in anndata.obs
+        geom: "shape" or "point"
         selected_types: select which types to show, others will be muted in grey
-        type_key: key to cell type
-        shape_key: key to cell shape
-        centroid_key: key to cell centroid
+        type_key: the key of cell type in anndata.obs (Default: spatialtis.CONFIG.CELL_TYPE_KEY)
+        shape_key: the key of cell shape in anndata.obs (Default: spatialtis.CONFIG.SHAPE_KEY)
+        centroid_key: the key of cell centroid in anndata.obs (Default: spatialtis.CONFIG.CENTROID_KEY)
         size: size of plot in pixels
         title: title of plot
-        palette: config the color, sequence of color in hex, or
-        sequence of names of palettes https://docs.bokeh.org/en/latest/docs/reference/palettes.html
+        palette: config the color, array of color in hex, or
+            array of `names of palettes <https://docs.bokeh.org/en/latest/docs/reference/palettes.html>`_
         display: whether to display the plot
         save: path to save your plot
         return_plot: whether to return the plot instance

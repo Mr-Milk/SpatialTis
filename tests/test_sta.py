@@ -12,8 +12,13 @@ CONFIG.CELL_TYPE_KEY = "leiden"
 CONFIG.WORKING_ENV = None
 
 
-def test_cell_components(shared_datadir):
+def test_read_data(shared_datadir):
     data = read_h5ad(shared_datadir / 'small.h5ad')
+    pytest.data = data
+
+
+def test_cell_components():
+    data = pytest.data
     pytest.data = data
     st.cell_components(data)
 

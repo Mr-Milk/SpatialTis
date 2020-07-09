@@ -196,12 +196,12 @@ def neighborhood_analysis(
         resample: perform resample for how many times
         pval: if smaller than pval, reject null hypothesis (No relationship)
         order: if False, Cell A - Cell B and Cell B - Cell A are the same interaction.
-        export: whether export to anndata object uns field
-        export_key: which key used to export
-        return_df: whether to return result dataframe
-        mp: whether enable parallel processing
+        export: whether to export the result to anndata.uns
+        export_key: the key used to export
+        return_df: whether to return the result
+        mp: whether to enable multiprocessing
 
-    .. seealso:: `spatial_enrichment_analysis <#spatialtis.spatial.spatial_enrichment_analysis>`_
+    .. seealso:: `spatial_enrichment_analysis <#spatialtis.plotting.spatial_enrichment_analysis>`_
 
 
     """
@@ -222,7 +222,7 @@ def neighborhood_analysis(
         return df
 
 
-@timer(prefix="Running spatial enrichment analysis")
+@timer(prefix="Running plotting enrichment analysis")
 def spatial_enrichment_analysis(
     n: Neighbors,
     resample: int = 50,
@@ -242,12 +242,12 @@ def spatial_enrichment_analysis(
         Args:
             n: A spatialtis.Neighbors object, neighbors are already computed
             resample: perform resample for how many times
-            export: whether export to anndata object uns field
-            export_key: which key used to export
-            return_df: whether to return result dataframe
-            mp: whether enable parallel processing
+            export: whether to export the result to anndata.uns
+            export_key: the key used to export
+            return_df: whether to return the result
+            mp: whether to enable multiprocessing
 
-        .. seealso:: `neighborhood_analysis <#spatialtis.spatial.neighborhood_analysis>`_
+        .. seealso:: `neighborhood_analysis <#spatialtis.plotting.neighborhood_analysis>`_
 
         """
 

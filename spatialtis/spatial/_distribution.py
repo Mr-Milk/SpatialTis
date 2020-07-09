@@ -117,17 +117,17 @@ def NNS(points, pval):
     return pattern
 
 
-@timer(prefix="Running spatial distribution")
+@timer(prefix="Running plotting distribution")
 def spatial_distribution(
     adata: AnnData,
     groupby: Union[Sequence, str, None] = None,
-    type_key: Optional[str] = None,
-    centroid_key: Optional[str] = None,
     method: str = "nns",
     pval: float = 0.01,
     r: Optional[float] = 10,
     resample: int = 50,
     quad: Sequence[int] = (10, 10),
+    type_key: Optional[str] = None,
+    centroid_key: Optional[str] = None,
     export: bool = True,
     export_key: Optional[str] = None,
     return_df: bool = False,
@@ -159,16 +159,19 @@ def spatial_distribution(
     Args:
         adata: anndata object to perform analysis
         groupby: how your experiments grouped, (Default: read from spatialtis.CONFIG.EXP_OBS)
-        type_key: the key name of cell type in anndata.obs (Default: read from spatialtis.CONFIG.CELL_TYPE_KEY)
-        centroid_key: anndata.obs key that store cell centroid info
         method: Options are 'vmr', 'quad', or 'nns'
         pval: if smaller than pval, reject null hypothesis (random distribute)
         r: only use when method='vmr', diameter of sample window
         resample: only use when method='vmr', the number of random permutations to perform
         quad: only use when method='quad', how to perform rectangle tessellation
-        export: whether to export to anndata.uns field
-        export_key: the key name that used to record the results in anndata.uns field (Default: "spatial_distribution")
-        return_df: whether to return an pandas.DataFrame
+        type_key: the key of cell type in anndata.obs (Default: spatialtis.CONFIG.CELL_TYPE_KEY)
+        centroid_key: the key of cell centroid in anndata.obs (Default: spatialtis.CONFIG.CENTROID_KEY)
+        export: whether to export the result to anndata.uns
+        export_key: the key used to export
+        return_df: whether to return the result
+
+    Returns:
+        pandas.DataFrame
 
     MID is quadratic statistic, it cuts a ROI into few rectangles, quad=(10,10) means the ROI will have 10*10 grid,
     if you don't know what to choose, let us choose for you, the default is 'auto'

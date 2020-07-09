@@ -15,6 +15,7 @@ def dotplot(
     annotated: bool = True,
     xlabel_rotation: int = 90,
     ylabel_rotation: int = 0,
+    legend_title: Optional[str] = None,
     color: Union[str, Sequence] = "#376B6D",
     alpha: float = 0.5,
     display: bool = True,
@@ -22,6 +23,26 @@ def dotplot(
     title: Optional[str] = None,
     save: Union[str, Path, None] = None,
 ):
+    """(matplotlib) dot plot
+
+    Args:
+        df:
+        x:
+        y:
+        annotated:
+        xlabel_rotation:
+        ylabel_rotation:
+        legend_title:
+        color:
+        alpha:
+        display:
+        return_plot:
+        title:
+        save:
+
+    Returns:
+
+    """
     xlabels = df.columns.get_level_values(x)
     ylabels = df.index.get_level_values(y)
 
@@ -104,12 +125,15 @@ def dotplot(
         ),
     ]
 
+    if legend_title is None:
+        legend_title = "Size"
+
     legend = ax.legend(
         handles=legends,
         loc="upper left",
         bbox_to_anchor=(1, -0.1, 0, 1),
-        title="Size",
-        markerscale=21,
+        title=legend_title,
+        markerscale=22,
         labelspacing=1.2,
         frameon=False,
     )

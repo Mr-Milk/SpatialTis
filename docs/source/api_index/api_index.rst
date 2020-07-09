@@ -7,6 +7,6 @@ API Reference
    preprocessing
    statistic
    spatial
-   plotting
+   plotting/wrapper
    utils
    config

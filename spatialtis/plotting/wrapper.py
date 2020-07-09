@@ -18,7 +18,6 @@ from ._dot_matrixplot import dot_matrix
 from ._dotplot import dotplot
 from ._heatmap_sns import heatmap
 from ._sankey import sankey
-from ._stacked_kde_sns import stacked_kde
 from ._triangle_dotplot import tri_dotplot
 from ._violin_plot import violin_plot
 
@@ -36,8 +35,8 @@ def cell_components(
         adata: anndata object
         groupby: how to group your data in plot
         selected_types: select interested types
-        key: which key to read the data
-        **kwargs: pass to plotting.stacked_bar
+        key: the key to read the data
+        **kwargs: pass to `plotting.stacked_bar <plotting.html#spatialtis.plotting.stacked_bar>`_
 
     """
     if key is None:
@@ -66,8 +65,8 @@ def cell_density(
         adata: anndata object
         groupby: how to group your data in plot
         selected_types: select interested types
-        key: which key to read the data
-        **kwargs: pass to plotting.violin_plot
+        key: the key to read the data
+        **kwargs: pass to `plotting.violin_plot <plotting.html#spatialtis.plotting.violin_plot>`_
 
     """
     if key is None:
@@ -86,6 +85,16 @@ def cell_density(
             groupby = list(groupby)
     else:
         groupby = ["type"]
+
+    df = df.iloc[df.index.sortlevel(groupby)[1], :]
+
+    levels_order = groupby.copy()
+    for name in df.index.names:
+        if name not in levels_order:
+            levels_order.append(name)
+
+    df = df.reorder_levels(levels_order)
+
     p = violin_plot(df, groupby, "density", **kwargs)
 
     return p
@@ -106,10 +115,9 @@ def cell_co_occurrence(
         groupby: how to group your data in plot
         selected_types: select interested types
         use: "dot" or "heatmap"
-        key: which key to read the data
-        **kwargs: pass to plotting.tri_dotplot (use="dot") or plotting.heatmap (use="heatmap")
-
-    Returns:
+        key: the key to read the data
+        **kwargs: pass to `plotting.tri_dotplot <plotting.html#spatialtis.plotting.tri_dotplot>`_ (use="dot") or
+            `plotting.heatmap <plotting.html#spatialtis.plotting.heatmap>`_ (use="heatmap")
 
     """
     if key is None:
@@ -139,7 +147,12 @@ def cell_co_occurrence(
             counts[comb[0]].append(v)
 
         counts = list(counts.values())
-        p = tri_dotplot(counts, labels, **kwargs)
+        plot_kwargs = dict(legend_title="ROI")
+
+        for k, v in kwargs.items():
+            plot_kwargs[k] = v
+
+        p = tri_dotplot(counts, labels, **plot_kwargs)
     else:
         plot_kwargs = dict(
             row_colors=groupby,
@@ -174,8 +187,8 @@ def cell_morphology(
         adata: anndata object
         groupby: how to group your data in plot
         selected_types: select interested types
-        key: which key to read the data
-        **kwargs: pass to plotting.violin_plot
+        key: the key to read the data
+        **kwargs: pass to `plotting.violin_plot <plotting.html#spatialtis.plotting.violin_plot>`_
 
     """
     if key is None:
@@ -195,6 +208,16 @@ def cell_morphology(
     else:
         df = df.set_index(["type", "id"], drop=True)
         groupby = ["type"]
+
+    df = df.iloc[df.index.sortlevel(groupby)[1], :]
+
+    levels_order = groupby.copy()
+    for name in df.index.names:
+        if name not in levels_order:
+            levels_order.append(name)
+
+    df = df.reorder_levels(levels_order)
+
     p = violin_plot(df, groupby, "value", **kwargs)
 
     return p
@@ -213,10 +236,12 @@ def neighborhood_analysis(
     Args:
         adata: anndata object
         groupby: how to group your data in plot, only work for use="heatmap"
-        selected_types:
-        key: which key to read the data
+        selected_types: select interested types
+        key: the key to read the data
         use: "dot_matrix", "heatmap", "graph"
-        **kwargs: pass to plotting.dot_matrix; plotting.heatmap; plotting.cc_interaction
+        **kwargs: pass to `plotting.dot_matrix <plotting.html#spatialtis.plotting.dot_matrix>`_ (use="dot_matrix");
+            `plotting.heatmap <plotting.html#spatialtis.plotting.heatmap>`_ (use="heatmap");
+            `plotting.cc_interaction <plotting.html#spatialtis.plotting.cc_interaction>`_ (use="graph");
 
     """
     if key is None:
@@ -302,7 +327,7 @@ def neighborhood_analysis(
         dot_size = counts.pivot(index="type1", columns="type2", values="all").to_numpy()
 
         plot_kwargs = dict(
-            size_legend_title="Sign 'ROI Counts",
+            size_legend_title="Sign' ROI",
             color_legend_title="% of interaction",
             cbar_legend_title="Pearson\nCorrelation",
             cbar_mapper={-1: "-1", 1: "1"},
@@ -346,13 +371,13 @@ def spatial_enrichment_analysis(
     key: Optional[str] = None,
     **kwargs,
 ):
-    """(matplotlib) plotting function for spatial enrichment analysis
+    """(matplotlib) plotting function for plotting enrichment analysis
 
     Args:
         adata: anndata object
         groupby: how to group your data in plot
-        key: which key to read the data
-        **kwargs: pass to plotting.heatmap
+        key: the key to read the data
+        **kwargs: pass to `plotting.heatmap <plotting.html#spatialtis.plotting.heatmap>`_
 
     """
     if key is None:
@@ -384,15 +409,16 @@ def spatial_distribution(
     use: str = "dot",  # heatmap
     **kwargs,
 ):
-    """(matplotlib) plotting function for spatial distribution
+    """(matplotlib) plotting function for plotting distribution
 
     Args:
         adata: anndata object
         groupby: how to group your data in plot
         selected_types: select interested types
-        key: which key to read the data
+        key: the key to read the data
         use: "dot" or "heatmap"
-        **kwargs: pass to plotting.dotplot or plotting.heatmap
+        **kwargs: pass to `plotting.dotplot <plotting.html#spatialtis.plotting.dotplot>`_ (use="dot") or
+            `plotting.heatmap <plotting.html#spatialtis.plotting.heatmap>`_ (use="heatmap")
 
     """
     if key is None:
@@ -429,9 +455,9 @@ def spatial_distribution(
         tb = tb[["No Cell", "Random", "Regular", "Cluster"]]
         colors = np.array(["#FFC408", "#c54a52", "#4a89b9", "#5a539d"] * len(tb))
 
-        plot_kwargs = dict(annotated=False, color=colors, alpha=1,)
+        plot_kwargs = dict(legend_title="ROI", annotated=False, color=colors, alpha=1,)
 
-        for k, v in kwargs:
+        for k, v in kwargs.items():
             plot_kwargs[k] = v
 
         p = dotplot(tb, y="Cell", x="Pattern", **plot_kwargs)
@@ -470,9 +496,10 @@ def spatial_heterogeneity(
     Args:
         adata: anndata object
         groupby: how to group your data in plot
-        key: which key to read the data
+        key: the key to read the data
         metric: "heterogeneity" or "KL", "KL" only available if you use shannon entropy
-        **kwargs: pass to plotting.violin_plot or plotting.stacked_bar
+        **kwargs: pass to `plotting.violin_plot <plotting.html#spatialtis.plotting.violin_plot>`_ or
+            `plotting.stacked_bar <plotting.html#spatialtis.plotting.stacked_bar>`_
 
     """
     if key is None:
@@ -497,21 +524,22 @@ def cell_neighbors(
     query: Mapping,
     use: str = "interactive",
     type_key: Optional[str] = None,
-    neighbors_key: Optional[str] = None,
     centroid_key: Optional[str] = None,
+    neighbors_key: Optional[str] = None,
     **kwargs,
 ):
-    """(pyecharts) visualize cell type in ROI
+    """(pyecharts) Visualize cell neighbors in ROI
 
     Args:
-        adata:
-        query:
-        type_key: key to cell type
-        neighbors_key: key to neighbors info
-        centroid_key: key to cell centroid
-        **kwargs: pass to plotting.graph_plot_interactive
-
-    Returns:
+        adata: anndata object
+        query: a dict use to select which ROI to display,
+            like {"Patients": "Patient 1", "ROI": "ROI3"}, "Patient" and "ROI" are keys in anndata.obs
+        use: "interactive" or "static"
+        type_key: the key of cell type in anndata.obs (Default: spatialtis.CONFIG.CELL_TYPE_KEY)
+        centroid_key: the key of cell centroid in anndata.obs (Default: spatialtis.CONFIG.CENTROID_KEY)
+        neighbors_key: the key of cell neighbors in anndata.obs
+        **kwargs: pass to `plotting.graph_plot_interactive <plotting.html#spatialtis.plotting.graph_plot_interactive>`_
+            or `plotting.graph_plot <plotting.html#spatialtis.plotting.graph_plot>`_
 
     """
     if type_key is None:
@@ -546,23 +574,25 @@ def cell_communities(
     min_cell: int = 10,
     use: str = "interactive",
     type_key: Optional[str] = None,
+    centroid_key: Optional[str] = None,
     community_key: Optional[str] = None,
     neighbors_key: Optional[str] = None,
-    centroid_key: Optional[str] = None,
     **kwargs,
 ):
-    """("interactive": pyecharts, "static": matplotlib) Visualize cell spatial communiteis
+    """(pyecharts, matplotlib) Visualize cell communiteis
 
     Args:
-        adata: anndata
-        query: a dict use to select which ROI to display
+        adata: anndata object
+        query: a dict use to select which ROI to display,
+            like {"Patients": "Patient 1", "ROI": "ROI3"}, "Patient" and "ROI" are keys in anndata.obs
         min_cell: only show communities that have certain number of cells
-        use: "interactive" or "static", for big ROI, "interactive" is much faster using WebGL
-        type_key: key to cell type
-        community_key: key to community
-        neighbors_key: key to neighbors
-        centroid_key: key to cell centroid
-        **kwargs: pass to plotting.graph_plot_interactive or plotting.graph_plot
+        use: "interactive" or "static". For big ROI, "interactive" is much faster using WebGL
+        type_key: the key of cell type in anndata.obs (Default: spatialtis.CONFIG.CELL_TYPE_KEY)
+        centroid_key: the key of cell centroid in anndata.obs (Default: spatialtis.CONFIG.CENTROID_KEY)
+        community_key: the key of cell communities in anndata.obs
+        neighbors_key: the key of cell neighbors in anndata.obs
+        **kwargs: pass to `plotting.graph_plot_interactive <plotting.html#spatialtis.plotting.graph_plot_interactive>`_
+            or `plotting.graph_plot <plotting.html#spatialtis.plotting.graph_plot>`_
 
 
     """
@@ -647,7 +677,7 @@ def exp_neighcells(
         adata: anndata object
         key: key to read data
         palette: config the color
-        **kwargs: pass to plotting.sankey
+        **kwargs: pass to `plotting.sankey <plotting.html#spatialtis.plotting.sankey>`_
 
     """
     if key is None:
@@ -680,8 +710,8 @@ def exp_neighcells(
         nodes.append(g)
         nodes_colors.append(gene_colormap[g])
     for i, row in df.iterrows():
-        links.append((row[0], row[1] + " ", 0.1))
-        links.append((row[1] + " ", row[2], row[3]))
+        links.append((row[1] + " ", row[0], 0.1))
+        links.append((row[2], row[1] + " ", 0.1))
 
     p = sankey(nodes, nodes_colors, links, **kwargs)
 

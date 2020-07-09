@@ -36,16 +36,31 @@ if CONFIG.OS in ["Linux", "Darwin"]:
 @timer(prefix="Finding marker expression influenced by neighbor markers")
 def exp_neighexp(
     n: Neighbors,
-    marker_col: Optional[str] = None,
     importance: float = 0.5,
+    marker_key: Optional[str] = None,
     export: bool = True,
     export_key: Optional[str] = None,
     return_df: bool = False,
     mp: bool = False,
     **kwargs,
 ):
-    if marker_col is None:
-        marker_col = CONFIG.MARKER_KEY
+    """Find the neighbor marker influence on marker expression after exp_neighcell
+
+    Args:
+        n: a spatialtis.Neighbors object, neighbors are already computed
+        importance: threshold for importance
+        marker_key: the key of marker in anndata.var (Default: spatialtis.CONFIG.MARKER_KEY)
+        export: whether to export the result to anndata.uns
+        export_key: the key used to export
+        return_df: whether to return the result
+        mp: whether to enable multiprocessing
+        **kwargs: 
+
+    Returns:
+
+    """
+    if marker_key is None:
+        marker_key = CONFIG.MARKER_KEY
 
     if export_key is None:
         export_key = CONFIG.exp_neighexp_key
@@ -57,7 +72,7 @@ def exp_neighexp(
     adata = n.adata
     neighbors_data = n.neighbors
 
-    markers = adata.var[marker_col]
+    markers = adata.var[marker_key]
     markers_mapper = dict(zip(markers, range(len(markers))))
 
     interactions = adata_uns2df(adata, CONFIG.exp_neighcell_key)
@@ -146,7 +161,7 @@ def exp_neighexp(
     )
 
     if export:
-        df2adata_uns(df, adata, export_key)
+        df2adata_uns(df, adata, export_key, params={"importance": importance})
 
     if return_df:
         return df
