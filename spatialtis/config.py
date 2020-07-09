@@ -1,7 +1,6 @@
 """
 Setting Global config for whole processing level
 """
-import os
 import platform
 import sys
 import warnings

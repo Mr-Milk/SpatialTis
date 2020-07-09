@@ -28,7 +28,7 @@ def _wrapper(groups, types, type_key, centroid_key, patch_func, *args):
     return patterns
 
 
-def VMR(points, resample, r):
+def VMR(points, resample, r, pval):
 
     tree = cKDTree(points)
     tmax = tree.maxes
@@ -51,9 +51,14 @@ def VMR(points, resample, r):
     if np.mean(counts) != 0:
         ID = np.var(counts) / np.mean(counts)
 
-        if ID == 1:
+        n = len(points)
+        chi2_value = (n - 1) * ID
+        p_value = 1 - chi2.cdf(chi2_value, n - 1)
+        accept_null = p_value > pval
+
+        if accept_null:
             pattern = 1  # random
-        elif ID > 1:
+        elif (not accept_null) & (ID > 1):
             pattern = 3  # clustered
         else:
             pattern = 2  # regular
@@ -195,7 +200,9 @@ def spatial_distribution(
 
     if method == "vmr":
         lprint("Method: Variance-to-mean ratio")
-        patterns = _wrapper(groups, types, type_key, centroid_key, VMR, resample, r)
+        patterns = _wrapper(
+            groups, types, type_key, centroid_key, VMR, resample, r, pval
+        )
     elif method == "quad":
         lprint("Method: Quadratic statistic")
         patterns = _wrapper(groups, types, type_key, centroid_key, QUAD, quad, pval)

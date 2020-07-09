@@ -1,7 +1,6 @@
 import functools
 import logging
 import shutil
-from collections import Counter
 from pathlib import Path
 from time import time
 from typing import Any, Optional, Sequence, Union
@@ -12,7 +11,7 @@ from colorama import Fore, init
 
 from spatialtis.config import CONFIG
 
-if CONFIG.OS is "Windows":
+if CONFIG.OS == "Windows":
     init(convert=True)
 
 logger = logging.getLogger(__name__)

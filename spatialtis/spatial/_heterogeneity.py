@@ -92,7 +92,7 @@ def spatial_heterogeneity(
 
     if method == "shannon":
         lprint("Method: Shannon entropy")
-        df = type_counter(adata, groupby, type_key)
+        df = type_counter(adata, groupby, type_key=type_key)
 
         if len(df.columns) == 1:
             warnings.warn(
