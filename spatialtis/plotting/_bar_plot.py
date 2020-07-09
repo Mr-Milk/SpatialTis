@@ -84,7 +84,7 @@ def stacked_bar(
 
     reg["factors"] = factors
 
-    bar_count = len(reg[list(reg.keys())[0]])
+    # bar_count = len(reg[list(reg.keys())[0]])
     types_count = len(types)
 
     # config for figure
