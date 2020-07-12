@@ -218,7 +218,7 @@ def spatial_distribution(
     results = results.rename_axis(index=["Cell type"], columns=groupby).T
 
     if export:
-        df2adata_uns(results, adata, export_key)
+        df2adata_uns(results, adata, export_key, params={"method": method})
 
     if return_df:
         return results

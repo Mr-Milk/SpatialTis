@@ -38,7 +38,6 @@ if CONFIG.OS in ["Linux", "Darwin"]:
 def exp_neighcells(
     n: Neighbors,
     std: float = 2.0,
-    importance: float = 0.7,
     marker_key: Optional[str] = None,
     export: bool = True,
     export_key: Optional[str] = None,
@@ -60,7 +59,6 @@ def exp_neighcells(
     Args:
         n: a spatialtis.Neighbors object, neighbors are already computed
         std: threshold for standard deviation of marker expression
-        importance: threshold for importance
         marker_key: the key of marker in anndata.var (Default: spatialtis.CONFIG.MARKER_KEY)
         export: whether to export the result to anndata.uns
         export_key: the key used to export
@@ -137,9 +135,9 @@ def exp_neighcells(
         results = list()
 
         for (m, c1, (max_ix, max_weights)) in zip(m_, c1_, mp_results):
-            if max_weights >= importance:
+            if max_weights > 0:
                 c2 = n.unitypes[max_ix]
-                results.append([c2, c1, m, max_weights])
+                results.append([c1, m, c2, max_weights])
 
     else:
         with tqdm(
@@ -155,17 +153,15 @@ def exp_neighcells(
                     pbar.update(1)
                     if np.std(g) >= std:
                         [max_ix, max_weights] = _max_feature(x, g, **kwargs)
-                        if max_weights >= importance:
+                        if max_weights > 0:
                             c2 = n.unitypes[max_ix]
-                            results.append([c2, c1, m, max_weights])
+                            results.append([c1, m, c2, max_weights])
             pbar.close()
 
-    df = pd.DataFrame(results, columns=["Affected_by", "Cell", "Marker", "Score "])
+    df = pd.DataFrame(results, columns=["Cell", "Marker", "Affected_by", "Score"])
 
     if export:
-        df2adata_uns(
-            df, adata, export_key, params={"std": std, "importance": importance}
-        )
+        df2adata_uns(df, adata, export_key, params={"std": std})
 
     if return_df:
         return df

@@ -36,7 +36,6 @@ if CONFIG.OS in ["Linux", "Darwin"]:
 @timer(prefix="Finding marker expression influenced by neighbor markers")
 def exp_neighexp(
     n: Neighbors,
-    importance: float = 0.5,
     marker_key: Optional[str] = None,
     export: bool = True,
     export_key: Optional[str] = None,
@@ -48,7 +47,6 @@ def exp_neighexp(
 
     Args:
         n: a spatialtis.Neighbors object, neighbors are already computed
-        importance: threshold for importance
         marker_key: the key of marker in anndata.var (Default: spatialtis.CONFIG.MARKER_KEY)
         export: whether to export the result to anndata.uns
         export_key: the key used to export
@@ -145,14 +143,14 @@ def exp_neighexp(
         mp_results = ray.get(results)
         results = []
         for comb, (max_ix, max_weights) in zip(combs, mp_results):
-            if max_weights > importance:
+            if max_weights > 0:
                 results.append((markers[max_ix], *comb, max_weights))
 
     else:
         results = []
         for comb, arr in tqdm(X.items(), **CONFIG.tqdm(desc="fit model"),):
             [max_ix, max_weights] = _max_feature(arr, Y[comb], **kwargs)
-            if max_weights > importance:
+            if max_weights > 0:
                 results.append((markers[max_ix], *comb, max_weights))
 
     df = pd.DataFrame(
@@ -161,7 +159,7 @@ def exp_neighexp(
     )
 
     if export:
-        df2adata_uns(df, adata, export_key, params={"importance": importance})
+        df2adata_uns(df, adata, export_key)
 
     if return_df:
         return df

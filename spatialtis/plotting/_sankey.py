@@ -56,7 +56,7 @@ def sankey(
             )
         )
         .add(
-            None,
+            "",
             draw_nodes,
             draw_links,
             linestyle_opt=opts.LineStyleOpts(color="source", opacity=0.6, curve=0.5),
@@ -65,7 +65,7 @@ def sankey(
         .set_global_opts(
             title_opts=opts.TitleOpts(title=title),
             toolbox_opts=opts.ToolboxOpts(
-                feature={"saveAsImage": {"title": "save", "pixelRatio": 5,},},
+                feature={"saveAsImage": {"title": "save", "pixelRatio": 5}},
             ),
         )
     )
