@@ -668,6 +668,7 @@ def cell_communities(
 def exp_neighcells(
     adata: AnnData,
     key: Optional[str] = None,
+    score: float = 0.5,
     palette: Optional[Sequence] = None,
     **kwargs,
 ):
@@ -684,9 +685,10 @@ def exp_neighcells(
         key = CONFIG.exp_neighcell_key
 
     df = adata_uns2df(adata, key)
+    df = df[df["Score"] >= score]
 
-    cell_types = pd.unique(df.iloc[:, [0, 1]].values.flatten())
-    gene_types = pd.unique(df.iloc[:, [2]].values.flatten())
+    cell_types = pd.unique(df.iloc[:, [0, 2]].values.flatten())
+    gene_types = pd.unique(df.iloc[:, [1]].values.flatten())
 
     if palette is None:
         palette = ["Set3", "Spectral"]
@@ -703,16 +705,15 @@ def exp_neighcells(
     for c in pd.unique(df.iloc[:, [0]].values.flatten()):
         nodes.append(c)
         nodes_colors.append(cell_colormap[c])
-    for c in pd.unique(df.iloc[:, [1]].values.flatten()):
+    for c in pd.unique(df.iloc[:, [2]].values.flatten()):
         nodes.append(c + " ")
         nodes_colors.append(cell_colormap[c])
     for g in gene_types:
         nodes.append(g)
         nodes_colors.append(gene_colormap[g])
     for i, row in df.iterrows():
-        links.append((row[1] + " ", row[0], 0.1))
-        links.append((row[2], row[1] + " ", 0.1))
-
+        links.append((row[0], row[1], 1))
+        links.append((row[1], row[2] + " ", 1))
     p = sankey(nodes, nodes_colors, links, **kwargs)
 
     # return nodes, nodes_colors, links
