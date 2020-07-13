@@ -677,6 +677,7 @@ def exp_neighcells(
     Args:
         adata: anndata object
         key: key to read data
+        score: threshold for score
         palette: config the color
         **kwargs: pass to `plotting.sankey <plotting.html#spatialtis.plotting.sankey>`_
 

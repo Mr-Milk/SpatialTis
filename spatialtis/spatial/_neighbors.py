@@ -277,6 +277,7 @@ class Neighbors(object):
                         self.__types[n] = types
 
             self.__neighborsbuilt = True
+        return self
 
     def export_neighbors(self, export_key: Optional[str] = None):
         """Export computed neighbors
@@ -310,6 +311,8 @@ class Neighbors(object):
                 neighbors.append(str(neighs))
         col2adata_obs(neighbors, self.__adata, export_key)
 
+        return self
+
     def neighbors_count(
         self, export_key: Optional[str] = None,
     ):
@@ -342,6 +345,8 @@ class Neighbors(object):
                 counts.append(count)
         col2adata_obs(counts, self.__adata, export_key)
 
+        return self
+
     def read_neighbors(self, read_key: Optional[str] = None):
         """Read computed neighbors from anndata
 
@@ -362,6 +367,8 @@ class Neighbors(object):
             neighborsdb[n] = dict(zip(range(len(g)), [eval(i) for i in g[read_key]]))
         self.__neighborsdb = neighborsdb
         self.__neighborsbuilt = True
+
+        return self
 
     def to_graphs(self):
         if not self.__neighborsbuilt:
