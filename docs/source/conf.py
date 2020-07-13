@@ -23,7 +23,7 @@ copyright = "2020, Mr-Milk"
 author = "Mr-Milk"
 
 # The full version, including alpha/beta/rc tags
-release = "Unrelease"
+release = "1.0.0-dev0"
 
 # -- General configuration ---------------------------------------------------
 
@@ -33,13 +33,10 @@ release = "Unrelease"
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
-    # "sphinx_autodoc_typehints",
     "sphinx.ext.autosectionlabel",
-    #'sphinx_autodoc_napoleon_typehints',
     "sphinx.ext.mathjax",
     "sphinx.ext.viewcode",
     "sphinx_rtd_theme",
-    "nbsphinx",
 ]
 
 # nbsphinx_allow_errors = True
@@ -78,7 +75,3 @@ html_theme_options = {
 #    "rightsidebar": "true",
 #    "relbarbgcolor": "#ef8992"
 #}
-
-# configuration for nbsphinx
-nbsphinx_input_prompt = ''
-nbsphinx_output_prompt = ''
