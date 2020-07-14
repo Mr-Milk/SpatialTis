@@ -9,6 +9,7 @@ from snapshot_phantomjs import snapshot
 def save_bokeh(plot, path):
     save_path = Path(path)
     file_ext = save_path.suffix[1:]
+    save_path = str(save_path)
 
     plot.background_fill_color = None
     plot.border_fill_color = None
