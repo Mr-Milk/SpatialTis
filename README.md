@@ -4,7 +4,7 @@
 
 
 # SpatialTis
-[![Documentation Status](https://readthedocs.org/projects/spatialtis/badge/?version=latest)](https://spatialtis.readthedocs.io/en/latest/?badge=latest) ![CI](https://github.com/Mr-Milk/SpatialTis/workflows/CI/badge.svg) ![codecov](https://codecov.io/gh/Mr-Milk/SpatialTis/branch/master/graph/badge.svg?token=DYNZ45IPSQ)![licence](https://badgen.net/badge/licence/Apache%202%2E0/blue)
+[![Documentation Status](https://readthedocs.org/projects/spatialtis/badge/?version=latest)](https://spatialtis.readthedocs.io/en/latest/?badge=latest) ![CI](https://github.com/Mr-Milk/SpatialTis/workflows/CI/badge.svg) ![codecov](https://codecov.io/gh/Mr-Milk/SpatialTis/branch/master/graph/badge.svg?token=DYNZ45IPSQ) ![licence](https://badgen.net/badge/licence/Apache%202%2E0/blue)
 
 SpatialTis is a spatial analysis toolkit for single-cell multiplexed tissue data using [`AnnData`](https://icb-anndata.readthedocs-hosted.com/en/stable/#) object as input. Multiprocessing is supported for most analysis functions.
 
