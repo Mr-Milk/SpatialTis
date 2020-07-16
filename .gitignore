@@ -6,6 +6,8 @@ tmp/test.h5ad
 tmp/test_adata.h5ad
 tutorial/
 
+*.svg
+*.png
 *.pptx
 *.ipynb
 

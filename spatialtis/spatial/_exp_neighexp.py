@@ -33,9 +33,10 @@ if CONFIG.OS in ["Linux", "Darwin"]:
     _max_feature_mp = ray.remote(_max_feature)
 
 
-@timer(prefix="Finding marker expression influenced by neighbor markers")
+# @timer(prefix="Finding marker expression influenced by neighbor markers")
 def exp_neighexp(
     n: Neighbors,
+    score: float = 0.5,
     marker_key: Optional[str] = None,
     export: bool = True,
     export_key: Optional[str] = None,
@@ -47,6 +48,7 @@ def exp_neighexp(
 
     Args:
         n: a spatialtis.Neighbors object, neighbors are already computed
+        score: threshold set for score
         marker_key: the key of marker in anndata.var (Default: spatialtis.CONFIG.MARKER_KEY)
         export: whether to export the result to anndata.uns
         export_key: the key used to export
@@ -70,10 +72,17 @@ def exp_neighexp(
     adata = n.adata
     neighbors_data = n.neighbors
 
+    if CONFIG.exp_neighcell_key not in adata.uns.keys():
+        raise KeyError(
+            f"{CONFIG.exp_neighcell_key} not found, please run spatialtis.exp_neighcells first."
+        )
+
     markers = adata.var[marker_key]
     markers_mapper = dict(zip(markers, range(len(markers))))
 
     interactions = adata_uns2df(adata, CONFIG.exp_neighcell_key)
+    interactions = interactions[interactions["Score"] >= score]
+
     cc_mapper = dict()
     cexp_mapper = dict()
     X = dict(
@@ -119,8 +128,11 @@ def exp_neighexp(
                 for (ic, c) in selected_neigh:
                     for gene in cexp_mapper[c]:
                         key = (centcell, c, gene)
-                        X[key].append(list(exp))
-                        Y[key].append(roi_exp[ic][markers_mapper[gene]])
+                        try:
+                            X[key].append(list(exp))
+                            Y[key].append(roi_exp[ic][markers_mapper[gene]])
+                        except KeyError:
+                            pass
 
     if mp & (CONFIG.OS in ["Linux", "Darwin"]):
 
@@ -136,7 +148,8 @@ def exp_neighexp(
             combs.append(comb)
 
         for _ in tqdm(
-            exec_iterator(results), **CONFIG.tqdm(total=len(results), desc="fit model")
+            exec_iterator(results),
+            **CONFIG.tqdm(total=len(results), desc="fit model", unit="regressor"),
         ):
             pass
 
@@ -148,7 +161,9 @@ def exp_neighexp(
 
     else:
         results = []
-        for comb, arr in tqdm(X.items(), **CONFIG.tqdm(desc="fit model"),):
+        for comb, arr in tqdm(
+            X.items(), **CONFIG.tqdm(desc="fit model", unit="regressor"),
+        ):
             [max_ix, max_weights] = _max_feature(arr, Y[comb], **kwargs)
             if max_weights > 0:
                 results.append((markers[max_ix], *comb, max_weights))
