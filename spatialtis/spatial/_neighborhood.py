@@ -14,10 +14,12 @@ from ._util import check_neighbors
 
 
 class CellComb:
-    def __init__(self, types):
+    def __init__(self, types, order):
         self.types = types
-        self.comb = [k for k in product(types, repeat=2)]
-        self.unicomb = [k for k in combinations_with_replacement(types, 2)]
+        if order:
+            self.comb = [k for k in product(types, repeat=2)]
+        else:
+            self.comb = [k for k in combinations_with_replacement(types, 2)]
         self.relationships = {t1: [(t1, t2) for t2 in types] for t1 in types}
 
     def get_comb(self, t):
@@ -48,33 +50,21 @@ def _count_neighbors(
 
 
 def _bootstrap(
-    cell_types: list,
-    cell_neighbors: Mapping,
-    cellcomb: CellComb,
-    resample: int,
-    order: bool,
+    cell_types: list, cell_neighbors: Mapping, cellcomb: CellComb, resample: int,
 ):
 
-    tmp_storage = (
-        {k: [] for k in cellcomb.comb} if order else {k: [] for k in cellcomb.unicomb}
-    )
+    tmp_storage = {k: [] for k in cellcomb.comb}
     real_count = _count_neighbors(cell_types, cell_neighbors, cellcomb, tmp_storage)
 
-    perm_count = (
-        {k: [] for k in cellcomb.comb} if order else {k: [] for k in cellcomb.unicomb}
-    )
+    perm_count = {k: [] for k in cellcomb.comb}
     shuffle_types = cell_types.copy()
     for attempt in range(resample):
         np.random.shuffle(shuffle_types)
-        tmp_storage = (
-            {k: [] for k in cellcomb.comb}
-            if order
-            else {k: [] for k in cellcomb.unicomb}
-        )
+        tmp_storage = {k: [] for k in cellcomb.comb}
         perm = _count_neighbors(shuffle_types, cell_neighbors, cellcomb, tmp_storage)
         for itr, m in perm.items():
             perm_count[itr].append(m)
-    columns = cellcomb.comb if order else cellcomb.unicomb
+    columns = cellcomb.comb
     perm_count = pd.DataFrame(perm_count, columns=columns)
     real_count = pd.DataFrame(real_count, index=[0], columns=columns)
     return [perm_count, real_count]
@@ -128,7 +118,7 @@ def _main(
         mp = CONFIG.MULTI_PROCESSING
 
     check_neighbors(n)
-    cellcomb = CellComb(n.unitypes)
+    cellcomb = CellComb(n.unitypes, order)
     results = dict()
 
     if mp & (CONFIG.OS in ["Linux", "Darwin"]):
@@ -141,7 +131,7 @@ def _main(
         counts = []
         names = []
         for name, value in n.neighbors.items():
-            id1 = _bootstrap_mp.remote(n.types[name], value, cellcomb, resample, order)
+            id1 = _bootstrap_mp.remote(n.types[name], value, cellcomb, resample)
             counts.append(id1)
             names.append(name)
 
@@ -161,7 +151,7 @@ def _main(
             n.neighbors.items(), **CONFIG.tqdm(desc="neighborhood analysis"),
         ):
             [perm_count, real_count] = _bootstrap(
-                n.types[name], value, cellcomb, resample, order
+                n.types[name], value, cellcomb, resample
             )
             results[name] = patch_func(perm_count, real_count, resample, pval)
 

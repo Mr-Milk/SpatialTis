@@ -11,9 +11,13 @@ from .palette import get_linear_colors
 def expression_map(
     adata: AnnData,
     query: Mapping,
+    selected_types: Optional[Sequence] = None,
+    type_key: Optional[str] = None,
     marker_key: Optional[str] = None,
     centroid_key: Optional[str] = None,
     order: Optional[Sequence] = None,
+    expression_min: Optional[float] = None,
+    expression_max: Optional[float] = None,
     use: str = "bar3d",  # 'bar3d', 'scatter'
     renderer: str = "canvas",
     axis_size: tuple = (100, 100, 80),
@@ -32,6 +36,8 @@ def expression_map(
         adata: anndata object
         query: a dict use to select which ROI to display,
             like {"Patients": "Patient 1", "ROI": "ROI3"}, "Patient" and "ROI" are keys in anndata.obs
+        selected_types: select whose expression to be displayed
+        type_key: the key of type in anndata.obs (Default: spatialtis.CONFIG.CELL_TYPE_KEY)
         marker_key: the key of marker in anndata.var (Default: spatialtis.CONFIG.MARKER_KEY)
         centroid_key: the key of cell centroid in anndata.obs (Default: spatialtis.CONFIG.CENTROID_KEY)
         order: array of marker name, display as order
@@ -45,6 +51,8 @@ def expression_map(
         return_plot: whether to return the plot instance
 
     """
+    if type_key is None:
+        type_key = CONFIG.CELL_TYPE_KEY
     if marker_key is None:
         marker_key = CONFIG.MARKER_KEY
     if centroid_key is None:
@@ -60,22 +68,48 @@ def expression_map(
 
     gene_names = list(adata.var[marker_key])
     data = adata.obs.query("&".join([f"({k}=='{v}')" for k, v in query.items()]))
+
+    if selected_types is not None:
+        data = data[data[type_key].isin(selected_types)]
+
     coord = data[centroid_key]
+    no_tab = False
     if order is not None:
+        if len(order) == 1:
+            no_tab = True
         exp_index = [gene_names.index(i) for i in order]
         gene_names = order
         exp = adata[data.index].X.T[exp_index]
     else:
         # if not specific, it will take the first 3
         exp = adata[data.index].X.T[0:3]
-
     t = Tab()
     for iexp, gene_name in zip(exp, gene_names):
         zdata = []
 
-        for e, c in zip(iexp, coord):
-            p = eval(c)
-            zdata.append([p[0], p[1], float(e)])
+        if (expression_min is not None) & (expression_max is None):
+            for e, c in zip(iexp, coord):
+                p = eval(c)
+                e = float(e)
+                if e >= expression_min:
+                    zdata.append([p[0], p[1], e])
+        elif (expression_max is not None) & (expression_min is None):
+            for e, c in zip(iexp, coord):
+                p = eval(c)
+                e = float(e)
+                if e <= expression_max:
+                    zdata.append([p[0], p[1], e])
+        elif (expression_max is not None) & (expression_min is not None):
+            for e, c in zip(iexp, coord):
+                p = eval(c)
+                e = float(e)
+                if (e >= expression_min) & (e <= expression_max):
+                    zdata.append([p[0], p[1], e])
+        else:
+            for e, c in zip(iexp, coord):
+                p = eval(c)
+                e = float(e)
+                zdata.append([p[0], p[1], e])
 
         zrange = sorted(zdata, key=lambda k: k[2])
         initopt_config = dict(
@@ -133,10 +167,13 @@ def expression_map(
                     max_=zrange[-1][2],
                     range_color=default_color,
                     dimension=2,
+                    pos_right="right",
                 ),
             )
-
-        t.add(a, gene_name)
+        if no_tab:
+            t = a
+        else:
+            t.add(a, gene_name)
 
     '''
     if save is not None:
