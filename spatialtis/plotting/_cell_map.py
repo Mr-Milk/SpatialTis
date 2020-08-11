@@ -65,6 +65,13 @@ def cell_map(
             raise KeyError("Centroid key not exist")
 
     df = adata.obs.query("&".join([f"({k}=='{v}')" for k, v in query.items()]))
+    new_types = []
+    for i in df[type_key]:
+        if i in selected_types:
+            new_types.append(i)
+        else:
+            new_types.append("other")
+    df.loc[:, [type_key]] = new_types
     groups = df.groupby(type_key)
 
     default_palette = ["Spectral", "Category20"]
@@ -143,13 +150,13 @@ def cell_map(
                 if n in selected_types:
                     add_patches(n, fill_color=color, fill_alpha=0.8)
                 else:
-                    add_patches("other", fill_color="grey", fill_alpha=0.5)
+                    add_patches(n, fill_color="grey", fill_alpha=0.5)
         else:
             for color, (n, data) in zip(colors, groups):
                 if n in selected_types:
                     add_circle(n, fill_color=color, fill_alpha=0.8)
                 else:
-                    add_circle("other", fill_color="grey", fill_alpha=0.8)
+                    add_circle(n, fill_color="grey", fill_alpha=0.8)
 
     if len(legends) >= 16:
         cut = int(len(legends) // 2)

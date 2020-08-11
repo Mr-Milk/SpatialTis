@@ -1,7 +1,6 @@
 import warnings
 from typing import Optional, Sequence, Union
 
-import igraph as ig
 import numpy as np
 from anndata import AnnData
 from scipy.spatial import cKDTree
@@ -371,6 +370,10 @@ class Neighbors(object):
         return self
 
     def to_graphs(self):
+        try:
+            import igraph as ig
+        except ImportError:
+            raise ImportError("Required python-igraph, try pip install python-igraph.")
         if not self.__neighborsbuilt:
             return None
         new_graphs = {n: 0 for n in self.__names}

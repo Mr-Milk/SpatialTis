@@ -5,7 +5,6 @@ from typing import Optional, Sequence, Union
 import anndata as ad
 import numpy as np
 import pandas as pd
-import tifffile
 from tqdm import tqdm
 
 from ..config import CONFIG
@@ -26,6 +25,11 @@ def get_roi(
 
     # read page by page, we don't know how user will store their file
     # some store 40 channels on one page, some store 1 channel per page
+    try:
+        import tifffile
+    except ImportError:
+        raise ImportError("Required tifffile, try pip install tifffile.")
+
     exp = []
     with tifffile.TiffFile(str(exp_img)) as img:
         for i in img.pages:

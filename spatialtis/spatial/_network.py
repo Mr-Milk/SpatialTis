@@ -1,6 +1,5 @@
 from typing import Optional
 
-import leidenalg
 import pandas as pd
 from tqdm import tqdm
 
@@ -26,6 +25,10 @@ def communities(
         return_df: whether to return the result
 
     """
+    try:
+        import leidenalg
+    except ImportError:
+        raise ImportError("Required leidenalg, try pip install leidenalg.")
 
     if export_key is None:
         export_key = CONFIG.community_key

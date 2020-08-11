@@ -1,11 +1,8 @@
 from pathlib import Path
 from typing import Optional, Sequence, Union
 
-import alphashape
 import numpy as np
 from shapely.geometry import MultiPoint
-from skimage.io import imread
-from skimage.measure import label, regionprops
 
 
 def mask2cells(
@@ -14,6 +11,15 @@ def mask2cells(
     polygonize: str = "convex",
     alpha: Optional[float] = None,
 ):
+    try:
+        from skimage.io import imread
+        from skimage.measure import label, regionprops
+    except ImportError:
+        raise ImportError(
+            "Using preprocessing moduele needs scikit-image. "
+            "Try pip install scikit-image."
+        )
+
     area = []
     borders = []
     centroids = []
@@ -47,6 +53,16 @@ def cell_border(cell, polygonize="convex", alpha=None):
     if polygonize == "convex":
         cell = MultiPoint(cell).convex_hull
     elif polygonize == "concave":
+        try:
+            from CGAL.CGAL_Alpha_shape_2 import Alpha_shape_2
+        except ImportError:
+            try:
+                import alphashape
+            except ImportError:
+                raise ImportError(
+                    "You have neither CGAL nor alphashape installed, "
+                    "try pip install cgal-bindings / pip install alphashape."
+                )
         if alpha is None:
             alpha = alphashape.optimizealpha(cell)
         try:
