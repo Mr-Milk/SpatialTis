@@ -76,6 +76,7 @@ class _CONFIG(object):
         self.community_key: str = "communities"
         self.neighborhood_analysis_key: str = "neighborhood_analysis"
         self.spatial_enrichment_analysis_key: str = "spatial_enrichment_analysis"
+        self.spatial_enrichment_analysis_layers_key: str = "markers_sign"
         self.neighbors_key: str = "cell_neighbors"
         self.neighbors_count_key: str = "neighbors_count"
         self.exp_neighcell_key: str = "exp_neighcell"

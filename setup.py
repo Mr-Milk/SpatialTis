@@ -25,5 +25,6 @@ setup(name="spatialtis",
                         'scipy', 'shapely', 'bokeh',
                         'seaborn', 'colour', 'IPython', 'matplotlib', 'tqdm', 'pyecharts',
                         'spatialentropy', 'colorama', 'snapshot_phantomjs', ],
-      extra_requires={'all': ['scikit-image', 'python-igraph', 'leidenalg', 'alphashape', 'tifffile']}
+      extra_requires={'all': ['scikit-image', 'python-igraph', 'leidenalg',
+                              'alphashape', 'tifffile', 'neighborhood_analysis']}
       )
