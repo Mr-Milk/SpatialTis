@@ -121,6 +121,7 @@ def exp_neighexp(
             centcell = type_map[center]
             if centcell in all_cell_types:
                 selected_type = cc_mapper[centcell]
+                neighs = [i for i in neighs if i != center]
                 selected_neigh = [
                     (i, type_map[i]) for i in neighs if type_map[i] in selected_type
                 ]

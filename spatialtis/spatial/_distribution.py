@@ -109,7 +109,7 @@ def NNS(points, pval):
     R = r_A / r_E
     z_score = (r_A - r_E) / (0.26136 / np.sqrt(n * rho))
 
-    p_value = 1 - norm.cdf(z_score)
+    p_value = norm.sf(abs(z_score)) * 2
     accept_null = p_value > pval
 
     if accept_null:

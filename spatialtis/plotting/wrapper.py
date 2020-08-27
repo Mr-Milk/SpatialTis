@@ -14,7 +14,7 @@ from spatialtis.utils import adata_uns2df
 from ._bar_plot import stacked_bar
 from ._cell_cell_interaction import cc_interactions
 from ._community_graph import graph_plot, graph_plot_interactive
-from ._dot_matrixplot import dot_matrix
+from ._dot_matrix import DotMatrix
 from ._dotplot import dotplot
 from ._heatmap_sns import heatmap
 from ._sankey import sankey
@@ -152,7 +152,7 @@ def cell_co_occurrence(
         for k, v in kwargs.items():
             plot_kwargs[k] = v
 
-        p = tri_dotplot(counts, labels, **plot_kwargs)
+        p = tri_dotplot(counts, labels=labels, **plot_kwargs)
     else:
         plot_kwargs = dict(
             row_colors=groupby,
@@ -264,9 +264,10 @@ def neighborhood_analysis(
     if use == "graph":
         p = cc_interactions(df, {-1: "Avoidance", 1: "Association"}, **kwargs)
     elif use == "dot_matrix":
-        if not order:
+        #if not order:
+        if order:
             raise ValueError(
-                "Unordered cell-interaction couldn't be visualized using dot matrix plot"
+                "Unordered interaction can't be visualized using dot matrix plot"
             )
         try:
             cc = adata_uns2df(adata, CONFIG.cell_components_key)
@@ -328,14 +329,14 @@ def neighborhood_analysis(
 
         plot_kwargs = dict(
             size_legend_title="Sign' ROI",
-            color_legend_title="% of interaction",
-            cbar_legend_title="Pearson\nCorrelation",
-            cbar_mapper={-1: "-1", 1: "1"},
-            color_legend_text=["Association", "", "Avoidance"],
+            matrix_cbar_title="■\nPearson\nCorrelation",
+            matrix_cbar_mapper={-1: "-1", 1: "1"},
+            dot_cbar_mapper={-1: "Avoidance", 1: "Association"},
+            dot_cbar_title="●\n% of\ninteraction"
         )
         for k, v in kwargs.items():
             plot_kwargs[k] = v
-        p = dot_matrix(matrix, dot_color, dot_size, xlabels, ylabels, **plot_kwargs)
+        p = DotMatrix(matrix, dot_color, dot_size, xlabels=xlabels, ylabels=ylabels, **plot_kwargs)
 
     elif use == "heatmap":
         plot_kwargs = dict(
@@ -443,24 +444,21 @@ def spatial_distribution(
             counts.append(Counter(col))
         counts.append({1: 0, 2: 0, 3: 0, 0: 0})
         tb = pd.DataFrame(counts)
-        tb.drop(tb.tail(1).index, inplace=True)
-        tb.fillna(0, inplace=True)
-        tb.rename(
-            columns={0: "No Cell", 1: "Random", 2: "Regular", 3: "Cluster"},
-            inplace=True,
-        )
+        tb = tb.drop(tb.tail(1).index)\
+            .fillna(0)
         tb.index = names
-        tb.index.name = "Cell"
-        tb.columns.name = "Pattern"
-        tb = tb[["No Cell", "Random", "Regular", "Cluster"]]
+        tb = tb[[0, 1, 2, 3]]
         colors = np.array(["#FFC408", "#c54a52", "#4a89b9", "#5a539d"] * len(tb))
 
-        plot_kwargs = dict(legend_title="ROI", annotated=False, color=colors, alpha=1,)
+        plot_kwargs = dict(legend_title="ROI", annotated=False, alpha=1,)
 
         for k, v in kwargs.items():
             plot_kwargs[k] = v
 
-        p = dotplot(tb, y="Cell", x="Pattern", **plot_kwargs)
+        p = dotplot(tb.to_numpy(), colors,
+                    xlabels=["No Cell", "Random", "Regular", "Cluster"],
+                    ylabels=names,
+                    **plot_kwargs)
         # p = dotplot(tb.T, x="Cell", y="Pattern", annotated=False)
     elif use == "heatmap":
         plot_kwargs = dict(

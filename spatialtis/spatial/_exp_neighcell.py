@@ -92,7 +92,7 @@ def exp_neighcells(
 
         for (center, neighs), exp in zip(neighbors.items(), adata[roi.index].X):
             t = type_map[center]
-            X[t].append(Counter([type_map[i] for i in neighs]))
+            X[t].append(Counter([type_map[i] for i in neighs if i != center]))
             Y[t].append(list(exp))
 
     t_cols = n.unitypes

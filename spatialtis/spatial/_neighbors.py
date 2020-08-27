@@ -50,7 +50,7 @@ def _neighborshapes(polycells, scale=None, expand=None):
     for i, cell in enumerate(polycells):
         scaled_cell = _scale_cell(cell, scale, expand)
         result = tree.query(scaled_cell)
-        neighs = [n.index for n in result if n.index != i]
+        neighs = [n.index for n in result]
         nbcells[i] = neighs
 
     return nbcells
@@ -96,14 +96,14 @@ class Neighbors(object):
     """
 
     def __init__(
-        self,
-        adata: AnnData,
-        geom: str = "shape",
-        *,
-        groupby: Union[Sequence, str, None] = None,
-        type_key: Optional[str] = None,
-        shape_key: Optional[str] = None,
-        centroid_key: Optional[str] = None,
+            self,
+            adata: AnnData,
+            geom: str = "shape",
+            *,
+            groupby: Union[Sequence, str, None] = None,
+            type_key: Optional[str] = None,
+            shape_key: Optional[str] = None,
+            centroid_key: Optional[str] = None,
     ):
 
         # keys for query info from anndata
@@ -138,12 +138,15 @@ class Neighbors(object):
         self.__uniquetypes = np.unique(self.__data[type_key])
         self.__types = {n: 0 for n in self.__names}
 
+    def __repr__(self):
+        return "A spatialtis.Neighbors instance"
+
     # @timer(prefix="Finding cell neighbors")
     def find_neighbors(
-        self,
-        expand: Optional[float] = None,
-        scale: Optional[float] = None,
-        mp: Optional[bool] = None,
+            self,
+            expand: Optional[float] = None,
+            scale: Optional[float] = None,
+            mp: Optional[bool] = None,
     ):
         """To find the neighbors of each cell
 
@@ -199,8 +202,8 @@ class Neighbors(object):
                         self.__types[n] = types
 
                 for _ in tqdm(
-                    exec_iterator(results),
-                    **CONFIG.tqdm(total=len(results), desc="polygonize cells",),
+                        exec_iterator(results),
+                        **CONFIG.tqdm(total=len(results), desc="polygonize cells", ),
                 ):
                     pass
 
@@ -219,8 +222,8 @@ class Neighbors(object):
                     results.append(_neighborshapes_mp.remote(polycells, scale, expand))
                     names.append(n)
                 for _ in tqdm(
-                    exec_iterator(results),
-                    **CONFIG.tqdm(total=len(results), desc="find neighbors"),
+                        exec_iterator(results),
+                        **CONFIG.tqdm(total=len(results), desc="find neighbors"),
                 ):
                     pass
                 results = ray.get(results)
@@ -235,8 +238,8 @@ class Neighbors(object):
                         self.__types[n] = types
 
                 for _ in tqdm(
-                    exec_iterator(results),
-                    **CONFIG.tqdm(total=len(results), desc="find neighbors"),
+                        exec_iterator(results),
+                        **CONFIG.tqdm(total=len(results), desc="find neighbors"),
                 ):
                     pass
                 results = ray.get(results)
@@ -248,7 +251,7 @@ class Neighbors(object):
         else:
             if (self.__geom == "shape") & (not self.__polycells):
                 for n, g in tqdm(
-                    self.__groups, **CONFIG.tqdm(desc="polygonize cells"),
+                        self.__groups, **CONFIG.tqdm(desc="polygonize cells"),
                 ):
                     polycells = _polygonize_cells(self.__shapekey, g)
                     self.__polycellsdb[n] = polycells
@@ -261,13 +264,13 @@ class Neighbors(object):
             # shape neighbor search
             if self.__geom == "shape":
                 for n, polycells in tqdm(
-                    self.__polycellsdb.items(), **CONFIG.tqdm(desc="find neighbors"),
+                        self.__polycellsdb.items(), **CONFIG.tqdm(desc="find neighbors"),
                 ):
                     nbcells = _neighborshapes(polycells, scale, expand)
                     self.__neighborsdb[n] = nbcells
             # point neighbor search
             else:
-                for n, g in tqdm(self.__groups, **CONFIG.tqdm(desc="find neighbors"),):
+                for n, g in tqdm(self.__groups, **CONFIG.tqdm(desc="find neighbors"), ):
                     nbcells = _neighborpoints(g[self.__centkey], expand)
                     self.__neighborsdb[n] = nbcells
 
@@ -313,7 +316,7 @@ class Neighbors(object):
         return self
 
     def neighbors_count(
-        self, export_key: Optional[str] = None,
+            self, export_key: Optional[str] = None,
     ):
         """Get how many neighbors for each cell
 
@@ -373,7 +376,7 @@ class Neighbors(object):
         try:
             import igraph as ig
         except ImportError:
-            raise ImportError("Required python-igraph, try pip install python-igraph.")
+            raise ImportError("Required python-igraph, try `pip install python-igraph`.")
         if not self.__neighborsbuilt:
             return None
         new_graphs = {n: 0 for n in self.__names}
@@ -389,11 +392,12 @@ class Neighbors(object):
             for k, vs in edges.items():
                 if len(vs) > 0:
                     for v in vs:
-                        distance = euclidean(centroids[k], centroids[v])
-                        # graph_edges.append((k, v, distance))
-                        graph_edges.append(
-                            {"source": k, "target": v, "weight": distance}
-                        )
+                        if k != v:
+                            distance = euclidean(centroids[k], centroids[v])
+                            # graph_edges.append((k, v, distance))
+                            graph_edges.append(
+                                {"source": k, "target": v, "weight": distance}
+                            )
                 # else:
                 # graph_edges.append((k, k, 0))
                 # graph_edges.append({"source": k, "target": k, "weight": 0})

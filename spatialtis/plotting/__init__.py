@@ -8,7 +8,7 @@ from ._cell_cell_interaction import cc_interactions
 from ._cell_map import cell_map
 from ._cell_map_echarts import cell_map_echarts
 from ._community_graph import graph_plot, graph_plot_interactive
-from ._dot_matrixplot import dot_matrix
+from ._dot_matrix import DotMatrix
 from ._dotplot import dotplot
 from ._expression_map import expression_map
 from ._heatmap_sns import heatmap

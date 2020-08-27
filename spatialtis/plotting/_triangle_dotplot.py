@@ -18,13 +18,14 @@ D   1
 
 
 def tri_dotplot(
-    diagonal_arr: np.array,
-    labels: Sequence,
-    annotate: bool = False,
+    diagonal_arr: Sequence,
+    colors: Union[str, Sequence] = "#376B6D",
+    labels: Optional[Sequence] = None,
     xlabel_rotation: int = 90,
     ylabel_rotation: int = 0,
     legend_title: Optional[str] = None,
-    color: str = "#376B6D",
+    annotate: bool = False,
+    alpha: float = 0.5,
     display: bool = True,
     title: Optional[str] = None,
     save: Union[str, Path, None] = None,
@@ -56,14 +57,16 @@ def tri_dotplot(
         return_plot: whether to return the plot
 
     """
-    all_max = list()
-    for arr in diagonal_arr:
-        all_max.append(max(arr))
 
     M = N = len(labels)
-    cm = max(all_max)
+    flat_b = []
+    for arr in diagonal_arr:
+        for i in arr:
+            flat_b.append(i)
+    cm = max(flat_b)
 
     fig, ax = plt.subplots(figsize=(N / 2, M / 2))
+    ax.set_aspect("equal")
 
     circles = list()
 
@@ -73,8 +76,11 @@ def tri_dotplot(
                 circles.append(plt.Circle((i + 0.5, t + 0.5), radius=v / cm / 2 * 0.9))
                 if annotate:
                     ax.annotate(v, xy=(i + 0.5, t + 0.5), ha="center", va="center")
-
-    circ_col = PatchCollection(circles, alpha=0.5, facecolor=color)
+    if isinstance(colors, str):
+        circ_col = PatchCollection(circles, alpha=alpha, facecolor=colors)
+    else:
+        color = np.asarray(colors)
+        circ_col = PatchCollection(circles, alpha=alpha, facecolor=color.flat)
 
     ax.add_collection(circ_col)
 
