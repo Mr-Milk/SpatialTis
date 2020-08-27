@@ -13,6 +13,7 @@ from spatialtis.utils import df2adata_uns, timer
 from ._neighbors import Neighbors
 from ._util import check_neighbors
 
+"""
 
 class CellComb:
     def __init__(self, types, order):
@@ -162,6 +163,7 @@ def _main(
     results_df.rename_axis(columns=n.expobs, inplace=True)
 
     return results_df
+"""
 
 
 def _na_fast(
@@ -169,22 +171,23 @@ def _na_fast(
         resample: int = 50,
         pval: float = 0.01,
         order: bool = True,
-        method: str = "pval"
+        method: str = "pval",
 ):
     try:
         import neighborhood_analysis as na
     except ImportError:
-        return None
+        raise ImportError("Package not found, try `pip install neighborhood_analysis`.")
 
     check_neighbors(n)
     types = n.unitypes
-    cb = na.CellCombs(types, order)
+    cc = na.CellCombs(types, order)
+    print(len(cc.cell_combs))
 
     results = {}
     for name, value in tqdm(
             n.neighbors.items(), **CONFIG.tqdm(desc="neighborhood analysis"),
     ):
-        result = cb.bootstrap(n.types[name], value, resample, pval, method)
+        result = cc.bootstrap(n.types[name], value, resample, pval, method, ignore_self=True)
         result = {tuple(k): v for (k, v) in result}
         results[name] = result
 
@@ -197,7 +200,7 @@ def _na_fast(
     return results_df
 
 
-#@timer(prefix="Running neighborhood analysis")
+# @timer(prefix="Running neighborhood analysis")
 def neighborhood_analysis(
         n: Neighbors,
         method: str = "pval",
@@ -236,8 +239,9 @@ def neighborhood_analysis(
     else:
         CONFIG.neighborhood_analysis_key = export_key
 
+    """
     try:
-        df = _na_fast(n, resample, pval, order, method)
+        df = _na_fast(n, resample, pval, order, method, ignore_self)
     except ImportError:
         warnings.warn("Try `pip install neighborhood_analysis` which is much faster than current one.")
         if method == "pval":
@@ -245,6 +249,9 @@ def neighborhood_analysis(
 
         else:
             df = _main(n, _patch_zscore, resample=resample, pval=pval, order=order, mp=mp)
+    """
+
+    df = _na_fast(n, resample=resample, pval=pval, order=order, method=method)
 
     if method == "pval":
         df = df.T.astype(int)
@@ -258,27 +265,29 @@ def neighborhood_analysis(
         return df
 
 
-@timer(prefix="Running spatial enrichment analysis")
+# @timer(prefix="Running spatial enrichment analysis")
 def spatial_enrichment_analysis(
         n: Neighbors,
         threshold: Optional[float] = None,
         layers_key: Optional[str] = None,
+        selected_markers: Optional[Sequence] = None,
         resample: int = 50,
+        marker_key: Optional[str] = None,
         export: bool = True,
         export_key: Optional[str] = None,
         return_df: bool = False,
         mp: bool = False,
 ):
-    """An alternative neighborhood analysis
+    """Profiling Markers co-localization
 
-        Neighborhood analysis tells you the relationship between different type of cells
-
-        This method is purposed in MIBI's paper, the major difference is that this method used z-score for relationships
-
-        To be noticed, when there is no cells, this will cause NaN, those value will be replaced with 0
+        Similar to neighborhood analysis which tells you the relationship between different type of cells.
+        This method tells you the spatial relationship between markers, purposed in MIBI's paper.
 
         Args:
             n: A spatialtis.Neighbors object, neighbors are already computed
+            threshold: the number to determine whether a marker is positive
+            layers_key: the key to anndata.layers
+            selected_markers: the markers to perform analysis on
             resample: perform resample for how many times
             export: whether to export the result to anndata.uns
             export_key: the key used to export
@@ -289,8 +298,16 @@ def spatial_enrichment_analysis(
 
         """
 
+    try:
+        import neighborhood_analysis as na
+    except ImportError:
+        raise ImportError("Package not found, try `pip install neighborhood_analysis`.")
+
     check_neighbors(n)
     data = n.adata
+
+    if marker_key is None:
+        marker_key = CONFIG.MARKER_KEY
 
     if export_key is None:
         export_key = CONFIG.spatial_enrichment_analysis_key
@@ -305,15 +322,32 @@ def spatial_enrichment_analysis(
         CONFIG.spatial_enrichment_analysis_layers_key = layers_key
     elif threshold is not None:
         layers_key = CONFIG.spatial_enrichment_analysis_layers_key
-        data[layers_key] = (data >= threshold)
+        data.layers[layers_key] = (data.X >= threshold)
 
+    if selected_markers is not None:
+        data = data[data.var[marker_key].isin(selected_markers)]
 
+    markers = data.var[marker_key]
+    cols = []
+    results = {k: [] for k in product(markers, repeat=2)}
 
+    for name, roi in data.obs.groupby(n.expobs):
+        neighbors = n.neighbors[name]
+        matrix = data[roi.index].layers[layers_key]
+        cols.append(name)
 
+        for ix, x in enumerate(markers):
+            x_status = [bool(i) for i in matrix[:, ix]]
+            for iy, y in enumerate(markers):
+                y_status = [bool(i) for i in matrix[:, iy]]
+                z = na.comb_bootstrap(x_status, y_status, neighbors)
+                results[(x, y)].append(z)
 
-    df = _main(n, _patch_zscore, resample=resample, mp=mp)
-
-    df = df.T
+    df = pd.DataFrame(results)
+    df.index = pd.MultiIndex.from_tuples(cols)
+    df.rename_axis(index=n.expobs, inplace=True)
+    df.columns.names = ['Marker1', 'Marker2']
+    df.fillna(0, inplace=True)
 
     if export:
         df2adata_uns(df, n.adata, export_key)

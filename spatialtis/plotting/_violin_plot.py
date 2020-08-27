@@ -18,7 +18,7 @@ def _kde_points(data, points):
     return kernel.evaluate(points)
 
 
-class violin_main:
+class ViolinMain:
     def __init__(
         self,
         df,
@@ -283,7 +283,7 @@ def violin_plot(
         for level, order in group_order.items():
             df = df.reindex(index=order, level=level)
 
-    plot = violin_main(
+    plot = ViolinMain(
         df,
         groupby,
         target_key,
