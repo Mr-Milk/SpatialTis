@@ -5,19 +5,19 @@ from typing import Mapping, Optional, Sequence
 import numpy as np
 import pandas as pd
 from anndata import AnnData
-from scipy.stats import chisquare, pearsonr
+from scipy.stats import norm, pearsonr
 
 from spatialtis.config import CONFIG
 from spatialtis.plotting.palette import get_colors
 from spatialtis.utils import adata_uns2df
 
 from ._bar_plot import stacked_bar
-from ._cell_cell_interaction import cc_interactions
 from ._community_graph import graph_plot, graph_plot_interactive
 from ._dot_matrix import DotMatrix
 from ._dotplot import dotplot
 from ._heatmap_sns import heatmap
 from ._sankey import sankey
+from ._tri_dot_matrix import TriDotMatrix
 from ._triangle_dotplot import tri_dotplot
 from ._violin_plot import violin_plot
 
@@ -151,7 +151,6 @@ def cell_co_occurrence(
 
         for k, v in kwargs.items():
             plot_kwargs[k] = v
-
         p = tri_dotplot(counts, labels=labels, **plot_kwargs)
     else:
         plot_kwargs = dict(
@@ -228,20 +227,19 @@ def neighborhood_analysis(
     groupby: Optional[Sequence[str]] = None,
     selected_types: Optional[Sequence] = None,
     key: Optional[str] = None,
-    use: str = "dot_matrix",  # graph, heatmap, dot_matrix
+    use: str = "dot_matrix",  # heatmap, dot_matrix
     **kwargs,
 ):
-    """("dot_matrix", "heatmap": matplotlib, "graph": pyechart) plotting function for neighborhood analysis
+    """("dot_matrix", "heatmap": matplotlib) plotting function for neighborhood analysis
 
     Args:
         adata: anndata object
         groupby: how to group your data in plot, only work for use="heatmap"
         selected_types: select interested types
         key: the key to read the data
-        use: "dot_matrix", "heatmap", "graph"
+        use: "dot_matrix", "heatmap"
         **kwargs: pass to `plotting.dot_matrix <plotting.html#spatialtis.plotting.dot_matrix>`_ (use="dot_matrix");
             `plotting.heatmap <plotting.html#spatialtis.plotting.heatmap>`_ (use="heatmap");
-            `plotting.cc_interaction <plotting.html#spatialtis.plotting.cc_interaction>`_ (use="graph");
 
     """
     if key is None:
@@ -249,6 +247,25 @@ def neighborhood_analysis(
 
     df, params = adata_uns2df(adata, key, params=True)
     order = params["order"]
+    method = params["method"]
+    pval = params["pval"]
+
+    if method == "zscore":
+        data = df.to_numpy()
+        sign_data = []
+        for arr in data:
+            sign_arr = []
+            for i in arr:
+                p_value = norm.sf(abs(i)) * 2
+                if p_value >= pval:
+                    sign_arr.append(0)
+                else:
+                    if i > 0:
+                        sign_arr.append(1)
+                    else:
+                        sign_arr.append(-1)
+            sign_data.append(sign_arr)
+        df = pd.DataFrame(sign_data, columns=df.columns, index=df.index)
 
     if selected_types is not None:
         combs = [i for i in combinations_with_replacement(selected_types, 2)]
@@ -260,43 +277,42 @@ def neighborhood_analysis(
         df.columns = pd.MultiIndex.from_tuples(cols)
         df.columns.names = colnames
         df = df[combs]
-
+    """
     if use == "graph":
         p = cc_interactions(df, {-1: "Avoidance", 1: "Association"}, **kwargs)
-    elif use == "dot_matrix":
-        #if not order:
-        if order:
-            raise ValueError(
-                "Unordered interaction can't be visualized using dot matrix plot"
-            )
+    """
+    if use == "dot_matrix":
         try:
             cc = adata_uns2df(adata, CONFIG.cell_components_key)
         except KeyError:
             raise Exception(
                 "Please run cell_components before plotting the dot matrix plot"
             )
-        counts = (
-            list()
-        )  # [cell 1, cell 2, interaction type, No. of sig (both type), % of sign type, p)
+
+        # [cell 1, cell 2, interaction type, No. of sig (both type), % of sign type, p)
+        counts = list()
         for label, data in df.items():
+            # count pearson correlation between cell components
+            p = pearsonr(cc[label[0]], cc[label[1]])[0]
+
+            # count the No. of sign for both type
             c_data = sorted(
                 [(k, v) for k, v in {**{0: 0, 1: 0, -1: 0}, **Counter(data)}.items()],
                 key=lambda x: x[1],
                 reverse=True,
             )
 
-            # count the No. of sign for both type
             all_sign = 0
             for (t, n) in c_data:
                 if t != 0:
                     all_sign += n
 
-            # count pearson correlation between cell components
-            p = pearsonr(cc[label[0]], cc[label[1]])[0]
             if all_sign == 0:
                 counts.append([label[0], label[1], 0, 0, p])
             else:
+                # if most ROI are no relationship
                 if c_data[0][0] == 0:
+                    # check the next
                     if c_data[1][0] == 1:
                         counts.append(
                             [label[0], label[1], all_sign, c_data[1][1] / all_sign, p]
@@ -311,6 +327,7 @@ def neighborhood_analysis(
                                 p,
                             ]
                         )
+                # if most ROI are interaction
                 elif c_data[0][0] == 1:
                     counts.append(
                         [label[0], label[1], all_sign, c_data[0][1] / all_sign, p]
@@ -327,18 +344,53 @@ def neighborhood_analysis(
         dot_color = counts.pivot(index="type1", columns="type2", values="%").to_numpy()
         dot_size = counts.pivot(index="type1", columns="type2", values="all").to_numpy()
 
-        plot_kwargs = dict(
-            size_legend_title="Sign' ROI",
-            matrix_cbar_title="■\nPearson\nCorrelation",
-            matrix_cbar_mapper={-1: "-1", 1: "1"},
-            dot_cbar_mapper={-1: "Avoidance", 1: "Association"},
-            dot_cbar_title="●\n% of\ninteraction"
-        )
-        for k, v in kwargs.items():
-            plot_kwargs[k] = v
-        p = DotMatrix(matrix, dot_color, dot_size, xlabels=xlabels, ylabels=ylabels, **plot_kwargs)
+        def filter_nan(matrix):
+            diag_matrix = []
+            for i in matrix:
+                arr = []
+                for t in i:
+                    if not np.isnan(t):
+                        arr.append(t)
+                diag_matrix.append(arr)
+            return diag_matrix
 
-    elif use == "heatmap":
+        if order:
+            plot_kwargs = dict(
+                size_legend_title="Sign' ROI",
+                matrix_cbar_title="■\nPearson\nCorrelation",
+                matrix_cbar_mapper={-1: "-1", 1: "1"},
+                dot_cbar_mapper={-1: "Avoidance", 1: "Association"},
+                dot_cbar_title="●\n% of\ninteraction",
+            )
+            for k, v in kwargs.items():
+                plot_kwargs[k] = v
+            p = DotMatrix(
+                matrix,
+                dot_color,
+                dot_size,
+                xlabels=xlabels,
+                ylabels=ylabels,
+                **plot_kwargs,
+            )
+        else:
+            diag_matrix = filter_nan(matrix)
+            diag_color = filter_nan(dot_color)
+            diag_size = filter_nan(dot_size)
+
+            plot_kwargs = dict(
+                size_legend_title="Sign' ROI",
+                block_cbar_title="■\nPearson\nCorrelation",
+                block_cbar_mapper={-1: "-1", 1: "1"},
+                dot_cbar_mapper={-1: "Avoidance", 1: "Association"},
+                dot_cbar_title="●\n% of\ninteraction",
+            )
+            for k, v in kwargs.items():
+                plot_kwargs[k] = v
+            p = TriDotMatrix(
+                diag_matrix, diag_color, diag_size, labels=xlabels, **plot_kwargs
+            )
+
+    else:
         plot_kwargs = dict(
             row_colors=groupby,
             col_colors=["Cell type1", "Cell type2"],
@@ -369,6 +421,8 @@ def neighborhood_analysis(
 def spatial_enrichment_analysis(
     adata: AnnData,
     groupby: Optional[Sequence[str]] = None,
+    selected_types: Optional[Sequence] = None,
+    use: str = "dot_matrix",
     key: Optional[str] = None,
     **kwargs,
 ):
@@ -384,21 +438,153 @@ def spatial_enrichment_analysis(
     if key is None:
         key = CONFIG.spatial_enrichment_analysis_key
 
-    df = adata_uns2df(adata, key)
+    df, params = adata_uns2df(adata, key, params=True)
+    order = True  # params["order"]
+    pval = params["pval"]
 
-    plot_kwargs = dict(
-        row_colors=groupby,
-        col_colors=["Cell type1", "Cell type2"],
-        col_colors_legend_bbox=(1.05, 0.5),
-        row_colors_legend_bbox=(-0.25, 0.15),
-        row_cluster=None,
-        col_cluster=True,
-    )
-    # allow user to overwrite the default plot config
-    for k, v in kwargs.items():
-        plot_kwargs[k] = v
+    data = df.to_numpy()
+    sign_data = []
+    for arr in data:
+        sign_arr = []
+        for i in arr:
+            p_value = norm.sf(abs(i)) * 2
+            if p_value >= pval:
+                sign_arr.append(0)
+            else:
+                if i > 0:
+                    sign_arr.append(1)
+                else:
+                    sign_arr.append(-1)
+        sign_data.append(sign_arr)
+    df = pd.DataFrame(sign_data, columns=df.columns, index=df.index)
 
-    p = heatmap(df, **plot_kwargs)
+    if selected_types is not None:
+        combs = [i for i in combinations_with_replacement(selected_types, 2)]
+        cols = df.columns.tolist()
+        colnames = df.columns.names
+        for i, comb in enumerate(cols):
+            if comb not in combs:
+                cols[i] = comb[::-1]
+        df.columns = pd.MultiIndex.from_tuples(cols)
+        df.columns.names = colnames
+        df = df[combs]
+
+    if use == "dot_matrix":
+
+        # [cell 1, cell 2, interaction type, No. of sig (both type), % of sign type, p)
+        counts = list()
+        for label, data in df.items():
+            # count the No. of sign for both type
+            c_data = sorted(
+                [(k, v) for k, v in {**{0: 0, 1: 0, -1: 0}, **Counter(data)}.items()],
+                key=lambda x: x[1],
+                reverse=True,
+            )
+
+            all_sign = 0
+            for (t, n) in c_data:
+                if t != 0:
+                    all_sign += n
+
+            if all_sign == 0:
+                counts.append([label[0], label[1], 0, 0])
+            else:
+                # if most ROI are no relationship
+                if c_data[0][0] == 0:
+                    # check the next
+                    if c_data[1][0] == 1:
+                        counts.append(
+                            [label[0], label[1], all_sign, c_data[1][1] / all_sign]
+                        )
+                    else:
+                        counts.append(
+                            [label[0], label[1], all_sign, 1 - c_data[1][1] / all_sign]
+                        )
+                # if most ROI are interaction
+                elif c_data[0][0] == 1:
+                    counts.append(
+                        [label[0], label[1], all_sign, c_data[0][1] / all_sign]
+                    )
+                else:
+                    counts.append(
+                        [label[0], label[1], all_sign, 1 - c_data[0][1] / all_sign]
+                    )
+        counts = pd.DataFrame(counts, columns=["type1", "type2", "all", "%"])
+        dot_color = counts.pivot(index="type1", columns="type2", values="%")
+        dot_size = counts.pivot(index="type1", columns="type2", values="all")
+        xlabels = dot_size.columns
+        ylabels = dot_size.index
+        dot_color = dot_color.to_numpy()
+        dot_size = dot_size.to_numpy()
+
+        def filter_nan(matrix):
+            diag_matrix = []
+            for i in matrix:
+                arr = []
+                for t in i:
+                    if not np.isnan(t):
+                        arr.append(t)
+                diag_matrix.append(arr)
+            return diag_matrix
+
+        if order:
+            plot_kwargs = dict(
+                size_legend_title="Sign' ROI",
+                dot_cbar_mapper={-1: "Avoidance", 1: "Association"},
+                dot_cbar_title="●\n% of\ninteraction",
+            )
+            for k, v in kwargs.items():
+                plot_kwargs[k] = v
+            p = DotMatrix(
+                dot_color=dot_color,
+                dot_size=dot_size,
+                xlabels=xlabels,
+                ylabels=ylabels,
+                **plot_kwargs,
+            )
+        else:
+            diag_color = filter_nan(dot_color)
+            diag_size = filter_nan(dot_size)
+
+            plot_kwargs = dict(
+                size_legend_title="Sign' ROI",
+                dot_cbar_mapper={-1: "Avoidance", 1: "Association"},
+                dot_cbar_title="●\n% of\ninteraction",
+            )
+            for k, v in kwargs.items():
+                plot_kwargs[k] = v
+            p = TriDotMatrix(
+                diagonal_dot_color=diag_color,
+                diagonal_dot_size=diag_size,
+                labels=xlabels,
+                **plot_kwargs,
+            )
+
+    else:
+        plot_kwargs = dict(
+            row_colors=groupby,
+            col_colors=["Marker1", "Marker2"],
+            palette=["#2f71ab", "#f7f7f7", "#ba262b"],
+            colorbar_type="categorical",
+            categorical_colorbar_text=["No co-expression", "Co-expression"],
+            col_colors_legend_bbox=(1.05, 0.5),
+            row_colors_legend_bbox=(-0.25, 0.5),
+            colorbar_bbox=(-0.25, 0.15),
+            row_cluster=True,
+            col_cluster=None,
+        )
+        # allow user to overwrite the default plot config
+        unique_values = np.unique(df.to_numpy())
+        if 1 not in unique_values:
+            plot_kwargs["palette"] = ["#2f71ab", "#f7f7f7"]
+            plot_kwargs["categorical_colorbar_text"] = ["Avoidance", "no-sign"]
+        if -1 not in unique_values:
+            plot_kwargs["palette"] = ["#f7f7f7", "#ba262b"]
+            plot_kwargs["categorical_colorbar_text"] = ["no-sign", "Association"]
+        for k, v in kwargs.items():
+            plot_kwargs[k] = v
+
+        p = heatmap(df, **plot_kwargs)
     return p
 
 
@@ -444,8 +630,7 @@ def spatial_distribution(
             counts.append(Counter(col))
         counts.append({1: 0, 2: 0, 3: 0, 0: 0})
         tb = pd.DataFrame(counts)
-        tb = tb.drop(tb.tail(1).index)\
-            .fillna(0)
+        tb = tb.drop(tb.tail(1).index).fillna(0)
         tb.index = names
         tb = tb[[0, 1, 2, 3]]
         colors = np.array(["#FFC408", "#c54a52", "#4a89b9", "#5a539d"] * len(tb))
@@ -455,10 +640,13 @@ def spatial_distribution(
         for k, v in kwargs.items():
             plot_kwargs[k] = v
 
-        p = dotplot(tb.to_numpy(), colors,
-                    xlabels=["No Cell", "Random", "Regular", "Cluster"],
-                    ylabels=names,
-                    **plot_kwargs)
+        p = dotplot(
+            tb.to_numpy(),
+            colors,
+            xlabels=["No Cell", "Random", "Regular", "Cluster"],
+            ylabels=names,
+            **plot_kwargs,
+        )
         # p = dotplot(tb.T, x="Cell", y="Pattern", annotated=False)
     elif use == "heatmap":
         plot_kwargs = dict(

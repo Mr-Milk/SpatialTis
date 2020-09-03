@@ -54,15 +54,12 @@ def cell_border(cell, polygonize="convex", alpha=None):
         cell = MultiPoint(cell).convex_hull
     elif polygonize == "concave":
         try:
-            from CGAL.CGAL_Alpha_shape_2 import Alpha_shape_2
+            import alphashape
         except ImportError:
-            try:
-                import alphashape
-            except ImportError:
-                raise ImportError(
-                    "You have neither CGAL nor alphashape installed, "
-                    "try pip install cgal-bindings / pip install alphashape."
-                )
+            raise ImportError(
+                "You have neither CGAL nor alphashape installed, "
+                "try pip install cgal-bindings / pip install alphashape."
+            )
         if alpha is None:
             alpha = alphashape.optimizealpha(cell)
         try:

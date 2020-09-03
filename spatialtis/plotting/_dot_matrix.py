@@ -42,24 +42,26 @@ class DotMatrix:
         return ""
 
     def __init__(
-            self,
-            matrix: Optional[Sequence] = None,
-            dot_color: Optional[Sequence] = None,
-            dot_size: Optional[Sequence] = None,
-            xlabels: Optional[Sequence] = None,
-            ylabels: Optional[Sequence] = None,
-            xlabel_rotation: int = 90,
-            ylabel_rotation: int = 0,
-            matrix_cbar_mapper: Optional[Mapping] = None,
-            dot_cbar_mapper: Optional[Mapping] = None,
-            matrix_cbar_title: Optional[str] = None,
-            dot_cbar_title: Optional[str] = None,
-            size_legend_title: Optional[str] = None,
-            matrix_palette: Optional[Sequence] = None,
-            dot_palette: Optional[Sequence] = None,
-            display: bool = True,
-            title: Optional[str] = None,
-            save: Union[str, Path, None] = None,
+        self,
+        matrix: Optional[Sequence] = None,
+        dot_color: Optional[Sequence] = None,
+        dot_size: Optional[Sequence] = None,
+        xlabels: Optional[Sequence] = None,
+        ylabels: Optional[Sequence] = None,
+        xlabel_rotation: int = 90,
+        ylabel_rotation: int = 0,
+        xaxis_title: Optional[str] = None,
+        yaxis_title: Optional[str] = None,
+        matrix_cbar_mapper: Optional[Mapping] = None,
+        dot_cbar_mapper: Optional[Mapping] = None,
+        matrix_cbar_title: Optional[str] = None,
+        dot_cbar_title: Optional[str] = None,
+        size_legend_title: Optional[str] = None,
+        matrix_palette: Optional[Sequence] = None,
+        dot_palette: Optional[Sequence] = None,
+        display: bool = True,
+        title: Optional[str] = None,
+        save: Union[str, Path, None] = None,
     ):
 
         # global arguments
@@ -75,7 +77,7 @@ class DotMatrix:
         if dot_palette is not None:
             self.dot_cmap = get_linear_colors(dot_palette)
         else:
-            self.dot_cmap = "BrBG"
+            self.dot_cmap = "PiYG"
 
         if xlabels is not None:
             self.xlabels = xlabels
@@ -123,6 +125,8 @@ class DotMatrix:
         )
         self.ax.set_xticks(np.arange(self.M + 1) - 0.5, minor=True)
         self.ax.set_yticks(np.arange(self.N + 1) - 0.5, minor=True)
+        self.ax.set_xlabel(xaxis_title)
+        self.ax.set_ylabel(yaxis_title)
 
         plt.xticks(rotation=xlabel_rotation)
         plt.yticks(rotation=ylabel_rotation)
@@ -147,19 +151,39 @@ class DotMatrix:
 
     def _draw_rect(self):
 
-        rects = [plt.Rectangle((j - 0.5, i - 0.5), 1, 1, ) for j, i in zip(self.x.flat, self.y.flat)]
-        rect_col = PatchCollection(rects, array=self.matrix.flatten(), cmap=self.matrix_cmap, alpha=0.5)
+        rects = [
+            plt.Rectangle((j - 0.5, i - 0.5), 1, 1,)
+            for j, i in zip(self.x.flat, self.y.flat)
+        ]
+        rect_col = PatchCollection(
+            rects, array=self.matrix.flatten(), cmap=self.matrix_cmap, alpha=0.5
+        )
         self.ax.add_collection(rect_col)
-        self._draw_cbar(rect_col, self.matrix_cbar_mapper, (1.07, -0.9, 1, 1), title=self.matrix_cbar_title)
+        self._draw_cbar(
+            rect_col,
+            self.matrix_cbar_mapper,
+            (1.07, -0.9, 1, 1),
+            title=self.matrix_cbar_title,
+        )
 
     def _draw_dot(self):
 
         R = self.dot_size / self.size_max / 2 * 0.9
-        circles = [plt.Circle((j, i), radius=r, ) for r, j, i in zip(R.flat, self.x.flat, self.y.flat)]
-        circ_col = PatchCollection(circles, array=self.dot_color.flatten(), cmap=self.dot_cmap, alpha=0.5)
+        circles = [
+            plt.Circle((j, i), radius=r,)
+            for r, j, i in zip(R.flat, self.x.flat, self.y.flat)
+        ]
+        circ_col = PatchCollection(
+            circles, array=self.dot_color.flatten(), cmap=self.dot_cmap, alpha=0.5
+        )
         self.ax.add_collection(circ_col)
         self._draw_dot_size_legend()
-        self._draw_cbar(circ_col, self.dot_cbar_mapper, (1.07, -0.5, 1, 1), title=self.dot_cbar_title)
+        self._draw_cbar(
+            circ_col,
+            self.dot_cbar_mapper,
+            (1.07, -0.5, 1, 1),
+            title=self.dot_cbar_title,
+        )
 
     def _draw_dot_size_legend(self):
         sm = self.size_max

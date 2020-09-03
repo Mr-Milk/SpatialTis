@@ -12,25 +12,6 @@ from spatialtis.config import CONFIG
 from ..sta.statistics import type_counter
 from ..utils import df2adata_uns, lprint, timer
 
-if CONFIG.OS in ["Linux", "Darwin"]:
-    try:
-        import ray
-    except ImportError:
-        raise ImportError(
-            "You don't have ray installed or your OS don't support ray.",
-            "Try `pip install ray` or use `mp=False`",
-        )
-
-    @ray.remote
-    def altieri_entropy_mp(*args, **kwargs):
-        e = altieri_entropy(*args, **kwargs)
-        return e.entropy
-
-    @ray.remote
-    def leibovici_entropy_mp(*args, **kwargs):
-        e = leibovici_entropy(*args, **kwargs)
-        return e.entropy
-
 
 @timer(prefix="Running plotting heterogeneity")
 def spatial_heterogeneity(
@@ -136,7 +117,25 @@ def spatial_heterogeneity(
         mindex = list()
         groups = df.groupby(groupby)
 
-        if mp & (CONFIG.OS in ["Linux", "Darwin"]):
+        if mp:
+
+            try:
+                import ray
+            except ImportError:
+                raise ImportError(
+                    "You don't have ray installed or your OS don't support ray.",
+                    "Try `pip install ray` or use `mp=False`",
+                )
+
+            @ray.remote
+            def altieri_entropy_mp(*args, **kwargs):
+                e = altieri_entropy(*args, **kwargs)
+                return e.entropy
+
+            @ray.remote
+            def leibovici_entropy_mp(*args, **kwargs):
+                e = leibovici_entropy(*args, **kwargs)
+                return e.entropy
 
             def exec_iterator(obj_ids):
                 while obj_ids:

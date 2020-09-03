@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, Sequence, Union, Mapping
+from typing import Mapping, Optional, Sequence, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -48,36 +48,39 @@ class TriDotMatrix:
         return_plot: whether to return the plot
 
     """
+
     @staticmethod
     def make_flat(arr):
         flat = []
         for i in arr:
             for t in i:
-                flat.append(i)
+                flat.append(t)
         return flat
 
     def __repr__(self):
         return ""
 
     def __init__(
-            self,
-            diagonal_block: Optional[Sequence] = None,
-            diagonal_dot_color: Optional[Sequence] = None,
-            diagonal_dot_size: Optional[Sequence] = None,
-            labels: Optional[Sequence] = None,
-            xlabel_rotation: int = 90,
-            ylabel_rotation: int = 0,
-            block_cbar_mapper: Optional[Mapping] = None,
-            dot_cbar_mapper: Optional[Mapping] = None,
-            block_cbar_title: Optional[str] = None,
-            dot_cbar_title: Optional[str] = None,
-            size_legend_title: Optional[str] = None,
-            block_palette: Optional[Sequence] = None,
-            dot_palette: Optional[Sequence] = None,
-            display: bool = True,
-            title: Optional[str] = None,
-            save: Union[str, Path, None] = None,
-            return_plot: bool = False,
+        self,
+        diagonal_block: Optional[Sequence] = None,
+        diagonal_dot_color: Optional[Sequence] = None,
+        diagonal_dot_size: Optional[Sequence] = None,
+        labels: Optional[Sequence] = None,
+        xlabel_rotation: int = 90,
+        ylabel_rotation: int = 0,
+        xaxis_title: Optional[str] = None,
+        yaxis_title: Optional[str] = None,
+        block_cbar_mapper: Optional[Mapping] = None,
+        dot_cbar_mapper: Optional[Mapping] = None,
+        block_cbar_title: Optional[str] = None,
+        dot_cbar_title: Optional[str] = None,
+        size_legend_title: Optional[str] = None,
+        block_palette: Optional[Sequence] = None,
+        dot_palette: Optional[Sequence] = None,
+        display: bool = True,
+        title: Optional[str] = None,
+        save: Union[str, Path, None] = None,
+        return_plot: bool = False,
     ):
 
         # global arguments
@@ -101,7 +104,7 @@ class TriDotMatrix:
         if dot_palette is not None:
             self.dot_cmap = get_linear_colors(dot_palette)
         else:
-            self.dot_cmap = "BrBG"
+            self.dot_cmap = "PiYG"
 
         self.block = diagonal_block
         self.dot_size = diagonal_dot_size
@@ -113,21 +116,21 @@ class TriDotMatrix:
         self.fig, self.ax = plt.subplots(figsize=(self.N / 2, self.M / 2))
         self.ax.set_aspect("equal")
         self.ax.set(
-            yticks=np.arange(0.5, self.M + 1),
-            xticks=np.arange(0.5, self.N + 1),
+            yticks=np.arange(self.M),
+            xticks=np.arange(self.N),
             xticklabels=self.labels,
             yticklabels=self.labels[::-1],
         )
         self.ax.set_xticks(np.arange(self.M + 1) - 0.5, minor=True)
         self.ax.set_yticks(np.arange(self.N + 1) - 0.5, minor=True)
-
-        if diagonal_block is not None:
-            self._draw_rect()
-        if diagonal_dot_size is not None:
-            self._draw_dot()
+        self.ax.set_xlabel(xaxis_title)
+        self.ax.set_ylabel(yaxis_title)
 
         plt.xticks(rotation=self.xlabel_rotation)
         plt.yticks(rotation=self.ylabel_rotation)
+
+        if title:
+            plt.title(title)
 
         # ax.xaxis.set_ticks_position("none")
         # ax.yaxis.set_ticks_position("none")
@@ -135,8 +138,10 @@ class TriDotMatrix:
         for spine in plt.gca().spines.values():
             spine.set_visible(False)
 
-        if title:
-            plt.title(title)
+        if diagonal_block is not None:
+            self._draw_rect()
+        if diagonal_dot_size is not None:
+            self._draw_dot()
 
         if save:
             plt.savefig(save, dpi=300, bbox_inches="tight")
@@ -151,8 +156,16 @@ class TriDotMatrix:
         for i, arr in enumerate(self.block):
             for t, v in enumerate(arr[::-1]):
                 rects.append(plt.Rectangle((i - 0.5, t - 0.5), 1, 1))
-        rects_col = PatchCollection(rects, alpha=0.5, array=flat_block, cmap=self.matrix_cmap)
+        rects_col = PatchCollection(
+            rects, alpha=0.5, array=np.asarray(flat_block), cmap=self.matrix_cmap
+        )
         self.ax.add_collection(rects_col)
+        self._draw_cbar(
+            rects_col,
+            self.block_cbar_mapper,
+            (1.07, -0.9, 1, 1),
+            title=self.block_cbar_title,
+        )
 
     def _draw_dot(self):
 
@@ -161,11 +174,21 @@ class TriDotMatrix:
         for i, arr in enumerate(self.dot_size):
             for t, v in enumerate(arr[::-1]):
                 if v != 0:
-                    circles.append(plt.Circle((i + 0.5, t + 0.5), radius=v / self.circ_max / 2 * 0.9))
-        circ_col = PatchCollection(circles, alpha=0.5, array=flat_color, cmap=self.dot_cmap)
+                    circles.append(
+                        plt.Circle((i, t), radius=v / self.circ_max / 2 * 0.9)
+                    )
+        circ_col = PatchCollection(
+            circles, alpha=0.5, array=np.asarray(flat_color), cmap=self.dot_cmap
+        )
         self.ax.add_collection(circ_col)
         self._draw_dot_size_legend()
-        self._draw_cbar(circ_col, self.dot_cbar_mapper, (1.07, -0.5, 1, 1), title=self.dot_cbar_title)
+        if self.dot_cbar_mapper is not None:
+            self._draw_cbar(
+                circ_col,
+                self.dot_cbar_mapper,
+                (1.07, -0.5, 1, 1),
+                title=self.dot_cbar_title,
+            )
 
     def _draw_dot_size_legend(self):
         # size legends
@@ -212,15 +235,17 @@ class TriDotMatrix:
         if self.size_legend_title is None:
             self.size_legend_title = "Size"
 
-        self.ax.add_artist(self.ax.legend(
-            handles=size_legends,
-            loc="upper left",
-            bbox_to_anchor=(1, -0.1, 0, 1),
-            title=self.size_legend_title,
-            markerscale=22,
-            labelspacing=1.2,
-            frameon=False,
-        ))
+        self.ax.add_artist(
+            self.ax.legend(
+                handles=size_legends,
+                loc="upper left",
+                bbox_to_anchor=(1.07, -0.1, 0, 1),
+                title=self.size_legend_title,
+                markerscale=22,
+                labelspacing=1.2,
+                frameon=False,
+            )
+        )
 
     def _draw_cbar(self, collections, mapper, position, title=None):
         collections.set_clim([-1, 1])

@@ -38,7 +38,7 @@ class _CONFIG(object):
     def __init__(self):
         self._EXP_OBS: Optional[Sequence[str]] = None
         self._CELL_TYPE_KEY: Optional[str] = None
-        self._WORKING_ENV: Optional[str] = "jupyter"
+        self._WORKING_ENV: Optional[str] = "jupyter_notebook"
         self._CPU_ALLOC: Optional[int] = None
         self._CONFIG_VERBOSE: Any = _VERBOSE()
 
@@ -164,7 +164,7 @@ class _CONFIG(object):
 
     @WORKING_ENV.setter
     def WORKING_ENV(self, env):
-        if env not in ["jupyter", "zepplin", None]:
+        if env not in ["jupyter_notebook", "jupyter_lab", "nteract", "zepplin", None]:
             warnings.warn("Unknown working environments", UserWarning)
         self._WORKING_ENV = env
         if env is None:
@@ -173,6 +173,21 @@ class _CONFIG(object):
         else:
             self.VERBOSE.PBAR = True
             self.PBAR_FORMAT = self._INBUILT_PBAT_FORMAT
+
+            from pyecharts.globals import CurrentConfig, NotebookType
+            from bokeh.io import output_notebook
+
+            if CONFIG.WORKING_ENV == "jupyter_notebook":
+                output_notebook(hide_banner=True)
+            elif env == "jupyter_lab":
+                CurrentConfig.NOTEBOOK_TYPE = NotebookType.JUPYTER_LAB
+                output_notebook(hide_banner=True)
+            elif env == "nteract":
+                CurrentConfig.NOTEBOOK_TYPE = NotebookType.NTERACT
+                output_notebook(hide_banner=True)
+            elif env == "zeppelin":
+                CurrentConfig.NOTEBOOK_TYPE = NotebookType.ZEPPELIN
+                output_notebook(hide_banner=True, notebook_type="zepplin")
 
     @property
     def CPU_ALLOC(self):
@@ -186,17 +201,14 @@ class _CONFIG(object):
 
         self._CPU_ALLOC = num
 
-        if self.OS in ["Linux", "Darwin"]:
-            import logging
-            import ray
+        import logging
+        import ray
 
-            ray.init(
-                logging_level=logging.FATAL,
-                ignore_reinit_error=True,
-                num_cpus=self._CPU_ALLOC,
-            )
-        else:
-            warnings.warn("Multi processing not supported on Windows platform")
+        ray.init(
+            logging_level=logging.FATAL,
+            ignore_reinit_error=True,
+            num_cpus=self._CPU_ALLOC,
+        )
 
     @property
     def VERBOSE(self):
@@ -218,6 +230,7 @@ class _CONFIG(object):
 
 CONFIG = _CONFIG()
 CONFIG.OS = system_os
+CONFIG.WORKING_ENV = "jupyter_notebook"
 
 # can be override in plotting function
 # ['jupyter', 'zepplin', None]

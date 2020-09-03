@@ -68,20 +68,6 @@ def _neighborpoints(cells, expand):
     return dict(zip(range(len(cells)), result))
 
 
-if CONFIG.OS in ["Linux", "Darwin"]:
-    try:
-        import ray
-    except ImportError:
-        raise ImportError(
-            "You don't have ray installed or your OS don't support ray.",
-            "Try `pip install ray` or use `mp=False`",
-        )
-
-    _polygonize_cells_mp = ray.remote(_polygonize_cells)
-    _neighborshapes_mp = ray.remote(_neighborshapes)
-    _neighborpoints_mp = ray.remote(_neighborpoints)
-
-
 class Neighbors(object):
     """Storage object for cell relationship
 
@@ -96,14 +82,14 @@ class Neighbors(object):
     """
 
     def __init__(
-            self,
-            adata: AnnData,
-            geom: str = "shape",
-            *,
-            groupby: Union[Sequence, str, None] = None,
-            type_key: Optional[str] = None,
-            shape_key: Optional[str] = None,
-            centroid_key: Optional[str] = None,
+        self,
+        adata: AnnData,
+        geom: str = "shape",
+        *,
+        groupby: Union[Sequence, str, None] = None,
+        type_key: Optional[str] = None,
+        shape_key: Optional[str] = None,
+        centroid_key: Optional[str] = None,
     ):
 
         # keys for query info from anndata
@@ -143,10 +129,10 @@ class Neighbors(object):
 
     # @timer(prefix="Finding cell neighbors")
     def find_neighbors(
-            self,
-            expand: Optional[float] = None,
-            scale: Optional[float] = None,
-            mp: Optional[bool] = None,
+        self,
+        expand: Optional[float] = None,
+        scale: Optional[float] = None,
+        mp: Optional[bool] = None,
     ):
         """To find the neighbors of each cell
 
@@ -182,7 +168,19 @@ class Neighbors(object):
             lprint("Cell resolved as shape data, searching neighbors using R-tree")
 
         # parallel processing
-        if mp & (CONFIG.OS in ["Linux", "Darwin"]):
+        if mp:
+
+            try:
+                import ray
+            except ImportError:
+                raise ImportError(
+                    "You don't have ray installed or your OS don't support ray.",
+                    "Try `pip install ray` or use `mp=False`",
+                )
+
+            _polygonize_cells_mp = ray.remote(_polygonize_cells)
+            _neighborshapes_mp = ray.remote(_neighborshapes)
+            _neighborpoints_mp = ray.remote(_neighborpoints)
 
             def exec_iterator(obj_ids):
                 while obj_ids:
@@ -202,8 +200,8 @@ class Neighbors(object):
                         self.__types[n] = types
 
                 for _ in tqdm(
-                        exec_iterator(results),
-                        **CONFIG.tqdm(total=len(results), desc="polygonize cells", ),
+                    exec_iterator(results),
+                    **CONFIG.tqdm(total=len(results), desc="polygonize cells",),
                 ):
                     pass
 
@@ -222,8 +220,8 @@ class Neighbors(object):
                     results.append(_neighborshapes_mp.remote(polycells, scale, expand))
                     names.append(n)
                 for _ in tqdm(
-                        exec_iterator(results),
-                        **CONFIG.tqdm(total=len(results), desc="find neighbors"),
+                    exec_iterator(results),
+                    **CONFIG.tqdm(total=len(results), desc="find neighbors"),
                 ):
                     pass
                 results = ray.get(results)
@@ -238,8 +236,8 @@ class Neighbors(object):
                         self.__types[n] = types
 
                 for _ in tqdm(
-                        exec_iterator(results),
-                        **CONFIG.tqdm(total=len(results), desc="find neighbors"),
+                    exec_iterator(results),
+                    **CONFIG.tqdm(total=len(results), desc="find neighbors"),
                 ):
                     pass
                 results = ray.get(results)
@@ -251,7 +249,7 @@ class Neighbors(object):
         else:
             if (self.__geom == "shape") & (not self.__polycells):
                 for n, g in tqdm(
-                        self.__groups, **CONFIG.tqdm(desc="polygonize cells"),
+                    self.__groups, **CONFIG.tqdm(desc="polygonize cells"),
                 ):
                     polycells = _polygonize_cells(self.__shapekey, g)
                     self.__polycellsdb[n] = polycells
@@ -264,13 +262,13 @@ class Neighbors(object):
             # shape neighbor search
             if self.__geom == "shape":
                 for n, polycells in tqdm(
-                        self.__polycellsdb.items(), **CONFIG.tqdm(desc="find neighbors"),
+                    self.__polycellsdb.items(), **CONFIG.tqdm(desc="find neighbors"),
                 ):
                     nbcells = _neighborshapes(polycells, scale, expand)
                     self.__neighborsdb[n] = nbcells
             # point neighbor search
             else:
-                for n, g in tqdm(self.__groups, **CONFIG.tqdm(desc="find neighbors"), ):
+                for n, g in tqdm(self.__groups, **CONFIG.tqdm(desc="find neighbors"),):
                     nbcells = _neighborpoints(g[self.__centkey], expand)
                     self.__neighborsdb[n] = nbcells
 
@@ -316,7 +314,7 @@ class Neighbors(object):
         return self
 
     def neighbors_count(
-            self, export_key: Optional[str] = None,
+        self, export_key: Optional[str] = None,
     ):
         """Get how many neighbors for each cell
 
@@ -352,8 +350,8 @@ class Neighbors(object):
     def read_neighbors(self, read_key: Optional[str] = None):
         """Read computed neighbors from anndata
 
-            Args:
-                read_key: the key name to read
+        Args:
+            read_key: the key name to read
 
         """
 
@@ -376,14 +374,14 @@ class Neighbors(object):
         try:
             import igraph as ig
         except ImportError:
-            raise ImportError("Required python-igraph, try `pip install python-igraph`.")
+            raise ImportError(
+                "Required python-igraph, try `pip install python-igraph`."
+            )
         if not self.__neighborsbuilt:
             return None
         new_graphs = {n: 0 for n in self.__names}
         for n, g in self.__groups:
             centroids = [eval(c) for c in g[self.__centkey]]
-            # X = [c[0] for c in centroids]
-            # Y = [c[1] for c in centroids]
             vertices = [
                 {"name": i, "x": x, "y": y} for i, (x, y) in enumerate(centroids)
             ]
@@ -394,18 +392,10 @@ class Neighbors(object):
                     for v in vs:
                         if k != v:
                             distance = euclidean(centroids[k], centroids[v])
-                            # graph_edges.append((k, v, distance))
                             graph_edges.append(
                                 {"source": k, "target": v, "weight": distance}
                             )
-                # else:
-                # graph_edges.append((k, k, 0))
-                # graph_edges.append({"source": k, "target": k, "weight": 0})
-            # g = ig.Graph.TupleList(graph_edges, weights=True).simplify()
             g = ig.Graph.DictList(vertices, graph_edges)
-            # g.vs["type"] = self.__types
-            # g.vs["x"] = X
-            # g.vs["y"] = Y
             new_graphs[n] = g
 
         return new_graphs

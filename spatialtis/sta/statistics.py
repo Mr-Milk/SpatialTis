@@ -123,18 +123,18 @@ def cell_co_occurrence(
 ):
     """The probability of two type of cells occur simultaneously
 
-        Args:
-            adata: anndata object to perform analysis
-            groupby: how your experiments grouped, (Default: spatialtis.CONFIG.EXP_OBS)
-            threshold: this value determines the presence/absence of a cell type in ROI
-            pval: the threshold of p-value to determine significance
-            type_key: the key of cell type in anndata.obs (Default: spatialtis.CONFIG.CELL_TYPE_KEY)
-            export: whether to export the result to anndata.uns
-            export_key: the key used to export
-            return_df: whether to return the result
+    Args:
+        adata: anndata object to perform analysis
+        groupby: how your experiments grouped, (Default: spatialtis.CONFIG.EXP_OBS)
+        threshold: this value determines the presence/absence of a cell type in ROI
+        pval: the threshold of p-value to determine significance
+        type_key: the key of cell type in anndata.obs (Default: spatialtis.CONFIG.CELL_TYPE_KEY)
+        export: whether to export the result to anndata.uns
+        export_key: the key used to export
+        return_df: whether to return the result
 
-        Return:
-            pandas.DataFrame
+    Return:
+        pandas.DataFrame
 
     """
     if export_key is None:
@@ -240,17 +240,17 @@ def cell_morphology(
 ):
     """Cell morphology variation between different groups
 
-        Args:
-            adata: anndata object to perform analysis
-            metrics_key: which key was used to measure cell morphology
-            groupby: how your experiments grouped, (Default: spatialtis.CONFIG.EXP_OBS)
-            type_key: the key of cell type in anndata.obs (Default: spatialtis.CONFIG.CELL_TYPE_KEY)
-            export: whether to export the result to anndata.uns
-            export_key: the key used to export
-            return_df: whether to return the result
+    Args:
+        adata: anndata object to perform analysis
+        metrics_key: which key was used to measure cell morphology
+        groupby: how your experiments grouped, (Default: spatialtis.CONFIG.EXP_OBS)
+        type_key: the key of cell type in anndata.obs (Default: spatialtis.CONFIG.CELL_TYPE_KEY)
+        export: whether to export the result to anndata.uns
+        export_key: the key used to export
+        return_df: whether to return the result
 
-        Return:
-                pandas.DataFrame
+    Return:
+            pandas.DataFrame
 
     """
 

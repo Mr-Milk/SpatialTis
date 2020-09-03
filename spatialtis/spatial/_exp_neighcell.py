@@ -22,18 +22,6 @@ def _max_feature(x, y, **kwargs):
     return [max_ix, max_weight]
 
 
-if CONFIG.OS in ["Linux", "Darwin"]:
-    try:
-        import ray
-    except ImportError:
-        raise ImportError(
-            "You don't have ray installed or your OS don't support ray.",
-            "Try `pip install ray` or use `mp=False`",
-        )
-
-    _max_feature_mp = ray.remote(_max_feature)
-
-
 @timer(prefix="Finding marker expression influenced by neighbor cells")
 def exp_neighcells(
     n: Neighbors,
@@ -106,7 +94,17 @@ def exp_neighcells(
         list()
     )  # [cell A, cell A's gene A, cell B that exert influences on cell A's gene A, weights]
 
-    if mp & (CONFIG.OS in ["Linux", "Darwin"]):
+    if mp:
+
+        try:
+            import ray
+        except ImportError:
+            raise ImportError(
+                "You don't have ray installed or your OS don't support ray.",
+                "Try `pip install ray` or use `mp=False`",
+            )
+
+        _max_feature_mp = ray.remote(_max_feature)
 
         def exec_iterator(obj_ids):
             while obj_ids:

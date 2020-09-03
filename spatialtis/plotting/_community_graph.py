@@ -13,16 +13,15 @@ from .palette import get_colors
 
 
 def graph_plot_interactive(
-    nodes,
-    edges,
-    nodes_types=None,
-    edges_types=None,
+    nodes: Sequence,
+    edges: Sequence,
+    nodes_types: Optional[Sequence] = None,
+    edges_types: Optional[Sequence] = None,
     node_size: Union[float, int] = 1,
     edge_size: Union[float, int] = 0.5,
     size: Sequence = (800, 800),
     renderer: str = "canvas",
     theme: str = "white",
-    palette: Optional[Sequence] = None,
     display: bool = True,
     return_plot: bool = False,
     title: Optional[str] = None,
@@ -31,20 +30,19 @@ def graph_plot_interactive(
     """(pyecharts) Graph visualization
 
     Args:
-        nodes:
-        edges:
-        nodes_types:
-        edges_types:
-        node_size:
-        edge_size:
-        size:
-        renderer:
-        theme:
-        palette:
-        display:
-        return_plot:
-        title:
-        save:
+        nodes: list of nodes
+        edges: list of edges
+        nodes_types: the type of every node
+        edges_types: the type of every edge
+        node_size: the size of node
+        edge_size: the size of edge width
+        size: size of plot in pixels
+        renderer: "canvas" or "svg"
+        theme: https://pyecharts.org/#/zh-cn/themes
+        title: title of the plot
+        display: whether to display the plot
+        save: the path to save your plot
+        return_plot: whether to return the plot instance
 
     """
     nodes_data = []
@@ -153,18 +151,18 @@ def graph_plot(
     """(matplotlib) Graph visualization
 
     Args:
-        nodes:
-        edges:
-        nodes_types:
-        edges_types:
-        node_size:
-        edge_size:
-        size:
-        palette:
-        display:
-        return_plot:
-        title:
-        save:
+        nodes: list of nodes
+        edges: list of edges
+        nodes_types: the type of every node
+        edges_types: the type of every edge
+        node_size: the size of node
+        edge_size: the size of edge width
+        size: size of the plot
+        palette: control the color of nodes
+        title: title of the plot
+        display: whether to display the plot
+        save: the path to save your plot
+        return_plot: whether to return the plot instance
 
     """
     if nodes_types is not None:
@@ -187,7 +185,10 @@ def graph_plot(
             )
     if edges_types is not None:
         e_unitypes = np.unique(edges_types)
-        edges_colors = get_colors(len(e_unitypes), ["Spectral", "Set3"])
+        if palette is None:
+            edges_colors = get_colors(len(e_unitypes), ["Spectral", "Set3"])
+        else:
+            edges_colors = get_colors(len(e_unitypes), palette)
         edges_colormap = dict(zip(e_unitypes, edges_colors))
 
     fig, ax = plt.subplots(figsize=size)
@@ -226,5 +227,15 @@ def graph_plot(
         ax.add_artist(nlegend)
 
     plt.axis("off")
+
     if not display:
         plt.close()
+
+    if title:
+        plt.title(title)
+
+    if save:
+        plt.savefig(save, dpi=300, bbox_inches="tight")
+
+    if return_plot:
+        return fig, ax

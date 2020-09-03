@@ -64,8 +64,19 @@ In neighborhood analysis, a pseudo-`p` value is calculated as follow:
 
     P_{avoidance} = \frac{\text{Numbers of }(\overline{perm}\leq\overline{real})}{\text{Number of resample} + 1}
 
-In spatial enrichment analysis which is from a `MIBI paper <https://www.nature.com/articles/nm.3488>`_,
-z-score is calculated instead of pseudo-`p` value.
+Or using z-score:
+
+.. math::
+    z = \frac{real - \overline{perm}}{\sigma}
+
+This analysis is implemented with rust for a better performance.
+See `neighborhood_analysis <https://github.com/Mr-Milk/neighborhood_analysis>`_
+
+Profiling of marker co-expression
+----------------------------------
+
+User defines the positive / negative of a marker in a cell, same bootstrap method is conducted as above.
+A z-score is calculated for each combination of markers.
 
 
 Spatial distribution
@@ -166,7 +177,7 @@ Spatial heterogeneity
 
 In spatialtis, three entropy methods have been implemented to quantify the heterogeneity in a ROI.
 Shannon entropy doesn't consider the spatial information. The Leibovici entropy and Altieri entropy consider
-spatial factor to evaluate entropy in a system.
+spatial factor to evaluate entropy in a system. See `spatialentropy <https://github.com/Mr-Milk/SpatialEntropy>`_.
 
 Shannon entropy
 ###############
@@ -278,11 +289,12 @@ they are neighbors, edge weight is represented by distance. Using leidenalg algo
 the communities within a ROI.
 
 
-Marker influences on neighbor Cells/Markers
+Marker influences on neighbor cells/markers
 -------------------------------------------
 
 The word *marker* can refer to gene/transcript/protein/metabolite... depends on your own data.
 
-Random forest regressor estimator is constructed to find which
+Random forest regressor estimator is constructed to find the cells/markers that explain more of the
+interest markers using gini score.
 
 
