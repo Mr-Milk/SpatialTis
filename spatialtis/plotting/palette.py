@@ -2,7 +2,6 @@ from itertools import cycle
 
 import bokeh.palettes as pl
 import numpy as np
-import seaborn as sns
 from colour import Color
 
 
@@ -39,13 +38,3 @@ def get_linear_colors(palette):
     max_colors = len(colors)
     color_index = np.linspace(0, max_colors - 1, max_colors)
     return [colors[int(i)] for i in color_index]
-
-
-def view_palette(palette):
-    """Show you how the palette looks like
-
-    Args:
-        palette: Name of the palette
-
-    """
-    return sns.palplot(palette)

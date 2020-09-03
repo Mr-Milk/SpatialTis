@@ -24,7 +24,7 @@ def cell_map(
     size: Optional[Sequence[int]] = None,
     title: Optional[str] = None,
     palette: Union[Sequence[str], str, None] = None,
-    display: bool = True,
+    display: Optional[bool] = None,
     save: Union[str, Path, None] = None,
     return_plot: bool = False,
 ):
@@ -186,8 +186,12 @@ def cell_map(
         save_bokeh(p, save)
 
     # solve env here
-    if (CONFIG.WORKING_ENV is not None) & display:
-        output_notebook(hide_banner=True, notebook_type=CONFIG.WORKING_ENV)
+    if display is None:
+        if CONFIG.WORKING_ENV is None:
+            display = False
+        else:
+            display = True
+    if display:
         show(p)
 
     # it will return a bokeh plot instance, allow user to do some modification

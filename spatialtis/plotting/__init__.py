@@ -1,5 +1,3 @@
-from spatialtis.config import CONFIG
-
 from ._bar_plot import stacked_bar
 from ._cell_map import cell_map
 from ._community_graph import graph_plot, graph_plot_interactive
@@ -11,7 +9,7 @@ from ._sankey import sankey
 from ._tri_dot_matrix import TriDotMatrix
 from ._triangle_dotplot import tri_dotplot
 from ._violin_plot import violin_plot
-from .palette import colorcycle, get_colors, get_linear_colors, view_palette
+from .palette import colorcycle, get_colors, get_linear_colors
 from .wrapper import (
     cell_co_occurrence,
     cell_communities,
@@ -26,6 +24,7 @@ from .wrapper import (
     spatial_heterogeneity,
 )
 
+"""
 # enable retina mode for all devices
 try:
     from IPython.display import set_matplotlib_formats
@@ -33,3 +32,4 @@ try:
     set_matplotlib_formats("retina")
 except ImportError:
     pass
+"""

@@ -4,6 +4,7 @@ from typing import Optional, Sequence, Union
 from pyecharts import options as opts
 from pyecharts.charts import Sankey
 
+from ..config import CONFIG
 from ._save import save_pyecharts
 
 
@@ -15,7 +16,7 @@ def sankey(
     theme: str = "white",
     size: Sequence = (900, 500),
     title: Optional[str] = None,
-    display: bool = True,
+    display: Optional[bool] = None,
     save: Union[str, Path, None] = None,
     return_plot: bool = False,
 ):
@@ -73,6 +74,11 @@ def sankey(
     if save is not None:
         save_pyecharts(c, save)
 
+    if display is None:
+        if CONFIG.WORKING_ENV is None:
+            display = False
+        else:
+            display = True
     if display:
         c.load_javascript()
         return c.render_notebook()

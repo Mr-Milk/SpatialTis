@@ -38,7 +38,7 @@ class _CONFIG(object):
     def __init__(self):
         self._EXP_OBS: Optional[Sequence[str]] = None
         self._CELL_TYPE_KEY: Optional[str] = None
-        self._WORKING_ENV: Optional[str] = "jupyter_notebook"
+        self._WORKING_ENV: Optional[str] = None
         self._CPU_ALLOC: Optional[int] = None
         self._CONFIG_VERBOSE: Any = _VERBOSE()
 
@@ -177,7 +177,7 @@ class _CONFIG(object):
             from pyecharts.globals import CurrentConfig, NotebookType
             from bokeh.io import output_notebook
 
-            if CONFIG.WORKING_ENV == "jupyter_notebook":
+            if env == "jupyter_notebook":
                 output_notebook(hide_banner=True)
             elif env == "jupyter_lab":
                 CurrentConfig.NOTEBOOK_TYPE = NotebookType.JUPYTER_LAB
@@ -230,7 +230,6 @@ class _CONFIG(object):
 
 CONFIG = _CONFIG()
 CONFIG.OS = system_os
-CONFIG.WORKING_ENV = "jupyter_notebook"
 
 # can be override in plotting function
 # ['jupyter', 'zepplin', None]

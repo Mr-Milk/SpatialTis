@@ -6,6 +6,8 @@ import numpy as np
 from matplotlib.collections import PatchCollection
 from matplotlib.lines import Line2D
 
+from ..config import CONFIG
+
 
 def dotplot(
     matrix: Sequence,
@@ -17,7 +19,7 @@ def dotplot(
     legend_title: Optional[str] = None,
     annotated: bool = False,
     alpha: float = 0.5,
-    display: bool = True,
+    display: Optional[bool] = None,
     return_plot: bool = False,
     title: Optional[str] = None,
     save: Union[str, Path, None] = None,
@@ -139,6 +141,11 @@ def dotplot(
     if save:
         plt.savefig(save, dpi=300, bbox_inches="tight")
 
+    if display is None:
+        if CONFIG.WORKING_ENV is None:
+            display = False
+        else:
+            display = True
     if not display:
         plt.close()
 

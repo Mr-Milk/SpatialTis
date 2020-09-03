@@ -8,6 +8,7 @@ from matplotlib.lines import Line2D
 from pyecharts import options as opts
 from pyecharts.charts import Graph
 
+from ..config import CONFIG
 from ._save import save_pyecharts
 from .palette import get_colors
 
@@ -22,7 +23,7 @@ def graph_plot_interactive(
     size: Sequence = (800, 800),
     renderer: str = "canvas",
     theme: str = "white",
-    display: bool = True,
+    display: Optional[bool] = None,
     return_plot: bool = False,
     title: Optional[str] = None,
     save: Union[str, Path, None] = None,
@@ -126,6 +127,11 @@ def graph_plot_interactive(
     if save is not None:
         save_pyecharts(g, save)
 
+    if display is None:
+        if CONFIG.WORKING_ENV is None:
+            display = False
+        else:
+            display = True
     if display:
         g.load_javascript()
         return g.render_notebook()
@@ -143,7 +149,7 @@ def graph_plot(
     edge_size: Union[float, int] = 0.7,
     size: Sequence = (15, 15),
     palette: Optional[Sequence] = None,
-    display: bool = True,
+    display: Optional[bool] = None,
     return_plot: bool = False,
     title: Optional[str] = None,
     save: Union[str, Path, None] = None,
@@ -228,6 +234,11 @@ def graph_plot(
 
     plt.axis("off")
 
+    if display is None:
+        if CONFIG.WORKING_ENV is None:
+            display = False
+        else:
+            display = True
     if not display:
         plt.close()
 
