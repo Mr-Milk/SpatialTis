@@ -1,7 +1,5 @@
-from collections import Counter
-from itertools import combinations_with_replacement, product
-from typing import Callable, Mapping, Optional, Sequence
 import warnings
+from typing import Optional, Sequence
 
 import numpy as np
 import pandas as pd
@@ -13,204 +11,17 @@ from spatialtis.utils import df2adata_uns, timer
 from ._neighbors import Neighbors
 from ._util import check_neighbors
 
-"""
 
-class CellComb:
-    def __init__(self, types, order):
-        self.types = types
-        if order:
-            self.comb = [k for k in product(types, repeat=2)]
-        else:
-            self.comb = [k for k in combinations_with_replacement(types, 2)]
-        self.relationships = {t1: [(t1, t2) for t2 in types] for t1 in types}
-
-    def get_comb(self, t):
-        return self.relationships[t]
-
-
-def _count_neighbors(
-        types: Sequence, relationships: Mapping, cellcomb: CellComb, storage_object: Mapping
-):
-    if len(relationships) > 0:
-        for k, v in relationships.items():
-            if len(v) > 0:
-                counts = Counter([types[i] for i in v])
-                center_type = types[k]
-                # if center_type in counts.keys():
-                for (t1, t2) in cellcomb.get_comb(center_type):
-                    try:
-                        c = counts[t2]
-                    except (KeyError, ValueError):
-                        c = 0
-                    try:
-                        storage_object[(t1, t2)].append(c)
-                    except (KeyError, ValueError):
-                        storage_object[(t2, t1)].append(c)
-    itr = storage_object.keys()
-    counts = [np.mean(v) if len(v) > 0 else 0 for v in storage_object.values()]
-    return dict(zip(itr, counts))
-
-
-def _bootstrap(
-        cell_types: list, cell_neighbors: Mapping, cellcomb: CellComb, resample: int,
-):
-    tmp_storage = {k: [] for k in cellcomb.comb}
-    real_count = _count_neighbors(cell_types, cell_neighbors, cellcomb, tmp_storage)
-
-    perm_count = {k: [] for k in cellcomb.comb}
-    shuffle_types = cell_types.copy()
-    for attempt in range(resample):
-        np.random.shuffle(shuffle_types)
-        tmp_storage = {k: [] for k in cellcomb.comb}
-        perm = _count_neighbors(shuffle_types, cell_neighbors, cellcomb, tmp_storage)
-        for itr, m in perm.items():
-            perm_count[itr].append(m)
-    columns = cellcomb.comb
-    perm_count = pd.DataFrame(perm_count, columns=columns)
-    real_count = pd.DataFrame(real_count, index=[0], columns=columns)
-    return [perm_count, real_count]
-
-
-if CONFIG.OS in ["Linux", "Darwin"]:
-    try:
-        import ray
-    except ImportError:
-        raise ImportError(
-            "You don't have ray installed or your OS don't support ray.",
-            "Try `pip install ray` or use `mp=False`",
-        )
-
-    _bootstrap_mp = ray.remote(_bootstrap)
-
-
-def _patch_pval(
-        perm_count: pd.DataFrame, real_count: pd.DataFrame, resample: int, pval: float
-):
-    p_gt = (perm_count >= real_count.to_numpy()).sum() / (resample + 1)
-    p_lt = (perm_count <= real_count.to_numpy()).sum() / (resample + 1)
-    direction = p_gt < p_lt
-    redirection = [not i for i in direction]
-    p = p_gt * direction + p_lt * redirection
-    sig = p < pval
-    sigv = (sig * np.sign(direction - 0.5)).astype(int)
-
-    return pd.Series(sigv, index=sig.index)
-
-
-def _patch_zscore(
-        perm_count: pd.DataFrame, real_count: pd.DataFrame, *args
-):
-    z_score = (real_count.to_numpy()[0] - perm_count.mean()) / perm_count.std()
-    # inf ---> NaN, and then NaN ---> 0
-    z_score = z_score.replace([np.inf, -np.inf], np.nan).fillna(0)
-
-    return z_score
-
-
-def _main(
-        n: Neighbors,
-        patch_func: Callable,
-        resample: int = 50,
-        pval: float = 0.01,
-        order: bool = True,
-        mp: Optional[bool] = None,
-):
-    if mp is None:
-        mp = CONFIG.MULTI_PROCESSING
-
-    check_neighbors(n)
-    cellcomb = CellComb(n.unitypes, order)
-    results = dict()
-
-    if mp & (CONFIG.OS in ["Linux", "Darwin"]):
-
-        def exec_iterator(obj_ids):
-            while obj_ids:
-                done, obj_ids = ray.wait(obj_ids)
-                yield ray.get(done[0])
-
-        counts = []
-        names = []
-        for name, value in n.neighbors.items():
-            id1 = _bootstrap_mp.remote(n.types[name], value, cellcomb, resample)
-            counts.append(id1)
-            names.append(name)
-
-        for _ in tqdm(
-                exec_iterator(counts),
-                **CONFIG.tqdm(total=len(counts), desc="neighborhood analysis"),
-        ):
-            pass
-
-        counts = ray.get(counts)
-
-        for count, name in zip(counts, names):
-            results[name] = patch_func(count[0], count[1], resample, pval)
-
-    else:
-        for name, value in tqdm(
-                n.neighbors.items(), **CONFIG.tqdm(desc="neighborhood analysis"),
-        ):
-            [perm_count, real_count] = _bootstrap(
-                n.types[name], value, cellcomb, resample
-            )
-            results[name] = patch_func(perm_count, real_count, resample, pval)
-
-    results_df = pd.DataFrame(results)
-    results_df.index = pd.MultiIndex.from_tuples(
-        results_df.index, names=("Cell type1", "Cell type2")
-    )
-    results_df.rename_axis(columns=n.expobs, inplace=True)
-
-    return results_df
-"""
-
-
-def _na_fast(
-        n: Neighbors,
-        resample: int = 50,
-        pval: float = 0.01,
-        order: bool = True,
-        method: str = "pval",
-):
-    try:
-        import neighborhood_analysis as na
-    except ImportError:
-        raise ImportError("Package not found, try `pip install neighborhood_analysis`.")
-
-    check_neighbors(n)
-    types = n.unitypes
-    cc = na.CellCombs(types, order)
-    print(len(cc.cell_combs))
-
-    results = {}
-    for name, value in tqdm(
-            n.neighbors.items(), **CONFIG.tqdm(desc="neighborhood analysis"),
-    ):
-        result = cc.bootstrap(n.types[name], value, resample, pval, method, ignore_self=True)
-        result = {tuple(k): v for (k, v) in result}
-        results[name] = result
-
-    results_df = pd.DataFrame(results)
-    results_df.index = pd.MultiIndex.from_tuples(
-        results_df.index, names=("Cell type1", "Cell type2")
-    )
-    results_df.rename_axis(columns=n.expobs, inplace=True)
-
-    return results_df
-
-
-# @timer(prefix="Running neighborhood analysis")
+@timer(prefix="Running neighborhood analysis")
 def neighborhood_analysis(
-        n: Neighbors,
-        method: str = "pval",
-        resample: int = 50,
-        pval: float = 0.01,
-        order: bool = True,
-        export: bool = True,
-        export_key: Optional[str] = None,
-        return_df: bool = False,
-        mp: bool = False,
+    n: Neighbors,
+    method: str = "pval",
+    resample: int = 500,
+    pval: float = 0.01,
+    order: bool = True,
+    export: bool = True,
+    export_key: Optional[str] = None,
+    return_df: bool = False,
 ):
     """Python implementation of neighborhood analysis
 
@@ -227,7 +38,6 @@ def neighborhood_analysis(
         export: whether to export the result to anndata.uns
         export_key: the key used to export
         return_df: whether to return the result
-        mp: whether to enable multiprocessing
 
     .. seealso:: `spatial_enrichment_analysis <#spatialtis.plotting.spatial_enrichment_analysis>`_
 
@@ -239,27 +49,43 @@ def neighborhood_analysis(
     else:
         CONFIG.neighborhood_analysis_key = export_key
 
-    """
     try:
-        df = _na_fast(n, resample, pval, order, method, ignore_self)
+        import neighborhood_analysis as na
     except ImportError:
-        warnings.warn("Try `pip install neighborhood_analysis` which is much faster than current one.")
-        if method == "pval":
-            df = _main(n, _patch_pval, resample=resample, pval=pval, order=order, mp=mp)
+        raise ImportError("Package not found, try `pip install neighborhood_analysis`.")
 
-        else:
-            df = _main(n, _patch_zscore, resample=resample, pval=pval, order=order, mp=mp)
-    """
+    check_neighbors(n)
+    types = n.unitypes
+    cc = na.CellCombs(types, order)
 
-    df = _na_fast(n, resample=resample, pval=pval, order=order, method=method)
+    results = {}
+    for name, value in tqdm(
+        n.neighbors.items(), **CONFIG.tqdm(desc="neighborhood analysis"),
+    ):
+        result = cc.bootstrap(
+            n.types[name], value, resample, pval, method, ignore_self=True
+        )
+        result = {tuple(k): v for (k, v) in result}
+        results[name] = result
+
+    df = pd.DataFrame(results)
+    df.index = pd.MultiIndex.from_tuples(df.index, names=("Cell type1", "Cell type2"))
+    df.rename_axis(columns=n.expobs, inplace=True)
 
     if method == "pval":
         df = df.T.astype(int)
     else:
+        df.replace(np.inf, 10.0, inplace=True)
+        df.replace(-np.inf, -10.0, inplace=True)
         df = df.T
 
     if export:
-        df2adata_uns(df, n.adata, export_key, params={"order": order, "method": method, "pval": pval})
+        df2adata_uns(
+            df,
+            n.adata,
+            export_key,
+            params={"order": order, "method": method, "pval": pval},
+        )
 
     if return_df:
         return df
@@ -267,36 +93,37 @@ def neighborhood_analysis(
 
 # @timer(prefix="Running spatial enrichment analysis")
 def spatial_enrichment_analysis(
-        n: Neighbors,
-        threshold: Optional[float] = None,
-        layers_key: Optional[str] = None,
-        selected_markers: Optional[Sequence] = None,
-        resample: int = 50,
-        marker_key: Optional[str] = None,
-        export: bool = True,
-        export_key: Optional[str] = None,
-        return_df: bool = False,
-        mp: bool = False,
+    n: Neighbors,
+    threshold: Optional[float] = None,
+    layers_key: Optional[str] = None,
+    selected_markers: Optional[Sequence] = None,
+    marker_key: Optional[str] = None,
+    resample: int = 500,
+    pval: float = 0.01,
+    export: bool = True,
+    export_key: Optional[str] = None,
+    return_df: bool = False,
 ):
-    """Profiling Markers co-localization
+    """Profiling Markers co-expression
 
-        Similar to neighborhood analysis which tells you the relationship between different type of cells.
-        This method tells you the spatial relationship between markers, purposed in MIBI's paper.
+    Similar to neighborhood analysis which tells you the relationship between different type of cells.
+    This method tells you the spatial relationship between markers, purposed in MIBI's paper.
 
-        Args:
-            n: A spatialtis.Neighbors object, neighbors are already computed
-            threshold: the number to determine whether a marker is positive
-            layers_key: the key to anndata.layers
-            selected_markers: the markers to perform analysis on
-            resample: perform resample for how many times
-            export: whether to export the result to anndata.uns
-            export_key: the key used to export
-            return_df: whether to return the result
-            mp: whether to enable multiprocessing
+    Args:
+        n: A spatialtis.Neighbors object, neighbors are already computed
+        threshold: the number to determine whether a marker is positive
+        layers_key: the key to anndata.layers
+        selected_markers: the markers to perform analysis on
+        marker_key: the key of markers in anndata.var (Default: spatialtis.CONFIG.MARKER_KEY)
+        resample: perform resample for how many times
+        pval: threshold for p-value
+        export: whether to export the result to anndata.uns
+        export_key: the key used to export
+        return_df: whether to return the result
 
-        .. seealso:: `neighborhood_analysis <#spatialtis.plotting.neighborhood_analysis>`_
+    .. seealso:: `neighborhood_analysis <#spatialtis.plotting.neighborhood_analysis>`_
 
-        """
+    """
 
     try:
         import neighborhood_analysis as na
@@ -318,39 +145,47 @@ def spatial_enrichment_analysis(
         raise ValueError("Either specific a threshold or a layers key.")
     elif layers_key is not None:
         if threshold is not None:
-            warnings.warn("You specific both threshold and layers_key, using user defined layers_key")
+            warnings.warn(
+                "You specific both threshold and layers_key, using user defined layers_key"
+            )
         CONFIG.spatial_enrichment_analysis_layers_key = layers_key
     elif threshold is not None:
         layers_key = CONFIG.spatial_enrichment_analysis_layers_key
-        data.layers[layers_key] = (data.X >= threshold)
+        data.layers[layers_key] = data.X >= threshold
 
     if selected_markers is not None:
         data = data[data.var[marker_key].isin(selected_markers)]
 
     markers = data.var[marker_key]
-    cols = []
-    results = {k: [] for k in product(markers, repeat=2)}
+    results = {}
 
-    for name, roi in data.obs.groupby(n.expobs):
+    for name, roi in tqdm(
+        data.obs.groupby(n.expobs), **CONFIG.tqdm(desc="spatial enrichment analysis"),
+    ):
         neighbors = n.neighbors[name]
         matrix = data[roi.index].layers[layers_key]
-        cols.append(name)
+        result = {}
 
         for ix, x in enumerate(markers):
             x_status = [bool(i) for i in matrix[:, ix]]
             for iy, y in enumerate(markers):
                 y_status = [bool(i) for i in matrix[:, iy]]
-                z = na.comb_bootstrap(x_status, y_status, neighbors)
-                results[(x, y)].append(z)
+                z = na.comb_bootstrap(
+                    x_status, y_status, neighbors, times=resample, ignore_self=False
+                )
+                result[(x, y)] = z
+        results[name] = result
 
     df = pd.DataFrame(results)
-    df.index = pd.MultiIndex.from_tuples(cols)
-    df.rename_axis(index=n.expobs, inplace=True)
-    df.columns.names = ['Marker1', 'Marker2']
+    df.index = pd.MultiIndex.from_tuples(df.index, names=("Marker1", "Marker2"))
+    df.rename_axis(columns=n.expobs, inplace=True)
+    df.replace(np.inf, 10.0, inplace=True)
+    df.replace(-np.inf, -10.0, inplace=True)
     df.fillna(0, inplace=True)
+    df = df.T
 
     if export:
-        df2adata_uns(df, n.adata, export_key)
+        df2adata_uns(df, n.adata, export_key, params={"pval": pval})
 
     if return_df:
         return df

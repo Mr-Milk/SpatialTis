@@ -65,13 +65,16 @@ def cell_map(
             raise KeyError("Centroid key not exist")
 
     df = adata.obs.query("&".join([f"({k}=='{v}')" for k, v in query.items()]))
-    new_types = []
-    for i in df[type_key]:
-        if i in selected_types:
-            new_types.append(i)
-        else:
-            new_types.append("other")
-    df.loc[:, [type_key]] = new_types
+
+    if selected_types is not None:
+        new_types = []
+        for i in df[type_key]:
+            if i in selected_types:
+                new_types.append(i)
+            else:
+                new_types.append("other")
+        df.loc[:, [type_key]] = new_types
+
     groups = df.groupby(type_key)
 
     default_palette = ["Spectral", "Category20"]

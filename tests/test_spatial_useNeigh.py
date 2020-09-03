@@ -21,7 +21,9 @@ def test_read_data(shared_datadir):
 def test_neighbors_shape_data():
     data = pytest.data
     n = Neighbors(data)
+    n.find_neighbors(scale=2)
     n.find_neighbors(expand=3)
+    n.find_neighbors(expand=3, mp=True)
     n.neighbors_count()
     n.export_neighbors()
     n.read_neighbors()
@@ -65,26 +67,26 @@ def test_cell_type_graph():
 def test_neighborhood_analysis():
     n = pytest.n
     st.neighborhood_analysis(n, resample=50)
+    st.neighborhood_analysis(n, resample=50, order=False, export_key="unorder_na")
 
 
 def test_neighborhood_analysis_plot():
     data = pytest.data
-    sp.neighborhood_analysis(data, use="graph", save="test.png")
-    os.remove('test.png')
     sp.neighborhood_analysis(data, ['Patient', 'Part'], use="heatmap", display=False)
 
     st.cell_components(data)
     sp.neighborhood_analysis(data, use="dot_matrix", display=False)
+    sp.neighborhood_analysis(data, use="dot_matrix", display=False, key="unorder_na")
 
 
 def test_spatial_enrichment_analysis():
     n = pytest.n
-    st.spatial_enrichment_analysis(n, resample=50)
+    st.spatial_enrichment_analysis(n, threshold=0.1, resample=50)
 
 
 def test_spatial_enrichment_analysis_plot():
     data = pytest.data
-    sp.spatial_enrichment_analysis(data, ["Patient", "Part"], display=False)
+    sp.spatial_enrichment_analysis(data, display=False)
 
 
 def test_exp_neighcell():
@@ -107,7 +109,7 @@ def test_spatial_mp():
     data = pytest.data
     n_mp = Neighbors(data)
     n_mp.find_neighbors(expand=3)
-    st.neighborhood_analysis(n, resample=50, mp=True)
-    st.spatial_enrichment_analysis(n, resample=50, mp=True)
+    st.neighborhood_analysis(n, resample=50)
+    st.spatial_enrichment_analysis(n, threshold=0.1, resample=50)
     st.exp_neighcells(n, mp=True)
     st.exp_neighexp(n, mp=True)

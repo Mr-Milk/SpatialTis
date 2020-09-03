@@ -184,8 +184,7 @@ def adata_uns2df(
 def filter_adata(
     adata, groupby, type_col, *keys, selected_types=None, reset_index=True
 ):
-    """(Private) Filter anndata.obs (pandas.DataFrame)
-    """
+    """(Private) Filter anndata.obs (pandas.DataFrame)"""
 
     keys = [k for k in keys if k is not None]
     df = adata.obs[groupby + keys + [type_col]]

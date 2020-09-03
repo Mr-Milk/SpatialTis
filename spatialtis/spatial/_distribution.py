@@ -1,4 +1,3 @@
-import sys
 from typing import Optional, Sequence, Union
 
 import numpy as np

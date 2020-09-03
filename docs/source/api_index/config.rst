@@ -46,6 +46,7 @@ Storage keys, please explicitly specify for your own data
 
 CONFIG.EXP_OBS
 =================
+
 To let spatialtis how your experiments are designed, this should be a list of `keys` from :code:`anndata.obs`.
 The order of the name do matters. The last element is assumed to be the ROI level. If not, you must specify using
 :code:`CONFIG.ROI_KEY`.
@@ -73,8 +74,8 @@ Normally, you don't need to specific your system, it will be auto detected by Sp
 CONFIG.MULTI_PROCESSING
 =========================
 
-To enable paralle processing globally in spatialtis. We used Ray to support this features, which is currently no available
-on Windows platform. But you can try WSL2. (This feature won't work if you run spatialtis on Windows)
+To enable paralle processing globally in spatialtis. We used Ray to support this features, the support for windows platform
+is still in experimental stage, if something went wrong, you should turn it off.
 
 
 CONFIG.CPU_ALLOC
@@ -88,8 +89,11 @@ CONFIG.VERBOSE
 
 Config the amount of information print by SpatialTis
 
-It will c
+:code:`VERBOSE.ANNDATA`: :code:`[True, False]` whether to display the change made to anndata object
 
+:code:`VERBOSE.PBAR`: :code:`[True, False]` whether to display the progress bar.
+
+:code:`VERBOSE.INFO`: :code:`[True, False]` whether to display the runtime info and timer.
 
 CONFIG.PBAR_FORMAT
 ====================

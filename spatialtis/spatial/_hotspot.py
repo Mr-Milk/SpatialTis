@@ -74,18 +74,6 @@ def _hotspot(cells, grid_size, level, pval):
         return marker_hot
 
 
-if CONFIG.OS in ["Linux", "Darwin"]:
-    try:
-        import ray
-    except ImportError:
-        raise ImportError(
-            "You don't have ray installed or your OS don't support ray.",
-            "Try `pip install ray` or use `mp=False`",
-        )
-
-    _hotspot_mp = ray.remote(_hotspot)
-
-
 @timer(prefix="Running hotspot detection")
 def hotspot(
     adata: AnnData,
@@ -139,7 +127,17 @@ def hotspot(
     )
     groups = df.groupby(groupby)
 
-    if mp & (CONFIG.OS in ["Linux", "Darwin"]):
+    if mp:
+
+        try:
+            import ray
+        except ImportError:
+            raise ImportError(
+                "You don't have ray installed or your OS don't support ray.",
+                "Try `pip install ray` or use `mp=False`",
+            )
+
+        _hotspot_mp = ray.remote(_hotspot)
 
         def exec_iterator(obj_ids):
             while obj_ids:

@@ -42,7 +42,7 @@ def get_linear_colors(palette):
 
 
 def view_palette(palette):
-    """ Show you how the palette looks like
+    """Show you how the palette looks like
 
     Args:
         palette: Name of the palette

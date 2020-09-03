@@ -49,32 +49,31 @@ def get_roi(
     return [data, geom_info]
 
 
-if CONFIG.OS in ["Linux", "Darwin"]:
-    try:
-        import ray
-    except ImportError:
-        raise ImportError(
-            "You don't have ray installed or your OS don't support ray.",
-            "Try `pip install ray` or use `mp=False`",
-        )
+try:
+    import ray
+except ImportError:
+    raise ImportError(
+        "You don't have ray installed or your OS don't support ray.",
+        "Try `pip install ray` or use `mp=False`",
+    )
 
-    get_roi_mp = ray.remote(get_roi)
+get_roi_mp = ray.remote(get_roi)
 
 
 class read_ROIs:
     """Extract single cell expression matrix and geometry information frrom stacked images and masks
 
-        Args:
-            entry (Union[Path, str]): the root folder to start with
-            obs_names (Sequence): array of names correspond to each level of your folders
-            var (pandas.DataFrame): usually use to describe the order of layers in your stacked image
-            mask_pattern (Optional[str]): name pattern for all of your mask
-            img_pattern (Optional[str]): name pattern for all of your image
+    Args:
+        entry (Union[Path, str]): the root folder to start with
+        obs_names (Sequence): array of names correspond to each level of your folders
+        var (pandas.DataFrame): usually use to describe the order of layers in your stacked image
+        mask_pattern (Optional[str]): name pattern for all of your mask
+        img_pattern (Optional[str]): name pattern for all of your image
 
-        Attributes:
-            obs: will pass to anndata obs
-            var: will pass to anndata var
-            anndata: get the processed anndata object
+    Attributes:
+        obs: will pass to anndata obs
+        var: will pass to anndata var
+        anndata: get the processed anndata object
 
     """
 
@@ -186,7 +185,7 @@ class read_ROIs:
         if polygonize == "concave":
             warnings.warn("Running concave hull is very slow", RuntimeWarning)
 
-        if mp & (CONFIG.OS in ["Linux", "Darwin"]):
+        if mp:
 
             def exec_iterator(obj_ids):
                 while obj_ids:

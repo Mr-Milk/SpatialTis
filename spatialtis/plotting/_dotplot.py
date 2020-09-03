@@ -3,7 +3,6 @@ from typing import Optional, Sequence, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 from matplotlib.collections import PatchCollection
 from matplotlib.lines import Line2D
 
@@ -26,21 +25,19 @@ def dotplot(
     """(matplotlib) dot plot
 
     Args:
-        df:
-        x:
-        y:
-        annotated:
-        xlabel_rotation:
-        ylabel_rotation:
-        legend_title:
-        color:
-        alpha:
-        display:
-        return_plot:
-        title:
-        save:
-
-    Returns:
+        matrix: matrix array of values
+        colors: the color of every dot
+        xlabels: the labels for x-axis
+        ylabels: the labels for y-axis
+        annotated: whether to annotate dot
+        xlabel_rotation: the degree to rotate the xlabel
+        ylabel_rotation: the degree to rotate the xlabel
+        legend_title: title on the legend
+        alpha: set the alpha value
+        title: title of the plot
+        display: whether to display the plot
+        save: the path to save your plot
+        return_plot: whether to return the plot instance
 
     """
     size = np.asarray(matrix)
