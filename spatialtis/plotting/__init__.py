@@ -24,7 +24,6 @@ from .wrapper import (
     spatial_heterogeneity,
 )
 
-"""
 # enable retina mode for all devices
 try:
     from IPython.display import set_matplotlib_formats
@@ -32,4 +31,3 @@ try:
     set_matplotlib_formats("retina")
 except ImportError:
     pass
-"""

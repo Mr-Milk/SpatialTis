@@ -69,8 +69,8 @@ def dotplot(
     ax.set(
         yticks=np.arange(0.5, N + 1),
         xticks=np.arange(0.5, M + 1),
-        xticklabels=xlabels,
-        yticklabels=ylabels,
+        xticklabels=list(xlabels) + [""],
+        yticklabels=list(ylabels) + [""],
     )
     plt.xticks(rotation=xlabel_rotation)
     plt.yticks(rotation=ylabel_rotation)
