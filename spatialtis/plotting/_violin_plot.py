@@ -243,7 +243,7 @@ def violin_plot(
     target_key: str,
     group_order: Optional[dict] = None,
     direction: Union[str] = "vertical",
-    display: bool = True,
+    display: Optional[bool] = None,
     title: Optional[str] = None,
     xaxis_title: Optional[str] = None,
     yaxis_title: Optional[str] = None,
@@ -299,8 +299,12 @@ def violin_plot(
     if save is not None:
         save_bokeh(plot.p, save)
 
-    if (CONFIG.WORKING_ENV is not None) & display:
-        output_notebook(hide_banner=True, notebook_type=CONFIG.WORKING_ENV)
+    if display is None:
+        if CONFIG.WORKING_ENV is None:
+            display = False
+        else:
+            display = True
+    if display:
         show(plot.p)
 
     if return_plot:

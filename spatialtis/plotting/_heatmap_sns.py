@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
+from ..config import CONFIG
 from .palette import get_colors, get_linear_colors
 
 
@@ -23,7 +24,7 @@ def heatmap(
     col_colors_legend_bbox: Optional[Sequence[float]] = None,
     colorbar_bbox: Optional[Sequence[float]] = None,
     save: Union[Path, str, None] = None,
-    display: bool = True,
+    display: Optional[bool] = None,
     return_plot: bool = False,
     **kwargs,
 ):
@@ -205,6 +206,11 @@ def heatmap(
     if save:
         h.savefig(save, dpi=300)
 
+    if display is None:
+        if CONFIG.WORKING_ENV is None:
+            display = False
+        else:
+            display = True
     if not display:
         plt.close()
 

@@ -8,6 +8,7 @@ from matplotlib.collections import PatchCollection
 from matplotlib.lines import Line2D
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
+from ..config import CONFIG
 from .palette import get_linear_colors
 
 
@@ -59,7 +60,7 @@ class DotMatrix:
         size_legend_title: Optional[str] = None,
         matrix_palette: Optional[Sequence] = None,
         dot_palette: Optional[Sequence] = None,
-        display: bool = True,
+        display: Optional[bool] = None,
         title: Optional[str] = None,
         save: Union[str, Path, None] = None,
     ):
@@ -146,6 +147,11 @@ class DotMatrix:
         if save:
             self.fig.savefig(save, dpi=300, bbox_inches="tight")
 
+        if display is None:
+            if CONFIG.WORKING_ENV is None:
+                display = False
+            else:
+                display = True
         if not display:
             plt.close()
 

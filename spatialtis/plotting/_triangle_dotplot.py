@@ -6,6 +6,8 @@ import numpy as np
 from matplotlib.collections import PatchCollection
 from matplotlib.lines import Line2D
 
+from ..config import CONFIG
+
 # the relationship between label and arr should look like this
 
 """
@@ -26,7 +28,7 @@ def tri_dotplot(
     legend_title: Optional[str] = None,
     annotate: bool = False,
     alpha: float = 0.5,
-    display: bool = True,
+    display: Optional[bool] = None,
     title: Optional[str] = None,
     save: Union[str, Path, None] = None,
     return_plot: bool = False,
@@ -160,6 +162,11 @@ def tri_dotplot(
     if save:
         plt.savefig(save, dpi=300, bbox_inches="tight")
 
+    if display is None:
+        if CONFIG.WORKING_ENV is None:
+            display = False
+        else:
+            display = True
     if not display:
         plt.close()
 

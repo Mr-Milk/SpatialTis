@@ -23,7 +23,7 @@ def expression_map(
     axis_size: tuple = (100, 100, 80),
     size: tuple = (800, 500),
     palette: Optional[Sequence] = None,
-    display: bool = True,
+    display: Optional[bool] = None,
     # save: Union[str, Path, None] = None, # save multi plots is not allowed in pyecharts
     return_plot: bool = False,
 ):
@@ -185,6 +185,11 @@ def expression_map(
         t.render(p)
     '''
 
+    if display is None:
+        if CONFIG.WORKING_ENV is None:
+            display = False
+        else:
+            display = True
     if display:
         t.load_javascript()
         return t.render_notebook()

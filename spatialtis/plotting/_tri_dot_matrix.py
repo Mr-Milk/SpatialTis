@@ -7,6 +7,7 @@ from matplotlib.collections import PatchCollection
 from matplotlib.lines import Line2D
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
+from ..config import CONFIG
 from .palette import get_linear_colors
 
 # the relationship between label and arr should look like this
@@ -45,7 +46,6 @@ class TriDotMatrix:
         display: whether to show the plot
         title: title of the plot
         save: the path to save the plot
-        return_plot: whether to return the plot
 
     """
 
@@ -77,10 +77,9 @@ class TriDotMatrix:
         size_legend_title: Optional[str] = None,
         block_palette: Optional[Sequence] = None,
         dot_palette: Optional[Sequence] = None,
-        display: bool = True,
+        display: Optional[bool] = None,
         title: Optional[str] = None,
         save: Union[str, Path, None] = None,
-        return_plot: bool = False,
     ):
 
         # global arguments
@@ -146,6 +145,11 @@ class TriDotMatrix:
         if save:
             plt.savefig(save, dpi=300, bbox_inches="tight")
 
+        if display is None:
+            if CONFIG.WORKING_ENV is None:
+                display = False
+            else:
+                display = True
         if not display:
             plt.close()
 
