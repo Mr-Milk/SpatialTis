@@ -11,17 +11,6 @@ from pyecharts.globals import WarningType
 
 WarningType.ShowWarning = False
 
-# get system os
-system_os = platform.system()
-
-if system_os in ["Linux", "Darwin"]:
-    import logging
-    import ray
-
-    ray.init(
-        logging_level=logging.FATAL, ignore_reinit_error=True,
-    )
-
 
 class _VERBOSE(object):
     def __init__(self):
@@ -47,13 +36,13 @@ class _CONFIG(object):
         self.MULTI_PROCESSING: bool = False
 
         # set tqdm bar foramt
-        self._INBUILT_PBAT_FORMAT = "%s{l_bar}%s{bar}%s{r_bar}%s" % (
+        self._INBUILT_PBAR_FORMAT = "%s{l_bar}%s{bar}%s{r_bar}%s" % (
             Fore.GREEN,
             Fore.CYAN,
             Fore.GREEN,
             Fore.RESET,
         )
-        self.PBAR_FORMAT = self._INBUILT_PBAT_FORMAT
+        self.PBAR_FORMAT = self._INBUILT_PBAR_FORMAT
 
         # used key name to store info in anndata
         self.CENTROID_KEY: str = "centroid"
@@ -142,7 +131,7 @@ class _CONFIG(object):
         if isinstance(obs, (str, int, float)):
             self._EXP_OBS = [obs]
         elif isinstance(obs, Sequence):
-            self._EXP_OBS = obs
+            self._EXP_OBS = list(obs)
         else:
             raise ValueError("")
         self._ROI_KEY = self._EXP_OBS[-1]
@@ -172,7 +161,7 @@ class _CONFIG(object):
             self.PBAR_FORMAT = "{l_bar}{bar}{r_bar}"
         else:
             self.VERBOSE.PBAR = True
-            self.PBAR_FORMAT = self._INBUILT_PBAT_FORMAT
+            self.PBAR_FORMAT = self._INBUILT_PBAR_FORMAT
 
             from pyecharts.globals import CurrentConfig, NotebookType
             from bokeh.io import output_notebook
@@ -229,7 +218,19 @@ class _CONFIG(object):
 
 
 CONFIG = _CONFIG()
+# get system os
+system_os = platform.system()
 CONFIG.OS = system_os
+
+try:
+    import logging
+    import ray
+
+    ray.init(
+        logging_level=logging.FATAL, ignore_reinit_error=True,
+    )
+except Exception:
+    warnings.warn("Initiate ray failed, parallel processing not available.")
 
 # can be override in plotting function
 # ['jupyter', 'zepplin', None]

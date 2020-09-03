@@ -48,11 +48,11 @@ def tri_dotplot(
     Args:
         diagonal_arr: the diagonal array
         labels: labels will be marked in x and y axis
+        colors: colors of the dot
         annotate: whether to show value on the dot
         xlabel_rotation: rotate x label
         ylabel_rotation: rotate y label
         legend_title: the title of legend
-        color: color of the dot
         display: whether to show the plot
         title: title of the plot
         save: the path to save the plot
