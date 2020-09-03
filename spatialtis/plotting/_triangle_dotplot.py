@@ -89,8 +89,8 @@ def tri_dotplot(
     ax.set(
         yticks=np.arange(0.5, M + 1),
         xticks=np.arange(0.5, N + 1),
-        xticklabels=labels,
-        yticklabels=labels[::-1],
+        xticklabels=list(labels) + [""],
+        yticklabels=list(labels)[::-1] + [""],
     )
 
     legends = [
