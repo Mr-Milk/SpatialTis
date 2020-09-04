@@ -7,4 +7,7 @@ python:
   version: 3.8
   install:
     - requirements: requirements.txt
-  setup_py_install: true
+    - method: pip
+      path: .
+      extra_requirements:
+        - all
