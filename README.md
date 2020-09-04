@@ -1,5 +1,5 @@
 <p align="center">
-<img src="https://raw.githubusercontent.com/Mr-Milk/SpatialTis/master/src/favicon-readme.png" width=10%/>
+<img src="https://raw.githubusercontent.com/Mr-Milk/SpatialTis/master/src/Logo.svg" width="200"/>
 <p/>
 
 
@@ -45,6 +45,7 @@ pip install git+https://github.com/Mr-Milk/SpatialTis.git
     - Spatial distribution
     - Spatial heterogeneity
     - Hotspot detection
-    - Neighborhood analysis
+    - Cell-cell interaction
+    - Markers co-expression
     - Spatial community detection
     - Marker influence by neighbor cell/marker

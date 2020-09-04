@@ -6,7 +6,7 @@
 Welcome to SpatialTis's documentation!
 ==========================================
 
-.. image:: src/favicon-chrome.png
+.. image:: src/Logo.svg
    :align: center
    :width: 20%
 
@@ -32,6 +32,7 @@ For a quick view of what it's does, check our following examples:
    usage/example
    usage/installation
    usage/image_export
+   usage/notebook
 
 .. toctree::
    :maxdepth: 2
