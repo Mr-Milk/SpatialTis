@@ -16,7 +16,6 @@ Num = Union[int, float]
 def type_counter(
     adata: AnnData,
     groupby: Union[Sequence, str, None] = None,
-    selected_types: Optional[Sequence] = None,
     type_key: Optional[str] = None,
 ) -> pd.DataFrame:
     """(private) To count how many type of value
@@ -24,32 +23,12 @@ def type_counter(
     Args:
         adata: anndata object to perform analysis
         groupby: how your experiments grouped, (Default: spatialtis.CONFIG.EXP_OBS)
-        selected_types: selected cell types you want to count
         type_key: the key name of cell type in anndata.obs (Default: spatialtis.CONFIG.CELL_TYPE_KEY)
 
     """
-    if groupby is None:
-        if CONFIG.EXP_OBS is not None:
-            groupby = CONFIG.EXP_OBS
-        else:
-            raise ValueError(
-                "Experiment observation unclear, set `spatialtis.CONFIG.EXP_OBS` or use argument "
-                "`groupby=`"
-            )
-    else:
-        groupby = list(groupby)
-
-    if type_key is None:
-        type_key = CONFIG.CELL_TYPE_KEY
-        if type_key is None:
-            raise ValueError(
-                "Either specific the key of cell type using `type_key` or `CONFIG.CELL_TYPE_KEY`"
-            )
 
     df = adata.obs[groupby + [type_key]]
 
-    if selected_types is not None:
-        df = df[df[type_key].isin(selected_types)]
     # the order of type will follow the order in df
     groups = df.groupby(groupby)
     types = pd.unique(df[type_key])
@@ -142,9 +121,6 @@ def cell_co_occurrence(
     else:
         CONFIG.cell_co_occurrence_key = export_key
 
-    if groupby is None:
-        groupby = CONFIG.EXP_OBS
-
     counter = type_counter(adata, groupby, type_key)
 
     df = counter.gt(threshold)
@@ -231,7 +207,7 @@ def cell_density(
 @timer(prefix="Running cell morphology")
 def cell_morphology(
     adata: AnnData,
-    metrics_key: str = "eccentricity",
+    metric_key: Optional[str] = None,
     groupby: Union[Sequence, str, None] = None,
     type_key: Optional[str] = None,
     export: bool = True,
@@ -242,7 +218,7 @@ def cell_morphology(
 
     Args:
         adata: anndata object to perform analysis
-        metrics_key: which key was used to measure cell morphology
+        metric_key: which key was used to measure cell morphology
         groupby: how your experiments grouped, (Default: spatialtis.CONFIG.EXP_OBS)
         type_key: the key of cell type in anndata.obs (Default: spatialtis.CONFIG.CELL_TYPE_KEY)
         export: whether to export the result to anndata.uns
@@ -253,25 +229,16 @@ def cell_morphology(
             pandas.DataFrame
 
     """
-
-    if groupby is None:
-        groupby = CONFIG.EXP_OBS
-    else:
-        groupby = list(groupby)
-
-    if type_key is None:
-        type_key = CONFIG.CELL_TYPE_KEY
-
     if export_key is None:
         export_key = CONFIG.cell_morphology_key
     else:
         CONFIG.cell_morphology_key = export_key
 
-    key = groupby + [type_key, metrics_key]
+    key = groupby + [type_key, metric_key]
     df = adata.obs.loc[:, key]
     df = df.reset_index()
     df.rename(
-        columns={type_key: "type", metrics_key: "value", "index": "id"}, inplace=True
+        columns={type_key: "type", metric_key: "value", "index": "id"}, inplace=True
     )
 
     if export:

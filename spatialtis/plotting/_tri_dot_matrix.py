@@ -70,8 +70,9 @@ class TriDotMatrix:
         ylabel_rotation: int = 0,
         xaxis_title: Optional[str] = None,
         yaxis_title: Optional[str] = None,
-        block_cbar_mapper: Optional[Mapping] = None,
-        dot_cbar_mapper: Optional[Mapping] = None,
+        show_ticks: bool = True,
+        block_cbar_text: Optional[Sequence] = None,
+        dot_cbar_text: Optional[Sequence] = None,
         block_cbar_title: Optional[str] = None,
         dot_cbar_title: Optional[str] = None,
         size_legend_title: Optional[str] = None,
@@ -88,8 +89,8 @@ class TriDotMatrix:
 
         self.xlabel_rotation = xlabel_rotation
         self.ylabel_rotation = ylabel_rotation
-        self.block_cbar_mapper = block_cbar_mapper
-        self.dot_cbar_mapper = dot_cbar_mapper
+        self.block_cbar_text = block_cbar_text
+        self.dot_cbar_text = dot_cbar_text
         self.block_cbar_title = block_cbar_title
         self.dot_cbar_title = dot_cbar_title
         self.size_legend_title = size_legend_title
@@ -122,6 +123,9 @@ class TriDotMatrix:
         )
         self.ax.set_xticks(np.arange(self.M + 1) - 0.5, minor=True)
         self.ax.set_yticks(np.arange(self.N + 1) - 0.5, minor=True)
+        if not show_ticks:
+            self.ax.xaxis.set_ticks_position("none")
+            self.ax.yaxis.set_ticks_position("none")
         self.ax.set_xlabel(xaxis_title)
         self.ax.set_ylabel(yaxis_title)
 
@@ -160,13 +164,18 @@ class TriDotMatrix:
         for i, arr in enumerate(self.block):
             for t, v in enumerate(arr[::-1]):
                 rects.append(plt.Rectangle((i - 0.5, t - 0.5), 1, 1))
+        color_array = np.asarray(flat_block)
+        cmax = np.max(color_array)
+        cmin = np.min(color_array)
         rects_col = PatchCollection(
-            rects, alpha=0.5, array=np.asarray(flat_block), cmap=self.matrix_cmap
+            rects, array=color_array, cmap=self.matrix_cmap, alpha=0.5
         )
+        rects_col.set_clim(cmin, cmax)
         self.ax.add_collection(rects_col)
         self._draw_cbar(
             rects_col,
-            self.block_cbar_mapper,
+            list(np.linspace(cmin, cmax, num=len(self.dot_cbar_text))),
+            self.block_cbar_text,
             (1.07, -0.9, 1, 1),
             title=self.block_cbar_title,
         )
@@ -181,15 +190,20 @@ class TriDotMatrix:
                     circles.append(
                         plt.Circle((i, t), radius=v / self.circ_max / 2 * 0.9)
                     )
+        color_array = np.asarray(flat_color)
+        cmax = np.max(color_array)
+        cmin = np.min(color_array)
         circ_col = PatchCollection(
-            circles, alpha=0.5, array=np.asarray(flat_color), cmap=self.dot_cmap
+            circles, array=color_array, cmap=self.dot_cmap, alpha=0.5
         )
+        circ_col.set_clim(cmin, cmax)
         self.ax.add_collection(circ_col)
         self._draw_dot_size_legend()
-        if self.dot_cbar_mapper is not None:
+        if self.dot_cbar_text is not None:
             self._draw_cbar(
                 circ_col,
-                self.dot_cbar_mapper,
+                list(np.linspace(cmin, cmax, num=len(self.dot_cbar_text))),
+                self.dot_cbar_text,
                 (1.07, -0.5, 1, 1),
                 title=self.dot_cbar_title,
             )
@@ -251,8 +265,7 @@ class TriDotMatrix:
             )
         )
 
-    def _draw_cbar(self, collections, mapper, position, title=None):
-        collections.set_clim([-1, 1])
+    def _draw_cbar(self, collections, ticks, ticks_text, position, title=None):
         axins = inset_axes(
             self.ax,
             width="5%",  # width = 5% of parent_bbox width
@@ -261,8 +274,8 @@ class TriDotMatrix:
             bbox_to_anchor=position,
             bbox_transform=self.ax.transAxes,
         )
-        cbar = self.fig.colorbar(collections, cax=axins, ticks=list(mapper.keys()))
+        cbar = self.fig.colorbar(collections, cax=axins, ticks=ticks)
         cbar.ax.set_title(title)
-        cbar.ax.set_yticklabels(list(mapper.values()))
+        cbar.ax.set_yticklabels(list(ticks_text))
         cbar.ax.yaxis.set_tick_params(length=0)  # hide ticks
         cbar.set_alpha(0.5)  # be consistent with color in plot

@@ -5,11 +5,12 @@ from tqdm import tqdm
 
 from spatialtis.config import CONFIG
 
+from ..utils import timer
 from ._neighbors import Neighbors
 from ._util import check_neighbors
 
 
-# @timer(prefix="Running community detection")
+@timer(prefix="Running community detection")
 def communities(
     n: Neighbors,
     export: bool = True,
@@ -46,10 +47,8 @@ def communities(
         sub_comm += part.membership
 
     sub_comm = pd.Series(sub_comm, index=n.data.index)
-    # n.data[export_key] = sub_comm
     if export:
         n.adata.obs[export_key] = sub_comm
 
     if return_df:
         return sub_comm
-    # n.data[export_key]

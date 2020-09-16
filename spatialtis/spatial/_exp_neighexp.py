@@ -21,7 +21,7 @@ def _max_feature(x, y, **kwargs):
     return [max_ix, max_weight]
 
 
-# @timer(prefix="Finding marker expression influenced by neighbor markers")
+@timer(prefix="Finding marker expression influenced by neighbor markers")
 def exp_neighexp(
     n: Neighbors,
     score: float = 0.5,
@@ -29,7 +29,7 @@ def exp_neighexp(
     export: bool = True,
     export_key: Optional[str] = None,
     return_df: bool = False,
-    mp: bool = False,
+    mp: Optional[bool] = None,
     **kwargs,
 ):
     """Find the neighbor marker influence on marker expression after exp_neighcell
@@ -41,10 +41,8 @@ def exp_neighexp(
         export: whether to export the result to anndata.uns
         export_key: the key used to export
         return_df: whether to return the result
-        mp: whether to enable multiprocessing
+        mp: whether to enable multiprocessing (Default: spatialtis.CONFIG.MULTI_PROCESSING)
         **kwargs:
-
-    Returns:
 
     """
     if marker_key is None:
@@ -147,7 +145,7 @@ def exp_neighexp(
 
         for _ in tqdm(
             exec_iterator(results),
-            **CONFIG.tqdm(total=len(results), desc="fit model", unit="regressor"),
+            **CONFIG.tqdm(total=len(results), desc="Fitting model", unit="regressor"),
         ):
             pass
 
@@ -160,7 +158,7 @@ def exp_neighexp(
     else:
         results = []
         for comb, arr in tqdm(
-            X.items(), **CONFIG.tqdm(desc="fit model", unit="regressor"),
+            X.items(), **CONFIG.tqdm(desc="Fitting model", unit="regressor"),
         ):
             [max_ix, max_weights] = _max_feature(arr, Y[comb], **kwargs)
             if max_weights > 0:

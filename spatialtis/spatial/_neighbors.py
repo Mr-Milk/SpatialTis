@@ -3,69 +3,12 @@ from typing import Optional, Sequence, Union
 
 import numpy as np
 from anndata import AnnData
-from scipy.spatial import cKDTree
+from neighborhood_analysis import get_bbox, get_bbox_neighbors, get_point_neighbors
 from scipy.spatial.distance import euclidean
-from shapely.affinity import scale as sscale
-from shapely.geometry import asMultiPoint, box
-from shapely.strtree import STRtree
-from shapely.wkt import dumps, loads
 from tqdm import tqdm
 
 from spatialtis.config import CONFIG
 from spatialtis.utils import col2adata_obs, lprint, timer
-
-
-def _polygonize_cells(shapekey, group):
-    shapes = group[shapekey]
-    polycells = []
-    for cell in shapes:
-        c = asMultiPoint(eval(cell))
-        polycells.append(c)
-    polycells = [dumps(c) for c in polycells]
-    return polycells
-
-
-def _scale_cell(cell, scale=None, expand=None):
-    if (scale == 1.0) or (expand == 0.0):
-        return cell
-    if scale is not None:
-        return sscale(cell, xfact=scale, yfact=scale)
-    if expand is not None:
-        bbox = cell.bounds
-        expanded_bbox = [
-            bbox[0] - expand,
-            bbox[1] - expand,
-            bbox[2] + expand,
-            bbox[3] + expand,
-        ]
-        return box(*expanded_bbox)
-
-
-def _neighborshapes(polycells, scale=None, expand=None):
-    nbcells = {}
-    polycells = [loads(c) for c in polycells]
-    for i, c in enumerate(polycells):
-        c.index = i
-    tree = STRtree(polycells)
-    for i, cell in enumerate(polycells):
-        scaled_cell = _scale_cell(cell, scale, expand)
-        result = tree.query(scaled_cell)
-        neighs = [n.index for n in result]
-        nbcells[i] = neighs
-
-    return nbcells
-
-
-def _neighborpoints(cells, expand):
-    cells = [eval(c) for c in cells]
-    tree = cKDTree(cells)
-    result = tree.query_ball_point(cells, expand)
-    for i, arr in zip(range(len(cells)), result):
-        try:
-            arr.remove(i)
-        except ValueError:
-            pass
-    return dict(zip(range(len(cells)), result))
 
 
 class Neighbors(object):
@@ -81,6 +24,7 @@ class Neighbors(object):
 
     """
 
+    @timer(verbose=False)
     def __init__(
         self,
         adata: AnnData,
@@ -93,14 +37,6 @@ class Neighbors(object):
     ):
 
         # keys for query info from anndata
-        if groupby is None:
-            groupby = CONFIG.EXP_OBS
-        if type_key is None:
-            type_key = CONFIG.CELL_TYPE_KEY
-        if centroid_key is None:
-            centroid_key = CONFIG.CENTROID_KEY
-        if shape_key is None:
-            shape_key = CONFIG.SHAPE_KEY
         if geom not in ["shape", "point"]:
             raise ValueError("Available options for 'geom' are 'shape', 'point'")
 
@@ -118,21 +54,17 @@ class Neighbors(object):
         self.__groups = self.__data.groupby(groupby, sort=False)
 
         # define vars for storage
-        self.__names = [n for n, _ in self.__groups]
-        self.__polycellsdb = {n: 0 for n in self.__names}
-        self.__neighborsdb = {n: 0 for n in self.__names}
+        self.__polycellsdb = None
+        self.__neighborsdb = None
         self.__uniquetypes = np.unique(self.__data[type_key])
-        self.__types = {n: 0 for n in self.__names}
+        self.__types = {n: list(g[self.__typekey]) for n, g in self.__groups}
 
     def __repr__(self):
         return "A spatialtis.Neighbors instance"
 
-    # @timer(prefix="Finding cell neighbors")
+    @timer(prefix="Finding cell neighbors")
     def find_neighbors(
-        self,
-        expand: Optional[float] = None,
-        scale: Optional[float] = None,
-        mp: Optional[bool] = None,
+        self, expand: Optional[float] = None, scale: Optional[float] = None,
     ):
         """To find the neighbors of each cell
 
@@ -140,15 +72,13 @@ class Neighbors(object):
             expand: If the cell is shape, it means how much units to expand each cell; If the cell is point, it's the
             search radius
             scale: how much to scale each cell, only if cell is shape
-            mp: whether to enable multi processing
 
         """
-        if mp is None:
-            mp = CONFIG.MULTI_PROCESSING
-
         # handle parameters
         if (expand is None) & (scale is None):
-            raise ValueError("Neither 'expand' or 'scale' are specific")
+            scale = 1.0
+            expand = None
+            warnings.warn("Neither 'expand' or 'scale' are specific")
         elif (expand is not None) & (scale is not None):
             warnings.warn(
                 f"Conflict parameters, can't set 'expand' and 'scale' in the same time, use expand={expand}"
@@ -167,116 +97,41 @@ class Neighbors(object):
         if self.__geom == "shape":
             lprint("Cell resolved as shape data, searching neighbors using R-tree")
 
-        # parallel processing
-        if mp:
-
-            try:
-                import ray
-            except ImportError:
-                raise ImportError(
-                    "You don't have ray installed or your OS don't support ray.",
-                    "Try `pip install ray` or use `mp=False`",
-                )
-
-            _polygonize_cells_mp = ray.remote(_polygonize_cells)
-            _neighborshapes_mp = ray.remote(_neighborshapes)
-            _neighborpoints_mp = ray.remote(_neighborpoints)
-
-            def exec_iterator(obj_ids):
-                while obj_ids:
-                    done, obj_ids = ray.wait(obj_ids)
-                    yield ray.get(done[0])
-
-            # prepare data for shape neighbor search
-            if (self.__geom == "shape") & (not self.__polycells):
-                results = []
-                names = []
-                for n, g in self.__groups:
-                    results.append(_polygonize_cells_mp.remote(self.__shapekey, g))
-                    names.append(n)
-
-                    if self.__typekey is not None:
-                        types = list(g[self.__typekey])
-                        self.__types[n] = types
-
-                for _ in tqdm(
-                    exec_iterator(results),
-                    **CONFIG.tqdm(total=len(results), desc="polygonize cells",),
-                ):
-                    pass
-
-                results = ray.get(results)
-
-                for i, n in enumerate(names):
-                    self.__polycellsdb[n] = results[i]
-
-                self.__polycells = True
-
+        # prepare data for shape neighbor search
+        if (self.__geom == "shape") & (not self.__polycells):
             results = []
             names = []
-            # shape neighbor search
-            if self.__geom == "shape":
-                for n, polycells in self.__polycellsdb.items():
-                    results.append(_neighborshapes_mp.remote(polycells, scale, expand))
-                    names.append(n)
-                for _ in tqdm(
-                    exec_iterator(results),
-                    **CONFIG.tqdm(total=len(results), desc="find neighbors"),
-                ):
-                    pass
-                results = ray.get(results)
-            # point neighbor search
-            else:
-                for n, g in self.__groups:
-                    results.append(_neighborpoints_mp.remote(g[self.__centkey], expand))
-                    names.append(n)
+            for n, g in tqdm(self.__groups, **CONFIG.tqdm(desc="Get cells' bbox",),):
+                shapes = g[self.__shapekey]
+                polycells = get_bbox([eval(cell) for cell in shapes])
+                results.append(polycells)
+                names.append(n)
 
-                    if self.__typekey is not None:
-                        types = list(g[self.__typekey])
-                        self.__types[n] = types
+            self.__polycellsdb = dict(zip(names, results))
+            self.__polycells = True
 
-                for _ in tqdm(
-                    exec_iterator(results),
-                    **CONFIG.tqdm(total=len(results), desc="find neighbors"),
-                ):
-                    pass
-                results = ray.get(results)
-
-            for i, n in enumerate(names):
-                self.__neighborsdb[n] = results[i]
-            self.__neighborsbuilt = True
-
+        results = []
+        names = []
+        # shape neighbor search
+        if self.__geom == "shape":
+            for n, polycells in tqdm(
+                self.__polycellsdb.items(), **CONFIG.tqdm(desc="Find neighbors"),
+            ):
+                if expand is not None:
+                    results.append(get_bbox_neighbors(polycells, expand=expand))
+                else:
+                    results.append(get_bbox_neighbors(polycells, scale=scale))
+                names.append(n)
+        # point neighbor search
         else:
-            if (self.__geom == "shape") & (not self.__polycells):
-                for n, g in tqdm(
-                    self.__groups, **CONFIG.tqdm(desc="polygonize cells"),
-                ):
-                    polycells = _polygonize_cells(self.__shapekey, g)
-                    self.__polycellsdb[n] = polycells
+            for n, g in tqdm(self.__groups, **CONFIG.tqdm(desc="Find neighbors"),):
+                cells = [eval(c) for c in g[self.__centkey]]
+                results.append(get_point_neighbors(cells, expand))
+                names.append(n)
 
-                    if self.__typekey is not None:
-                        types = list(g[self.__typekey])
-                        self.__types[n] = types
+        self.__neighborsdb = dict(zip(names, results))
+        self.__neighborsbuilt = True
 
-                self.__polycells = True
-            # shape neighbor search
-            if self.__geom == "shape":
-                for n, polycells in tqdm(
-                    self.__polycellsdb.items(), **CONFIG.tqdm(desc="find neighbors"),
-                ):
-                    nbcells = _neighborshapes(polycells, scale, expand)
-                    self.__neighborsdb[n] = nbcells
-            # point neighbor search
-            else:
-                for n, g in tqdm(self.__groups, **CONFIG.tqdm(desc="find neighbors"),):
-                    nbcells = _neighborpoints(g[self.__centkey], expand)
-                    self.__neighborsdb[n] = nbcells
-
-                    if self.__typekey is not None:
-                        types = list(g[self.__typekey])
-                        self.__types[n] = types
-
-            self.__neighborsbuilt = True
         return self
 
     def export_neighbors(self, export_key: Optional[str] = None):
@@ -379,7 +234,9 @@ class Neighbors(object):
             )
         if not self.__neighborsbuilt:
             return None
-        new_graphs = {n: 0 for n in self.__names}
+
+        graphs = []
+        names = []
         for n, g in self.__groups:
             centroids = [eval(c) for c in g[self.__centkey]]
             vertices = [
@@ -395,8 +252,10 @@ class Neighbors(object):
                             graph_edges.append(
                                 {"source": k, "target": v, "weight": distance}
                             )
-            g = ig.Graph.DictList(vertices, graph_edges)
-            new_graphs[n] = g
+            graphs.append(ig.Graph.DictList(vertices, graph_edges))
+            names.append(n)
+
+        new_graphs = dict(zip(names, graphs))
 
         return new_graphs
 

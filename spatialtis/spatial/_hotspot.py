@@ -87,7 +87,7 @@ def hotspot(
     export: bool = True,
     export_key: Optional[str] = None,
     return_df: bool = False,
-    mp: bool = False,
+    mp: Optional[bool] = None,
 ):
     """Getis ord hotspot detection
 
@@ -103,7 +103,8 @@ def hotspot(
         export: whether to export the result to anndata.obs
         export_key: the key used to export
         return_df: whether to return the result
-        mp: whether to enable multiprocessing
+        mp: whether to enable multiprocessing (Default: spatialtis.CONFIG.MULTI_PROCESSING)
+
     """
     if groupby is None:
         groupby = CONFIG.EXP_OBS
@@ -116,6 +117,9 @@ def hotspot(
         export_key = CONFIG.hotspot_key
     else:
         CONFIG.hotspot_key = export_key
+
+    if mp is None:
+        mp = CONFIG.MULTI_PROCESSING
 
     df = filter_adata(
         adata,

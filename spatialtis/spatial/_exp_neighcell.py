@@ -30,7 +30,7 @@ def exp_neighcells(
     export: bool = True,
     export_key: Optional[str] = None,
     return_df: bool = False,
-    mp: bool = False,
+    mp: Optional[bool] = None,
     **kwargs,
 ):
     """Find the neighbor cell influence on marker expression
@@ -51,16 +51,10 @@ def exp_neighcells(
         export: whether to export the result to anndata.uns
         export_key: the key used to export
         return_df: whether to return the result
-        mp: whether to enable multiprocessing
+        mp: whether to enable multiprocessing (Default: spatialtis.CONFIG.MULTI_PROCESSING)
         **kwargs: pass to sklearn.ensemble.RandomForestRegressor
 
-    Returns:
-        pandas.DataFrame
-
     """
-    if marker_key is None:
-        marker_key = CONFIG.MARKER_KEY
-
     if export_key is None:
         export_key = CONFIG.exp_neighcell_key
     else:
@@ -124,7 +118,8 @@ def exp_neighcells(
                     c1_.append(c1)
 
         for _ in tqdm(
-            exec_iterator(results), **CONFIG.tqdm(total=len(results), desc="fit model")
+            exec_iterator(results),
+            **CONFIG.tqdm(total=len(results), desc="Fitting model", unit="regressor"),
         ):
             pass
 
@@ -140,7 +135,9 @@ def exp_neighcells(
     else:
         with tqdm(
             **CONFIG.tqdm(
-                total=len(n.unitypes) * len(markers), desc="fit model", unit="regressor"
+                total=len(n.unitypes) * len(markers),
+                desc="Fitting model",
+                unit="regressor",
             )
         ) as pbar:
             for c1 in n.unitypes:

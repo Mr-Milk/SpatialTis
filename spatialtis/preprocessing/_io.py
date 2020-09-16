@@ -147,7 +147,7 @@ class read_ROIs:
         method: str = "mean",
         polygonize: str = "convex",
         alpha: Optional[float] = None,
-        mp: bool = False,
+        mp: Optional[bool] = None,
     ):
         """Get anndata object
 
@@ -158,7 +158,7 @@ class read_ROIs:
             method: how to compute the expression level. ("mean", "sum", "median")
             polygonize: how to compute the cell shape.("convex", "concave")
             alpha: the alpha value for polygonize="concave"
-            mp: whether enable parallel processing
+            mp: whether enable parallel processing (Default: spatialtis.CONFIG.MULTI_PROCESSING)
 
         .. note:: "convex" or "concave"
 
@@ -173,6 +173,9 @@ class read_ROIs:
 
 
         """
+
+        if mp is None:
+            mp = CONFIG.MULTI_PROCESSING
 
         X = []
         ann_obs = []

@@ -91,7 +91,7 @@ def neighborhood_analysis(
         return df
 
 
-# @timer(prefix="Running spatial enrichment analysis")
+@timer(prefix="Running spatial enrichment analysis")
 def spatial_enrichment_analysis(
     n: Neighbors,
     threshold: Optional[float] = None,
