@@ -25,8 +25,8 @@ class DotMatrix:
         xlabel_rotation: rotate the x label
         ylabel_rotation: rotate the y label
         show_ticks: control the minor ticks
-        matrix_cbar_mapper: how to map the rect colorbar to annotation text
-        dot_cbar_mapper: how to map the dot colorbar to annotation text
+        matrix_cbar_text: how to map the rect colorbar to annotation text
+        dot_cbar_text: how to map the dot colorbar to annotation text
         cbar_legend_title: title of colorbar
         size_legend_title: title of size legend
         color_legend_title: title of color legend
@@ -51,10 +51,11 @@ class DotMatrix:
         ylabels: Optional[Sequence] = None,
         xlabel_rotation: int = 90,
         ylabel_rotation: int = 0,
+        show_ticks: bool = True,
         xaxis_title: Optional[str] = None,
         yaxis_title: Optional[str] = None,
-        matrix_cbar_mapper: Optional[Mapping] = None,
-        dot_cbar_mapper: Optional[Mapping] = None,
+        matrix_cbar_text: Optional[Mapping] = None,
+        dot_cbar_text: Optional[Mapping] = None,
         matrix_cbar_title: Optional[str] = None,
         dot_cbar_title: Optional[str] = None,
         size_legend_title: Optional[str] = None,
@@ -106,8 +107,8 @@ class DotMatrix:
         else:
             self.N, self.M = self.dot_size.shape
 
-        self.matrix_cbar_mapper = matrix_cbar_mapper
-        self.dot_cbar_mapper = dot_cbar_mapper
+        self.matrix_cbar_text = matrix_cbar_text
+        self.dot_cbar_text = dot_cbar_text
         self.matrix_cbar_title = matrix_cbar_title
         self.dot_cbar_title = dot_cbar_title
         self.size_legend_title = size_legend_title
@@ -117,7 +118,7 @@ class DotMatrix:
         self.ax.set_aspect("equal")
 
         # turn off minor ticks
-        self.ax.minorticks_off()
+        # self.ax.minorticks_off()
         self.ax.set(
             xticks=np.arange(self.M),
             yticks=np.arange(self.N),
@@ -126,6 +127,9 @@ class DotMatrix:
         )
         self.ax.set_xticks(np.arange(self.M + 1) - 0.5, minor=True)
         self.ax.set_yticks(np.arange(self.N + 1) - 0.5, minor=True)
+        if not show_ticks:
+            self.ax.xaxis.set_ticks_position("none")
+            self.ax.yaxis.set_ticks_position("none")
         self.ax.set_xlabel(xaxis_title)
         self.ax.set_ylabel(yaxis_title)
 
@@ -161,13 +165,18 @@ class DotMatrix:
             plt.Rectangle((j - 0.5, i - 0.5), 1, 1,)
             for j, i in zip(self.x.flat, self.y.flat)
         ]
+        color_array = self.matrix.flatten()
+        cmax = np.max(color_array)
+        cmin = np.min(color_array)
         rect_col = PatchCollection(
-            rects, array=self.matrix.flatten(), cmap=self.matrix_cmap, alpha=0.5
+            rects, array=color_array, cmap=self.matrix_cmap, alpha=0.5
         )
+        rect_col.set_clim(cmin, cmax)
         self.ax.add_collection(rect_col)
         self._draw_cbar(
             rect_col,
-            self.matrix_cbar_mapper,
+            list(np.linspace(cmin, cmax, num=len(self.dot_cbar_text))),
+            self.matrix_cbar_text,
             (1.07, -0.9, 1, 1),
             title=self.matrix_cbar_title,
         )
@@ -179,14 +188,19 @@ class DotMatrix:
             plt.Circle((j, i), radius=r,)
             for r, j, i in zip(R.flat, self.x.flat, self.y.flat)
         ]
+        color_array = self.dot_color.flatten()
+        cmax = np.max(color_array)
+        cmin = np.min(color_array)
         circ_col = PatchCollection(
-            circles, array=self.dot_color.flatten(), cmap=self.dot_cmap, alpha=0.5
+            circles, array=color_array, cmap=self.dot_cmap, alpha=0.5
         )
+        circ_col.set_clim(cmin, cmax)
         self.ax.add_collection(circ_col)
         self._draw_dot_size_legend()
         self._draw_cbar(
             circ_col,
-            self.dot_cbar_mapper,
+            list(np.linspace(cmin, cmax, num=len(self.dot_cbar_text))),
+            self.dot_cbar_text,
             (1.07, -0.5, 1, 1),
             title=self.dot_cbar_title,
         )
@@ -247,8 +261,7 @@ class DotMatrix:
         legend._legend_box.align = "left"
         self.ax.add_artist(legend)
 
-    def _draw_cbar(self, collections, mapper, position, title=None):
-        collections.set_clim([-1, 1])
+    def _draw_cbar(self, collections, ticks, ticks_text, position, title=None):
         axins = inset_axes(
             self.ax,
             width="5%",  # width = 5% of parent_bbox width
@@ -257,8 +270,8 @@ class DotMatrix:
             bbox_to_anchor=position,
             bbox_transform=self.ax.transAxes,
         )
-        cbar = self.fig.colorbar(collections, cax=axins, ticks=list(mapper.keys()))
+        cbar = self.fig.colorbar(collections, cax=axins, ticks=ticks)
         cbar.ax.set_title(title)
-        cbar.ax.set_yticklabels(list(mapper.values()))
+        cbar.ax.set_yticklabels(list(ticks_text))
         cbar.ax.yaxis.set_tick_params(length=0)  # hide ticks
         cbar.set_alpha(0.5)  # be consistent with color in plot

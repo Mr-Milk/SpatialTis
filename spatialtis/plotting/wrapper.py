@@ -1,5 +1,5 @@
 from collections import Counter, OrderedDict
-from itertools import combinations_with_replacement
+from itertools import combinations_with_replacement, product
 from typing import Mapping, Optional, Sequence
 
 import numpy as np
@@ -267,16 +267,26 @@ def neighborhood_analysis(
             sign_data.append(sign_arr)
         df = pd.DataFrame(sign_data, columns=df.columns, index=df.index)
 
-    if selected_types is not None:
+    if selected_types is None:
+        selected_types = np.unique(df.columns.to_frame(index=False).to_numpy())
+    if order:
+        combs = [i for i in product(selected_types, repeat=2)]
+        df = df[combs]
+    else:
         combs = [i for i in combinations_with_replacement(selected_types, 2)]
         cols = df.columns.tolist()
         colnames = df.columns.names
-        for i, comb in enumerate(cols):
-            if comb not in combs:
-                cols[i] = comb[::-1]
-        df.columns = pd.MultiIndex.from_tuples(cols)
+        new_cols = []
+        for comb in combs:
+            if comb not in cols:
+                if comb[::-1] in cols:
+                    new_cols.append(comb[::-1])
+            else:
+                new_cols.append(comb)
+        df = df[new_cols]
+        df.columns = pd.MultiIndex.from_tuples(combs)
         df.columns.names = colnames
-        df = df[combs]
+
     """
     if use == "graph":
         p = cc_interactions(df, {-1: "Avoidance", 1: "Association"}, **kwargs)
@@ -338,11 +348,15 @@ def neighborhood_analysis(
                     )
         counts = pd.DataFrame(counts, columns=["type1", "type2", "all", "%", "p"])
         matrix = counts.pivot(index="type1", columns="type2", values="p")
+        # the pivot operation will sort alphabetically, force to sort again
+        matrix = matrix.loc[selected_types, selected_types]
         xlabels = matrix.columns
         ylabels = matrix.index
         matrix = matrix.to_numpy()
-        dot_color = counts.pivot(index="type1", columns="type2", values="%").to_numpy()
-        dot_size = counts.pivot(index="type1", columns="type2", values="all").to_numpy()
+        dot_color = counts.pivot(index="type1", columns="type2", values="%")
+        dot_color = dot_color.loc[selected_types, selected_types].to_numpy()
+        dot_size = counts.pivot(index="type1", columns="type2", values="all")
+        dot_size = dot_size.loc[selected_types, selected_types].to_numpy()
 
         def filter_nan(matrix):
             diag_matrix = []
@@ -356,10 +370,11 @@ def neighborhood_analysis(
 
         if order:
             plot_kwargs = dict(
+                show_ticks=False,
                 size_legend_title="Sign' ROI",
                 matrix_cbar_title="■\nPearson\nCorrelation",
-                matrix_cbar_mapper={-1: "-1", 1: "1"},
-                dot_cbar_mapper={-1: "Avoidance", 1: "Association"},
+                matrix_cbar_text=["-1", "1"],
+                dot_cbar_text=["Avoidance", "Association"],
                 dot_cbar_title="●\n% of\ninteraction",
             )
             for k, v in kwargs.items():
@@ -378,10 +393,11 @@ def neighborhood_analysis(
             diag_size = filter_nan(dot_size)
 
             plot_kwargs = dict(
+                show_ticks=False,
                 size_legend_title="Sign' ROI",
                 block_cbar_title="■\nPearson\nCorrelation",
-                block_cbar_mapper={-1: "-1", 1: "1"},
-                dot_cbar_mapper={-1: "Avoidance", 1: "Association"},
+                block_cbar_text=["-1", "1"],
+                dot_cbar_text=["Avoidance", "Association"],
                 dot_cbar_title="●\n% of\ninteraction",
             )
             for k, v in kwargs.items():
@@ -458,16 +474,21 @@ def spatial_enrichment_analysis(
         sign_data.append(sign_arr)
     df = pd.DataFrame(sign_data, columns=df.columns, index=df.index)
 
-    if selected_types is not None:
-        combs = [i for i in combinations_with_replacement(selected_types, 2)]
-        cols = df.columns.tolist()
-        colnames = df.columns.names
-        for i, comb in enumerate(cols):
-            if comb not in combs:
-                cols[i] = comb[::-1]
-        df.columns = pd.MultiIndex.from_tuples(cols)
-        df.columns.names = colnames
-        df = df[combs]
+    if selected_types is None:
+        selected_types = pd.unique(df.columns.to_frame(index=False).iloc[:, 0])
+    combs = [i for i in product(selected_types, repeat=2)]
+    cols = df.columns.tolist()
+    colnames = df.columns.names
+    new_cols = []
+    for comb in combs:
+        if comb not in cols:
+            if comb[::-1] in cols:
+                new_cols.append(comb[::-1])
+        else:
+            new_cols.append(comb)
+    df = df[new_cols]
+    df.columns = pd.MultiIndex.from_tuples(combs)
+    df.columns.names = colnames
 
     if use == "dot_matrix":
 
@@ -511,7 +532,9 @@ def spatial_enrichment_analysis(
                     )
         counts = pd.DataFrame(counts, columns=["type1", "type2", "all", "%"])
         dot_color = counts.pivot(index="type1", columns="type2", values="%")
+        dot_color = dot_color.loc[selected_types, selected_types]
         dot_size = counts.pivot(index="type1", columns="type2", values="all")
+        dot_size = dot_size.loc[selected_types, selected_types]
         xlabels = dot_size.columns
         ylabels = dot_size.index
         dot_color = dot_color.to_numpy()
@@ -529,8 +552,9 @@ def spatial_enrichment_analysis(
 
         if order:
             plot_kwargs = dict(
+                show_ticks=False,
                 size_legend_title="Sign' ROI",
-                dot_cbar_mapper={-1: "Avoidance", 1: "Association"},
+                dot_cbar_text=["Avoidance", "Association"],
                 dot_cbar_title="●\n% of\ninteraction",
             )
             for k, v in kwargs.items():
@@ -547,8 +571,9 @@ def spatial_enrichment_analysis(
             diag_size = filter_nan(dot_size)
 
             plot_kwargs = dict(
+                show_ticks=False,
                 size_legend_title="Sign' ROI",
-                dot_cbar_mapper={-1: "Avoidance", 1: "Association"},
+                dot_cbar_text=["Avoidance", "Association"],
                 dot_cbar_title="●\n% of\ninteraction",
             )
             for k, v in kwargs.items():

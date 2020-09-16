@@ -13,20 +13,6 @@ from ..utils import df2adata_uns, filter_adata, lprint, timer
 from ._util import quad_sta
 
 
-def _wrapper(groups, types, type_key, centroid_key, patch_func, *args):
-    names = [n for n, _ in groups]
-    patterns = {n: {t: 0 for t in types} for n in names}
-
-    for name, group in tqdm(groups, **CONFIG.tqdm(desc="find distribution pattern"),):
-        for t, tg in group.groupby(type_key):
-            if len(tg) > 1:
-                cells = [eval(c) for c in tg[centroid_key]]
-                pattern = patch_func(cells, *args)
-                patterns[name][t] = pattern
-
-    return patterns
-
-
 def VMR(points, resample, r, pval):
 
     tree = cKDTree(points)
@@ -121,20 +107,21 @@ def NNS(points, pval):
     return pattern
 
 
-@timer(prefix="Running plotting distribution")
+@timer(prefix="Running spatial distribution")
 def spatial_distribution(
     adata: AnnData,
     groupby: Union[Sequence, str, None] = None,
     method: str = "nns",
     pval: float = 0.01,
     r: Optional[float] = 10,
-    resample: int = 50,
+    resample: int = 500,
     quad: Sequence[int] = (10, 10),
     type_key: Optional[str] = None,
     centroid_key: Optional[str] = None,
     export: bool = True,
     export_key: Optional[str] = None,
     return_df: bool = False,
+    mp: Optional[bool] = None,
 ):
     """Cell distribution pattern
 
@@ -173,6 +160,7 @@ def spatial_distribution(
         export: whether to export the result to anndata.uns
         export_key: the key used to export
         return_df: whether to return the result
+        mp: whether to enable multiprocessing (Default: spatialtis.CONFIG.MULTI_PROCESSING)
 
     Returns:
         pandas.DataFrame
@@ -181,13 +169,6 @@ def spatial_distribution(
     if you don't know what to choose, let us choose for you, the default is 'auto'
 
     """
-    if groupby is None:
-        groupby = CONFIG.EXP_OBS
-    if type_key is None:
-        type_key = CONFIG.CELL_TYPE_KEY
-    if centroid_key is None:
-        centroid_key = CONFIG.CENTROID_KEY
-
     if export_key is None:
         export_key = CONFIG.spatial_distribution_key
     else:
@@ -199,21 +180,76 @@ def spatial_distribution(
 
     if method == "vmr":
         lprint("Method: Variance-to-mean ratio")
-        patterns = _wrapper(
-            groups, types, type_key, centroid_key, VMR, resample, r, pval
-        )
+        _dist_func = VMR
+        args = [resample, r, pval]
     elif method == "quad":
         lprint("Method: Quadratic statistic")
-        patterns = _wrapper(groups, types, type_key, centroid_key, QUAD, quad, pval)
+        _dist_func = QUAD
+        args = [quad, pval]
     elif method == "nns":
         lprint("Method: Nearest neighbors search")
-        patterns = _wrapper(groups, types, type_key, centroid_key, NNS, pval)
+        _dist_func = NNS
+        args = [pval]
     else:
         raise ValueError(
             f"'{method}' No such method, available options are 'vmr','quad','nns'."
         )
 
-    results = pd.DataFrame(patterns)
+    patterns = []
+    name_tags = []
+    type_tags = []
+
+    if mp:
+        try:
+            import ray
+        except ImportError:
+            raise ImportError(
+                "You don't have ray installed or your OS don't support ray.",
+                "Try `pip install ray` or use `mp=False`",
+            )
+
+        _dist_mp = ray.remote(_dist_func)
+
+        def exec_iterator(obj_ids):
+            while obj_ids:
+                done, obj_ids = ray.wait(obj_ids)
+                yield ray.get(done[0])
+
+        results = []
+        for name, group in groups:
+            for t, tg in group.groupby(type_key):
+                if len(tg) > 1:
+                    cells = [eval(c) for c in tg[centroid_key]]
+                    results.append(_dist_mp.remote(cells, *args))
+                    type_tags.append(t)
+                    name_tags.append(name)
+
+        for _ in tqdm(
+            exec_iterator(results),
+            **CONFIG.tqdm(
+                total=len(results), desc="Finding distribution pattern", unit="task"
+            ),
+        ):
+            pass
+
+        patterns = ray.get(results)
+
+    else:
+        for name, group in tqdm(
+            groups, **CONFIG.tqdm(desc="Finding distribution pattern"),
+        ):
+            for t, tg in group.groupby(type_key):
+                if len(tg) > 1:
+                    cells = [eval(c) for c in tg[centroid_key]]
+                    patterns.append(_dist_func(cells, *args))
+                    type_tags.append(t)
+                    name_tags.append(name)
+
+    dist_patterns = {n: {t: 0 for t in types} for n in name_tags}
+    for n, t, p in zip(name_tags, type_tags, patterns):
+        dist_patterns[n][t] = p
+
+    results = pd.DataFrame(dist_patterns)
     results = results.rename_axis(index=["Cell type"], columns=groupby).T
 
     if export:

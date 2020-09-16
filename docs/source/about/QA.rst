@@ -17,11 +17,12 @@ The parallel happens at ROI level. If a small dataset is used, there might find 
 Only following functions in spatialtis have parallel processing support, pass argument `mp=True` to enable.
 
     - :class:`spatialtis.read_ROIs`
-    - :meth:`spatialtis.Neighbors.find_neighbors`
+    - :func:`spatialtis.spatial.spatial_distribution`
     - :func:`spatialtis.spatial.hotspot`
 
 These are implemented in rust, it will automatically run in parallel.
 
+    - :meth:`spatialtis.Neighbors.find_neighbors`
     - :func:`spatialtis.spatial.neighborhood_analysis`
     - :func:`spatialtis.spatial.spatial_enrichment_analysis`
 

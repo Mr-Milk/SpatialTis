@@ -13,7 +13,7 @@ from ..sta.statistics import type_counter
 from ..utils import df2adata_uns, lprint, timer
 
 
-@timer(prefix="Running plotting heterogeneity")
+@timer(prefix="Running spatial heterogeneity")
 def spatial_heterogeneity(
     adata: AnnData,
     groupby: Union[Sequence, str, None] = None,
@@ -48,16 +48,9 @@ def spatial_heterogeneity(
         export: whether to export the result to anndata.uns
         export_key: the key used to export
         return_df: whether to return the result
-        mp: whether to enable multiprocessing
+        mp: whether to enable multiprocessing (Default: spatialtis.CONFIG.MULTI_PROCESSING)
 
     """
-    if groupby is None:
-        groupby = CONFIG.EXP_OBS
-    if type_key is None:
-        type_key = CONFIG.CELL_TYPE_KEY
-    if centroid_key is None:
-        centroid_key = CONFIG.CENTROID_KEY
-
     if export_key is None:
         export_key = CONFIG.spatial_heterogeneity_key
     else:
@@ -164,7 +157,7 @@ def spatial_heterogeneity(
 
             for _ in tqdm(
                 exec_iterator(results),
-                **CONFIG.tqdm(total=len(results), desc="heterogeneity")
+                **CONFIG.tqdm(total=len(results), desc="Calculating heterogeneity")
             ):
                 pass
 
@@ -175,7 +168,7 @@ def spatial_heterogeneity(
 
         else:
             for i, (n, g) in enumerate(
-                tqdm(groups, **CONFIG.tqdm(desc="heterogeneity",))
+                tqdm(groups, **CONFIG.tqdm(desc="Calculating heterogeneity",))
             ):
                 types = list(g[type_key])
                 points = [eval(i) for i in g[centroid_key]]

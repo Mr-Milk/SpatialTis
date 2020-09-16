@@ -23,8 +23,7 @@ setup(name="spatialtis",
       python_requires='>=3.6',
       install_requires=['anndata', 'numpy', 'pandas',
                         'scipy', 'shapely', 'bokeh',
-                        'seaborn', 'colour', 'matplotlib', 'tqdm', 'pyecharts',
-                        'spatialentropy', 'colorama', 'snapshot_phantomjs', ],
-      extra_requires={'all': ['ray', 'scikit-image', 'python-igraph', 'leidenalg', 'IPython'
-                              'alphashape', 'tifffile', 'neighborhood_analysis']}
+                        'seaborn', 'colour', 'matplotlib', 'tqdm', 'pyecharts', 'ray',
+                        'spatialentropy', 'colorama', 'snapshot_phantomjs', 'neighborhood_analysis'],
+      extra_requires={'all': ['scikit-image', 'python-igraph', 'leidenalg', 'alphashape', 'tifffile', ]}
       )

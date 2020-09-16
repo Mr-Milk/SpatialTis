@@ -23,7 +23,7 @@ def test_neighbors_shape_data():
     n = Neighbors(data)
     n.find_neighbors(scale=2)
     n.find_neighbors(expand=3)
-    n.find_neighbors(expand=3, mp=True)
+    n.find_neighbors(expand=3)
     n.neighbors_count()
     n.export_neighbors()
     n.read_neighbors()
