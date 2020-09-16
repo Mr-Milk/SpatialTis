@@ -71,9 +71,6 @@ def cell_components(
         export_key: the key used to export
         return_df: whether to return the result
 
-    Return:
-        pandas.DataFrame
-
     """
     if export_key is None:
         export_key = CONFIG.cell_components_key
@@ -111,9 +108,6 @@ def cell_co_occurrence(
         export: whether to export the result to anndata.uns
         export_key: the key used to export
         return_df: whether to return the result
-
-    Return:
-        pandas.DataFrame
 
     """
     if export_key is None:
@@ -177,9 +171,6 @@ def cell_density(
         export_key: the key used to export
         return_df: whether to return the result
 
-    Return:
-            pandas.DataFrame
-
     """
     if export_key is None:
         export_key = CONFIG.cell_density_key
@@ -224,9 +215,6 @@ def cell_morphology(
         export: whether to export the result to anndata.uns
         export_key: the key used to export
         return_df: whether to return the result
-
-    Return:
-            pandas.DataFrame
 
     """
     if export_key is None:

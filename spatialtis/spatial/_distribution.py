@@ -162,9 +162,6 @@ def spatial_distribution(
         return_df: whether to return the result
         mp: whether to enable multiprocessing (Default: spatialtis.CONFIG.MULTI_PROCESSING)
 
-    Returns:
-        pandas.DataFrame
-
     MID is quadratic statistic, it cuts a ROI into few rectangles, quad=(10,10) means the ROI will have 10*10 grid,
     if you don't know what to choose, let us choose for you, the default is 'auto'
 

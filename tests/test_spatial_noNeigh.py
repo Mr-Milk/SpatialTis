@@ -36,7 +36,7 @@ def test_spatial_hetero():
     data = pytest.data
     st.spatial_heterogeneity(data)
     st.spatial_heterogeneity(data, method="shannon", compare="Patient")
-    st.spatial_heterogeneity(data, method="leibovici", mp=True)
+    st.spatial_heterogeneity(data, method="altieri")
 
 
 def test_spatial_hetero_plot():
@@ -51,5 +51,6 @@ def test_hotspot():
 
 def test_spatial_mp():
     data = pytest.data
+    st.spatial_distribution(data, mp=True)
     st.spatial_heterogeneity(data, mp=True)
     st.hotspot(data, grid_size=10, mp=True)

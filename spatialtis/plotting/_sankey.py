@@ -23,18 +23,16 @@ def sankey(
     """(pyecharts) sankey plot
 
     Args:
-        nodes:
-        nodes_colors:
-        links:
-        renderer:
-        theme:
-        size:
-        title:
-        display:
-        save:
-        return_plot:
-
-    Returns:
+        nodes: all the nodes
+        nodes_colors: the color for each node
+        links: connections between nodes
+        renderer: "canvas" or "svg"
+        theme: https://pyecharts.org/#/zh-cn/themes
+        size: size of plot in pixels
+        title: title of the plot
+        display: whether to display the plot
+        save: the path to save your plot
+        return_plot: whether to return the plot instance
 
     """
     draw_nodes = []
