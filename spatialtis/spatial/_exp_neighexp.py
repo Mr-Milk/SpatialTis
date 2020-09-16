@@ -42,7 +42,7 @@ def exp_neighexp(
         export_key: the key used to export
         return_df: whether to return the result
         mp: whether to enable multiprocessing (Default: spatialtis.CONFIG.MULTI_PROCESSING)
-        **kwargs:
+        **kwargs: pass to sklearn.ensemble.RandomForestRegressor
 
     """
     if marker_key is None:

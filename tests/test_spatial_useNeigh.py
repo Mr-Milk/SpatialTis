@@ -42,8 +42,8 @@ def test_neighbors_point_data():
 def test_neighbors_plot():
     data = pytest.data
     ROI = {"Patient": "HPAP005", "Part": "Tail", "ROI": "ROI1"}
-    sp.cell_neighbors(data, ROI)
-    sp.cell_neighbors(data, ROI, use="static", display=False)
+    sp.cell_neighbors(data, ROI, save="test.png")
+    sp.cell_neighbors(data, ROI, use="static", display=False, save="test.png")
 
 
 def test_community():
@@ -67,16 +67,24 @@ def test_cell_type_graph():
 def test_neighborhood_analysis():
     n = pytest.n
     st.neighborhood_analysis(n, resample=50)
+    st.neighborhood_analysis(n, resample=50, method="zscore", export_key='zscore_na')
     st.neighborhood_analysis(n, resample=50, order=False, export_key="unorder_na")
+    st.neighborhood_analysis(n, resample=50, order=False, method="zscore", export_key='zscore_unorder_na')
 
 
 def test_neighborhood_analysis_plot():
     data = pytest.data
     sp.neighborhood_analysis(data, ['Patient', 'Part'], use="heatmap", display=False)
+    sp.neighborhood_analysis(data, ['Patient', 'Part'], use="heatmap", display=False, key='zscore_na')
+    sp.neighborhood_analysis(data, ['Patient', 'Part'], use="heatmap", display=False, key='unorder_na')
+    sp.neighborhood_analysis(data, ['Patient', 'Part'], use="heatmap", display=False, key='zscore_unorder_na')
 
     st.cell_components(data)
     sp.neighborhood_analysis(data, use="dot_matrix", display=False)
+    sp.neighborhood_analysis(data, use="dot_matrix", display=False, key="zscore_na")
     sp.neighborhood_analysis(data, use="dot_matrix", display=False, key="unorder_na")
+    sp.neighborhood_analysis(data, use="dot_matrix", display=False, key="unorder_na")
+    sp.neighborhood_analysis(data, use="dot_matrix", display=False, key="zscore_unorder_na")
 
 
 def test_spatial_enrichment_analysis():
@@ -96,7 +104,7 @@ def test_exp_neighcell():
 
 def test_exp_neighcell_plot():
     data = pytest.data
-    sp.exp_neighcells(data)
+    sp.exp_neighcells(data, score=0)
 
 
 def test_exp_neighexp():
@@ -106,10 +114,5 @@ def test_exp_neighexp():
 
 def test_spatial_mp():
     n = pytest.n
-    data = pytest.data
-    n_mp = Neighbors(data)
-    n_mp.find_neighbors(expand=3)
-    st.neighborhood_analysis(n, resample=50)
-    st.spatial_enrichment_analysis(n, threshold=0.1, resample=50)
     st.exp_neighcells(n, mp=True)
     st.exp_neighexp(n, mp=True)

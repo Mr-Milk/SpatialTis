@@ -74,7 +74,7 @@ def timer(prefix=None, suffix=None, verbose=None):
             params_names = sig.parameters.keys()
             kw_names = kw.keys()
 
-            if "grouby" in kw_names:
+            if "groupby" in kw_names:
                 kw["groupby"] = list(kw["groupby"])
 
             def _handle_kwargs(
@@ -266,10 +266,10 @@ def prepare_svca(
     Args:
         adata: AnnData object
         export: where to store the data
-        entry_folder:
+        entry_folder: the folder to store the data
         marker_key: which key in anndata var is used in the header of the expressions.txt
-        groupby:
-        centroid_key:
+        groupby: how your experiments grouped, (Default: spatialtis.CONFIG.EXP_OBS)
+        centroid_key: anndata.obs key that store cell centroid info (Default: spatialtis.CONFIG.CENTROID_KEY)
 
     """
     if groupby is None:

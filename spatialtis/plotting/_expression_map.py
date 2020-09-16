@@ -41,6 +41,8 @@ def expression_map(
         marker_key: the key of marker in anndata.var (Default: spatialtis.CONFIG.MARKER_KEY)
         centroid_key: the key of cell centroid in anndata.obs (Default: spatialtis.CONFIG.CENTROID_KEY)
         order: array of marker name, display as order
+        expression_min: setting threshold for min of expression
+        expression_max: setting threshold for max of expression
         use: "bar3d" or "scatter"
         renderer: "canvas" or "svg"
         axis_size: the length of x,y,z axis

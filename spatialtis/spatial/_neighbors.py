@@ -68,10 +68,8 @@ class Neighbors(object):
     ):
         """To find the neighbors of each cell
 
-        Args:
-            expand: If the cell is shape, it means how much units to expand each cell; If the cell is point, it's the
-            search radius
-            scale: how much to scale each cell, only if cell is shape
+        Args: expand: If the cell is shape, it means how much units to expand each cell; If the cell is point, it's the search radius
+        scale: how much to scale each cell, only if cell is shape
 
         """
         # handle parameters
