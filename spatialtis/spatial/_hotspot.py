@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 from spatialtis.config import CONFIG
 
-from ..utils import filter_adata, timer
+from ..utils import col2adata_obs, filter_adata, timer
 from ._util import quad_sta
 
 
@@ -164,7 +164,7 @@ def hotspot(
 
         for _ in tqdm(
             exec_iterator(results),
-            **CONFIG.tqdm(total=len(results), desc="hotspot analysis"),
+            **CONFIG.tqdm(total=len(results), desc="Hotspot analysis"),
         ):
             pass
 
@@ -175,7 +175,7 @@ def hotspot(
 
     else:
         hotcells = []
-        for name, group in tqdm(groups, **CONFIG.tqdm(desc="hotspot analysis")):
+        for name, group in tqdm(groups, **CONFIG.tqdm(desc="Hotspot analysis")):
             for t, tg in group.groupby(type_key):
                 if len(tg) > 1:
                     cells = [eval(c) for c in tg[centroid_key]]
@@ -189,7 +189,8 @@ def hotspot(
     if export:
         adata.obs[export_key] = hotcells
         # Cell map will leave blank if fill with None value
-        adata.obs[export_key].fillna("other")
+        adata.obs[export_key].fillna("other", inplace=True)
+        col2adata_obs(adata.obs[export_key], adata, export_key)
 
     if return_df:
         return hotcells

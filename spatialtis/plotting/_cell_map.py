@@ -54,6 +54,8 @@ def cell_map(
         shape_key = CONFIG.SHAPE_KEY
     if centroid_key is None:
         centroid_key = CONFIG.CENTROID_KEY
+    if geom not in ["shape", "point"]:
+        raise ValueError("Available value for `geom` are 'shape' and 'point'.")
 
     if geom == "shape":
         if shape_key not in adata.obs.keys():

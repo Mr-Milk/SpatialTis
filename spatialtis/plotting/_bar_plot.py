@@ -66,8 +66,12 @@ def stacked_bar(
         df = df.sort_values(sort_type, ascending=ascending)
 
     if group_order is not None:
-        for level, order in group_order.items():
-            df = df.reindex(index=order, level=level)
+        if isinstance(df.index, pd.MultiIndex):
+            for level, order in group_order.items():
+                df = df.reindex(index=order, level=level)
+        else:
+            for level, order in group_order.items():
+                df = df.reindex(index=order)
 
     factors = list()
     for i in list(df.index):

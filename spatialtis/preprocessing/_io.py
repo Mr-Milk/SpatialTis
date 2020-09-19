@@ -199,7 +199,14 @@ class read_ROIs:
 
             for exp_img, mask_img in zip(self._exp_img, self._mask_img):
                 results.append(
-                    get_roi_mp.remote(exp_img, mask_img, bg, method, polygonize, alpha,)
+                    get_roi_mp.remote(
+                        exp_img,
+                        mask_img,
+                        bg=bg,
+                        method=method,
+                        polygonize=polygonize,
+                        alpha=alpha,
+                    )
                 )
 
             for _ in tqdm(
@@ -223,7 +230,14 @@ class read_ROIs:
                 zip(self._exp_img, self._mask_img, self.obs),
                 **CONFIG.tqdm(total=len(self._tree), desc="process images"),
             ):
-                [exp, cells] = get_roi(exp_img, mask_img, bg, method, polygonize, alpha)
+                [exp, cells] = get_roi(
+                    exp_img,
+                    mask_img,
+                    bg=bg,
+                    method=method,
+                    polygonize=polygonize,
+                    alpha=alpha,
+                )
                 X += exp
                 ann_obs += list(np.repeat(np.array([obs]), len(cells[0]), axis=0))
                 areas += cells[0]

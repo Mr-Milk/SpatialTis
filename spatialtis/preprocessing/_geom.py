@@ -49,7 +49,6 @@ def cell_border(cell, polygonize="convex", alpha=None):
     # if cell has less than 3 points, then it's meaningless
     if len(cell) < 3:
         return None
-
     if polygonize == "convex":
         cell = MultiPoint(cell).convex_hull
     elif polygonize == "concave":
@@ -57,8 +56,7 @@ def cell_border(cell, polygonize="convex", alpha=None):
             import alphashape
         except ImportError:
             raise ImportError(
-                "You have neither CGAL nor alphashape installed, "
-                "try pip install cgal-bindings / pip install alphashape."
+                "You need alphashape installed, " "try `pip install alphashape`."
             )
         if alpha is None:
             alpha = alphashape.optimizealpha(cell)

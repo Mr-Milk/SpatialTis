@@ -151,7 +151,9 @@ class Neighbors(object):
             CONFIG.neighbors_key = export_key
 
         if not self.__neighborsbuilt:
-            return "Please run .find_neighbors() before further analysis."
+            raise ValueError(
+                "Neighbors info not found. Please run Neighbors.find_neighbors() before further analysis."
+            )
 
         neighbors = []
         for n, g in self.__groups:
@@ -185,7 +187,9 @@ class Neighbors(object):
             CONFIG.neighbors_count_key = export_key
 
         if not self.__neighborsbuilt:
-            return "Please run .find_neighbors() before further analysis."
+            raise ValueError(
+                "Neighbors info not found. Please run Neighbors.find_neighbors() before further analysis."
+            )
 
         counts = []
         for n, g in self.__groups:
@@ -231,7 +235,9 @@ class Neighbors(object):
                 "Required python-igraph, try `pip install python-igraph`."
             )
         if not self.__neighborsbuilt:
-            return None
+            raise ValueError(
+                "Neighbors info not found. Please run Neighbors.find_neighbors() before further analysis."
+            )
 
         graphs = []
         names = []
