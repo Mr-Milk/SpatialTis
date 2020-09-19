@@ -154,7 +154,12 @@ def spatial_enrichment_analysis(
         data.layers[layers_key] = data.X >= threshold
 
     if selected_markers is not None:
-        data = data[data.var[marker_key].isin(selected_markers)]
+        if len(selected_markers) > 1:
+            data_t = data.T
+            data = data_t[data_t.obs[marker_key].isin(selected_markers)].copy()
+            data = data.T
+        else:
+            raise ValueError("You need at least two markers for `selected_markers`.")
 
     markers = data.var[marker_key]
     results = {}

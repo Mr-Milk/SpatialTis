@@ -20,6 +20,14 @@ def test_read_rois_mp():
     data.to_anndata(mp=True)
 
 
-def test_concave():
+def test_concave(shared_datadir):
+    var = pd.read_csv((shared_datadir / 'metadata.csv'))
+    data = read_ROIs((shared_datadir / 'Patients' / 'HPAP002' / 'Body'), ['Part', 'ROI'], var,
+                     mask_pattern="mask", img_pattern="stacked")
+    data.to_anndata(polygonize="concave", alpha=1.0)
+
+
+@pytest.mark.xfail
+def test_polygonzie_failed():
     data = pytest.data
-    data.to_anndata(polygonize="concave", alpha=1.0, mp=True)
+    data.to_anndata(polygonize="con", alpha=1.0)

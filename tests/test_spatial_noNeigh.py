@@ -18,25 +18,42 @@ def test_read_data(shared_datadir):
     pytest.data = data
 
 
-def test_spatial_dist(shared_datadir):
+def test_spatial_dist():
     data = pytest.data
-    st.spatial_distribution(data, r=50, method="vmr")
-    st.spatial_distribution(data, quad=(10, 10), method="quad")
+    st.spatial_distribution(data, r=50, method="vmr", export_key=CONFIG.spatial_distribution_key)
+    st.spatial_distribution(data, quad=(10, 10), method="quad", return_df=True)
     st.spatial_distribution(data, method="nns")
+
+
+@pytest.mark.xfail
+def test_spatial_dist_failed_param_method():
+    data = pytest.data
+    st.spatial_distribution(data, method="ttt")
 
 
 def test_spatial_dist_plot():
     data = pytest.data
-    sp.spatial_distribution(data, ["Patient", "Part"], save="test.png")
-    os.remove('test.png')
+    plot_kwargs = dict(
+        annotated=True,
+        title="sth",
+        save="test.png",
+        return_plot=True
+    )
+    sp.spatial_distribution(data, ["Patient", "Part"], **plot_kwargs)
     sp.spatial_distribution(data, ["Patient", "Part"], use="heatmap", display=False)
 
 
 def test_spatial_hetero():
     data = pytest.data
-    st.spatial_heterogeneity(data)
     st.spatial_heterogeneity(data, method="shannon", compare="Patient")
+    st.spatial_heterogeneity(data, method="leibovici")
     st.spatial_heterogeneity(data, method="altieri")
+
+
+@pytest.mark.xfail
+def test_spatial_hetero_failed_param_method():
+    data = pytest.data
+    st.spatial_heterogeneity(data, method="what")
 
 
 def test_spatial_hetero_plot():
@@ -52,5 +69,6 @@ def test_hotspot():
 def test_spatial_mp():
     data = pytest.data
     st.spatial_distribution(data, mp=True)
-    st.spatial_heterogeneity(data, mp=True)
+    st.spatial_heterogeneity(data, method="leibovici", mp=True)
+    st.spatial_heterogeneity(data, method="altieri", mp=True)
     st.hotspot(data, grid_size=10, mp=True)

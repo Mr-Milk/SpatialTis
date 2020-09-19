@@ -111,6 +111,8 @@ class _CONFIG(object):
 
     @ROI_KEY.setter
     def ROI_KEY(self, key):
+        if self.EXP_OBS is None:
+            raise ValueError("Please set the EXP_OBS first")
         if key not in self.EXP_OBS:
             raise ValueError("The ROI_KEY is not in your EXP_OBS")
         else:
@@ -130,11 +132,14 @@ class _CONFIG(object):
     def EXP_OBS(self, obs):
         if isinstance(obs, (str, int, float)):
             self._EXP_OBS = [obs]
+            self._ROI_KEY = self._EXP_OBS[-1]
         elif isinstance(obs, Sequence):
             self._EXP_OBS = list(obs)
+            self._ROI_KEY = self._EXP_OBS[-1]
+        elif obs is None:
+            self._EXP_OBS = None
         else:
-            raise ValueError("")
-        self._ROI_KEY = self._EXP_OBS[-1]
+            raise TypeError(f"Couldn't set EXP_OBS with type {type(obs)}")
 
     @property
     def CELL_TYPE_KEY(self):
@@ -144,8 +149,10 @@ class _CONFIG(object):
     def CELL_TYPE_KEY(self, type_key):
         if isinstance(type_key, (str, int, float)):
             self._CELL_TYPE_KEY = type_key
+        elif type_key is None:
+            self._CELL_TYPE_KEY = None
         else:
-            raise ValueError
+            raise TypeError(f"Couldn't set CELL_TYPE_KEY with type {type(type_key)}")
 
     @property
     def WORKING_ENV(self):
@@ -153,7 +160,7 @@ class _CONFIG(object):
 
     @WORKING_ENV.setter
     def WORKING_ENV(self, env):
-        if env not in ["jupyter_notebook", "jupyter_lab", "nteract", "zepplin", None]:
+        if env not in ["jupyter_notebook", "jupyter_lab", "nteract", "zeppelin", None]:
             warnings.warn("Unknown working environments", UserWarning)
         self._WORKING_ENV = env
         if env is None:
@@ -166,17 +173,16 @@ class _CONFIG(object):
             from pyecharts.globals import CurrentConfig, NotebookType
             from bokeh.io import output_notebook
 
+            output_notebook(hide_banner=True)
+
             if env == "jupyter_notebook":
-                output_notebook(hide_banner=True)
+                pass
             elif env == "jupyter_lab":
                 CurrentConfig.NOTEBOOK_TYPE = NotebookType.JUPYTER_LAB
-                output_notebook(hide_banner=True)
             elif env == "nteract":
                 CurrentConfig.NOTEBOOK_TYPE = NotebookType.NTERACT
-                output_notebook(hide_banner=True)
             elif env == "zeppelin":
                 CurrentConfig.NOTEBOOK_TYPE = NotebookType.ZEPPELIN
-                output_notebook(hide_banner=True, notebook_type="zepplin")
 
     @property
     def CPU_ALLOC(self):
@@ -205,16 +211,17 @@ class _CONFIG(object):
 
     @VERBOSE.setter
     def VERBOSE(self, v):
+        if not isinstance(v, bool):
+            raise ValueError("CONFIG.verbose only accept bool value")
+
         if v:
             self._CONFIG_VERBOSE.PBAR = True
             self._CONFIG_VERBOSE.ANNDATA = True
             self._CONFIG_VERBOSE.INFO = True
-        elif not v:
+        else:
             self._CONFIG_VERBOSE.PBAR = False
             self._CONFIG_VERBOSE.ANNDATA = False
             self._CONFIG_VERBOSE.INFO = False
-        else:
-            raise ValueError("CONFIG.verbose only accept bool value")
 
 
 CONFIG = _CONFIG()
