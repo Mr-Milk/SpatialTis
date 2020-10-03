@@ -160,15 +160,25 @@ class _CONFIG(object):
 
     @WORKING_ENV.setter
     def WORKING_ENV(self, env):
-        if env not in ["jupyter_notebook", "jupyter_lab", "nteract", "zeppelin", None]:
+        if env not in [
+            "jupyter_notebook",
+            "jupyter_lab",
+            "nteract",
+            "zeppelin",
+            "interactive",
+            None,
+        ]:
             warnings.warn("Unknown working environments", UserWarning)
         self._WORKING_ENV = env
         if env is None:
             self.VERBOSE.PBAR = False
-            self.PBAR_FORMAT = "{l_bar}{bar}{r_bar}"
         else:
             self.VERBOSE.PBAR = True
             self.PBAR_FORMAT = self._INBUILT_PBAR_FORMAT
+
+            # TODO: Currently we have to turn of tqdm when run in notebook env in Windows,
+            if (CONFIG.OS == "Windows") & (env != "interactive"):
+                CONFIG.VERBOSE.PBAR = False
 
             from pyecharts.globals import CurrentConfig, NotebookType
             from bokeh.io import output_notebook

@@ -10,7 +10,7 @@ Determine cell shape
 
 There are two way to determine the shape of a cell, "convex hull" or "concave hull". The "concave hull" is slower and need an extra
 parameter, an alpha value. This will influence the `cell_shape` but no other geometry information. Although the shape
-look more authetic using concave hull, spatialtis use `alphashape <https://github.com/bellockk/alphashape>`_ which is pure-python
+look more authentic using concave hull, spatialtis use `alphashape <https://github.com/bellockk/alphashape>`_ which is pure-python
 implementation so it's super slow. We highly recommend using "convex hull" which is the default setting.
 
 .. image:: ../src/convex_concave.png
