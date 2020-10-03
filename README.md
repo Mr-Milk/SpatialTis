@@ -6,19 +6,19 @@
 # SpatialTis
 [![Documentation Status](https://readthedocs.org/projects/spatialtis/badge/?version=latest)](https://spatialtis.readthedocs.io/en/latest/?badge=latest) ![CI](https://github.com/Mr-Milk/SpatialTis/workflows/CI/badge.svg) ![codecov](https://codecov.io/gh/Mr-Milk/SpatialTis/branch/master/graph/badge.svg?token=DYNZ45IPSQ) ![licence](https://badgen.net/badge/licence/Apache%202%2E0/blue)
 
-SpatialTis is a spatial analysis toolkit for single-cell multiplexed tissue data using [`AnnData`](https://icb-anndata.readthedocs-hosted.com/en/stable/#) object as input. Multiprocessing is supported for most analysis functions.
-
-> **Note**: This package is still in development, API may change in the future.
+SpatialTis is a high-performance spatial analysis toolkit for single-cell multiplexed tissue data using [`AnnData`](https://icb-anndata.readthedocs-hosted.com/en/stable/#) object as input with **parallel processing** support.
 
 **Documentation**: [![rtd](https://badgen.net/badge/view%20on/read%20the%20docs/blue)](https://spatialtis.readthedocs.io/en/latest/)
 
-**Tutorial**: [![nbviewer](https://badgen.net/badge/view%20on/nbviewer/orange)](https://nbviewer.jupyter.org/github/Mr-Milk/SpatialTis-Tutorial/blob/master/Tutorial%20%28MIBI-dataset%29.ipynb)
+**Tutorial**: 
+- MIBI Data (Breast cancer, 180K cells) [![nbviewer](https://badgen.net/badge/view%20on/nbviewer/orange)](https://nbviewer.jupyter.org/github/Mr-Milk/SpatialTis-Tutorial/blob/master/Tutorial-1%20%28MIBI-dataset%29.ipynb)
+- IMC Data (Diabetes, 1.7M cells) [![nbviewer](https://badgen.net/badge/view%20on/nbviewer/orange)](https://nbviewer.jupyter.org/github/Mr-Milk/SpatialTis-Tutorial/blob/master/Tutorial-2%20%28IMC-dataset%29.ipynb)
 
-
+[Download](https://github.com/Mr-Milk/SpatialTis-Tutorial) the examples and try it on your own, see how fast SpatialTis is.
 
 ## Installation
 
-### Pypi
+### PYPI
 
 ```shell
 pip install spatialtis
