@@ -80,6 +80,13 @@ jobs:
       - name: List dist
         run: find dist/*
 
+      - name: List event and tags
+        run: |
+          echo ${{ github.event_name }}
+          echo ${{ github.ref }}
+          echo ${{ startsWith(github.ref, 'refs/tags/v') }}
+          echo ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
+
       - name: Publish
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
         env:
