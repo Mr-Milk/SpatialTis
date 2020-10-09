@@ -1,14 +1,15 @@
 from pathlib import Path
 
-from setuptools import setup
+from setuptools import find_packages, setup
 
 README = Path("README.md").read_text()
 
 setup(name="spatialtis",
+      packages=find_packages(),
       description="spatial analysis toolkit for single-cell multiplexed tissue data",
       long_description=README,
       long_description_content_type="text/markdown",
-      version="0.1.1",
+      version="0.1.2",
       author="Mr-Milk",
       url="https://github.com/Mr-Milk/SpatialTis",
       author_email="yb97643@um.edu.mo",
