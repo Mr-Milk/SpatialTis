@@ -1,0 +1,9 @@
+0.1.1
+1. Incomplete files in previous distribution
+2. Fix SettingWithCopy warning in plotting.cell_map
+
+0.1.0
+1. The first major release of SpatialTis
+2. Yank the 1.0.0.dev0 version
+3. Neighbor search, neighborhood analysis, spatial enrichment analysis reimplemented in Rust
+4. Allow Ray runs on Windows

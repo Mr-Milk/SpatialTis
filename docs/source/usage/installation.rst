@@ -1,7 +1,7 @@
 Installation
 ============
 
-SpatialTis requires **Python 3.6+**, it's recommended that you start a new environment.
+SpatialTis requires **Python 3.6+**, it's recommended that you install it in a new environment.
 
 PYPI
 ----
@@ -17,7 +17,7 @@ For windows user
 -----------------
 
 You may find installation problem with following dependencies, please refer to their documentation for detail instructions.
-You can try install them via conda channels, or compile it on your machine:
+You can try install them via conda channels, or compile it from source on your machine:
 
 - `python-igraph <https://igraph.org/python/>`_
 - `leidenalg <https://leidenalg.readthedocs.io/en/stable/install.html>`_

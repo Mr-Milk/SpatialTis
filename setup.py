@@ -1,15 +1,14 @@
 from pathlib import Path
 
-from setuptools import find_packages, setup
+from setuptools import setup
 
 README = Path("README.md").read_text()
 
 setup(name="spatialtis",
-      packages=find_packages(include=["spatialtis"]),
       description="spatial analysis toolkit for single-cell multiplexed tissue data",
       long_description=README,
       long_description_content_type="text/markdown",
-      version="0.1.0",
+      version="0.1.1",
       author="Mr-Milk",
       url="https://github.com/Mr-Milk/SpatialTis",
       author_email="yb97643@um.edu.mo",
@@ -25,5 +24,5 @@ setup(name="spatialtis",
                         'scipy', 'shapely', 'bokeh',
                         'seaborn', 'colour', 'matplotlib', 'tqdm', 'pyecharts', 'ray',
                         'spatialentropy', 'colorama', 'snapshot_phantomjs', 'neighborhood_analysis'],
-      extra_requires={'all': ['scikit-image', 'python-igraph', 'leidenalg', 'alphashape', 'tifffile', ]}
+      extras_require={'all': ['scikit-image', 'python-igraph', 'leidenalg', 'alphashape', 'tifffile', ]}
       )

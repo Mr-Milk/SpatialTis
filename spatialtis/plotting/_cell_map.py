@@ -66,7 +66,7 @@ def cell_map(
         if centroid_key not in adata.obs.keys():
             raise KeyError("Centroid key not exist")
 
-    df = adata.obs.query("&".join([f"({k}=='{v}')" for k, v in query.items()]))
+    df = adata.obs.query("&".join([f"({k}=='{v}')" for k, v in query.items()])).copy()
 
     if selected_types is not None:
         new_types = []
