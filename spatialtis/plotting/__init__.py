@@ -1,22 +1,24 @@
-from ._bar_plot import stacked_bar
-from ._cell_map import cell_map
-from ._community_graph import graph_plot, graph_plot_interactive
-from ._dot_matrix import DotMatrix
-from ._dotplot import dotplot
-from ._expression_map import expression_map
-from ._heatmap_sns import heatmap
-from ._sankey import sankey
-from ._tri_dot_matrix import TriDotMatrix
-from ._triangle_dotplot import tri_dotplot
-from ._violin_plot import violin_plot
-from .palette import colorcycle, get_colors, get_linear_colors
+from .base import (
+    DotMatrix,
+    TriDotMatrix,
+    colorcycle,
+    dotplot,
+    get_colors,
+    get_linear_colors,
+    graph_plot,
+    graph_plot_interactive,
+    heatmap,
+    sankey,
+    stacked_bar,
+    tri_dotplot,
+    violin_plot,
+)
+from .roi_viz import cell_communities, cell_map, cell_neighbors, expression_map
 from .wrapper import (
     cell_co_occurrence,
-    cell_communities,
     cell_components,
     cell_density,
     cell_morphology,
-    cell_neighbors,
     exp_neighcells,
     neighborhood_analysis,
     spatial_distribution,

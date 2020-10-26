@@ -4,23 +4,24 @@ Q&A
 Basic
 ------
 
-What is spatialtis for?
+What is SpatialTis?
 #######################
 
-SpatialTis is a spatial analysis package for single cell multiplexed data.
+SpatialTis is a spatial analysis toolkit for single-cell multiplexed tissue data.
 
 How parallel processing works?
 #################################
 
-The parallel happens at ROI level. If a small dataset is used, there might find the processing time will take longer than non-parallel mode, because there are some overhead steps (serialization and deserialization so that it could distribute the data to different processors). This features only support Linux and MacOS, on Windows there will be no effects.
-
-Only following functions in spatialtis have parallel processing support, pass argument `mp=True` to enable.
+Following functions in spatialtis can have parallel processing supported by `Ray <https://docs.ray.io/en/latest/>`_, use argument :code:`mp=True` to enable.
 
     - :class:`spatialtis.read_ROIs`
-    - :func:`spatialtis.spatial.spatial_distribution`
-    - :func:`spatialtis.spatial.hotspot`
+    - :func:`spatialtis.spatial_distribution`
+    - :func:`spatialtis.spatial_heterogeneity`
+    - :func:`spatialtis.hotspot`
+    - :func:`spatialtis.exp_neighcells`
+    - :func:`spatialtis.exp_neighexp`
 
-These are implemented in rust, it will automatically run in parallel.
+These are implemented in rust, it will automatically run in parallel, supported by `rayon <https://github.com/rayon-rs/rayon>`_.
 
     - :meth:`spatialtis.Neighbors.find_neighbors`
     - :func:`spatialtis.spatial.neighborhood_analysis`

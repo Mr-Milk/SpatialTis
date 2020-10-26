@@ -10,22 +10,29 @@ Welcome to SpatialTis's documentation!
    :align: center
    :width: 20%
 
-SpatialTis is a spatial analysis toolkit for single-cell multiplexed tissue data.
+|doc| |ci| |coverage| |pypi| |license|
 
+.. |doc| image:: https://readthedocs.org/projects/spatialtis/badge/?version=latest&style=flat-square
+.. |ci| image:: https://flat.badgen.net/github/status/Mr-Milk/SpatialTis?icon=github&label=CI
+.. |coverage| image:: https://flat.badgen.net/codecov/c/github/Mr-Milk/SpatialTis
+.. |license| image:: https://flat.badgen.net/github/license/Mr-Milk/SpatialTis
+.. |pypi| image:: https://flat.badgen.net/pypi/v/spatialtis?color=blue
+
+SpatialTis is a spatial analysis toolkit for single-cell multiplexed tissue data.
 For a quick view of what it's does, check our following examples:
 
 - MIBI breast cancer 180K cells: |MIBI-tutorial|_
 - IMC diabetes 1.7M cells: |IMC-tutorial|_
 
-.. |MIBI-tutorial| image:: https://badgen.net/badge/view%20on/nbviewer/orange
+.. |MIBI-tutorial| image:: https://flat.badgen.net/badge/view%20on/nbviewer/orange
 .. _MIBI-tutorial: https://nbviewer.jupyter.org/github/Mr-Milk/SpatialTis-Tutorial/blob/master/Tutorial-1%20%28MIBI-dataset%29.ipynb
 
-.. |IMC-tutorial| image:: https://badgen.net/badge/view%20on/nbviewer/orange
+.. |IMC-tutorial| image:: https://flat.badgen.net/badge/view%20on/nbviewer/orange
 .. _IMC-tutorial: https://nbviewer.jupyter.org/github/Mr-Milk/SpatialTis-Tutorial/blob/master/Tutorial-2%20%28IMC-dataset%29.ipynb
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :glob:
    :caption: Usage
 
@@ -36,7 +43,7 @@ For a quick view of what it's does, check our following examples:
    usage/notebook
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :glob:
    :caption: About
 

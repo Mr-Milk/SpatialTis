@@ -1,1 +1,1 @@
-from ._io import read_ROIs
+from .io import read_ROIs

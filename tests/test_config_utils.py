@@ -1,8 +1,10 @@
+import pandas as pd
 import pytest
 from anndata import read_h5ad
 
 from spatialtis import CONFIG
-from spatialtis.utils import prepare_svca, pretty_time, timer
+from spatialtis.utils import col2adata_obs, df2adata_uns, prepare_svca, timer
+from spatialtis.utils.log import pretty_time
 
 
 @timer(prefix="say sth before", suffix="say sth after")
@@ -22,7 +24,6 @@ def test_read_config_property():
     CONFIG.EXP_OBS
     CONFIG.CELL_TYPE_KEY
     CONFIG.WORKING_ENV
-    CONFIG.CPU_ALLOC
 
 
 def test_read_set_roi_key():
@@ -71,15 +72,6 @@ def test_set_working_env():
     CONFIG.WORKING_ENV = "zeppelin"
 
 
-def test_set_cpu_alloc():
-    CONFIG.CPU_ALLOC = 1
-
-
-@pytest.mark.xfail
-def test_set_cpu_alloc_failed():
-    CONFIG.CPU_ALLOC = 1.2
-
-
 def test_set_verbose():
     CONFIG.VERBOSE = True
     CONFIG.VERBOSE = False
@@ -113,8 +105,30 @@ def test_timer():
     fake_func(groupby="what")
 
 
-def test_svca(shared_datadir, tmpdir):
+def test_data2adata(shared_datadir):
+    df = pd.DataFrame({
+        'a': [1, 2, 3, 4, 5, 5, 6],
+        'b': [4, 5, 6, 7, 8, 9, 2],
+    })
+    adata = read_h5ad(shared_datadir / 'small.h5ad')
+    pytest.data = adata
+    col = [0 for _ in range(len(adata.obs))]
+    CONFIG.VERBOSE = True
+    df2adata_uns(df, adata, 'test_df')
+    col2adata_obs(col, adata, 'test_col')
+    CONFIG.WORKING_ENV = "jupyter_notebook"
+    df2adata_uns(df, adata, 'test_df')
+    col2adata_obs(col, adata, 'test_col')
+
+
+def test_svca(tmpdir):
     CONFIG.EXP_OBS = ["Patient", "Part", "ROI"]
     CONFIG.CELL_TYPE_KEY = "leiden"
-    data = read_h5ad(shared_datadir / 'small.h5ad')
+    data = pytest.data
     prepare_svca(data, tmpdir)
+
+
+@pytest.mark.xfail
+def test_svca_failed(tmpdir):
+    data = pytest.data
+    prepare_svca(data, tmpdir, marker_key="wrong_key")

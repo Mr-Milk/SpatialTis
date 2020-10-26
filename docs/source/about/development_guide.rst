@@ -13,28 +13,27 @@ And then install the dependencies, it should contain everything::
 
     pip install -r requirements.txt
 
-
 Here are some tools used in development:
 
     Code Quality:
-    - pre-commit framework
 
-        - isort (sort import)
-        - black (code formating)
-        - mypy (type check)
-        - flake8 (pylint check)
-
-    - pytest (test framework)
+    - `pre-commit hook <https://pre-commit.com/>`_
+        - `isort <https://pycqa.github.io/isort/>`_ (sort import)
+        - `black <https://black.readthedocs.io/en/stable/>`_ (code formating)
+        - `flake8 <https://flake8.pycqa.org/en/latest/>`_ (pylint check)
+    - `pytest <https://docs.pytest.org/en/latest/>`_ (test framework)
 
     Documentation:
-    - sphinx
+
+    - `sphinx <https://www.sphinx-doc.org/en/master/>`_
 
     Continuous Integration:
-    - Github Actions
+
+    - `Github Actions <https://github.com/features/actions>`_
 
 And here are some requirements:
 
-    - Ideally, the test coverage should be > 80%.
+    - Ideally, the test coverage should be > 90%.
     - Every exposed API should have type annotation.
     - Docstring is google style
 

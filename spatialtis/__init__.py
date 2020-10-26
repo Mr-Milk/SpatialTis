@@ -14,7 +14,7 @@ from .spatial import (
     spatial_enrichment_analysis,
     spatial_heterogeneity,
 )
-from .sta import cell_co_occurrence, cell_components, cell_density, cell_morphology
+from .stats import cell_co_occurrence, cell_components, cell_density, cell_morphology
 from .utils import adata_uns2df, df2adata_uns, prepare_svca
 
 logger = logging.getLogger(__name__)

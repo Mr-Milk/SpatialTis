@@ -1,3 +1,10 @@
+0.2.0
+1. spatialtis.sta.cell_density() can compute area automatically
+2. Replace eval with ast.literal_eval() for safety concern
+3. Add subsampling for violin plot to reduce rendering time
+4. RandomForestRegressor has fixed random_state
+5. CONFIG.CPU_ALLOC deprecated
+
 0.1.2
 1. Incomplete files in previous distribution
 

@@ -33,10 +33,10 @@ subcellular resolution can resolve single cell in 2D-shape.
 For each ROI, every cell will be stored in a spatial index tree structure allowing for fast neighbor search.
 
 For point data, `KD-tree <https://en.wikipedia.org/wiki/K-d_tree>`_ is used and constructed using
-scipy's `cKDtree <https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.cKDTree.html>`_.
+`kdbush <https://github.com/pka/rust-kdbush>`_.
 
-For 2D-shape data, `R-tree <https://en.wikipedia.org/wiki/R-tree>`_ is used and constructed using
-shapely's `STRtree <https://shapely.readthedocs.io/en/latest/manual.html#str-packed-r-tree>`_.
+For 2D-shape data, `R*-tree <https://en.wikipedia.org/wiki/R*_tree>`_ is used and constructed using
+`rstar <https://github.com/Stoeoef/rstar>`_.
 
 Profiling of cell-cell interaction
 -----------------------------------
@@ -72,7 +72,7 @@ Or using z-score:
 This analysis is implemented with rust for a better performance.
 See `neighborhood_analysis <https://github.com/Mr-Milk/neighborhood_analysis>`_
 
-Profiling of marker co-expression
+Profiling of markers co-expression
 ----------------------------------
 
 User defines the positive / negative of a marker in a cell, same bootstrap method is conducted as above.
@@ -295,6 +295,6 @@ Marker influences on neighbor cells/markers
 The word *marker* can refer to gene/transcript/protein/metabolite... depends on your own data.
 
 Random forest regressor estimator is constructed to find the cells/markers that explain more of the
-interest markers using gini score.
+interest markers.
 
 
