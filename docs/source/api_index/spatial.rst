@@ -33,6 +33,10 @@ neighborhood_analysis
 #######################
 
 .. autofunction:: spatialtis.neighborhood_analysis
+
+spatial_enrichment_analysis
+##############################
+
 .. autofunction:: spatialtis.spatial_enrichment_analysis
 
 communities

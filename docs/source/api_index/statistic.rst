@@ -16,8 +16,10 @@ cell_co_occurrence
 
 cell_density
 #############
+
 .. autofunction:: spatialtis.cell_density
 
 cell_morphology
 ###############
+
 .. autofunction:: spatialtis.cell_morphology

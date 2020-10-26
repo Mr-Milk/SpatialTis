@@ -1,11 +1,9 @@
-import os
-
 import pytest
 from anndata import read_h5ad
 
 import spatialtis as st
 import spatialtis.plotting as sp
-from spatialtis import CONFIG, Neighbors
+from spatialtis import CONFIG
 
 CONFIG.EXP_OBS = ["Patient", "Part", "ROI"]
 CONFIG.CELL_TYPE_KEY = "leiden"
@@ -66,9 +64,17 @@ def test_hotspot():
     st.hotspot(data, grid_size=10)
 
 
-def test_spatial_mp():
+def test_spatial_dist_mp():
     data = pytest.data
     st.spatial_distribution(data, mp=True)
+
+
+def test_spatial_hetero_mp():
+    data = pytest.data
     st.spatial_heterogeneity(data, method="leibovici", mp=True)
     st.spatial_heterogeneity(data, method="altieri", mp=True)
+
+
+def test_hotspot_mp():
+    data = pytest.data
     st.hotspot(data, grid_size=10, mp=True)

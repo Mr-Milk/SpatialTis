@@ -1,5 +1,3 @@
-import os
-
 import pytest
 from anndata import read_h5ad
 
@@ -88,7 +86,7 @@ def test_neighbors_plot():
     data = pytest.data
     ROI = {"Patient": "HPAP005", "Part": "Tail", "ROI": "ROI1"}
     sp.cell_neighbors(data, ROI, save="test.png")
-    sp.cell_neighbors(data, ROI, use="static", display=False, save="test.png")
+    sp.cell_neighbors(data, ROI, use="_static", display=False, save="test.png")
 
 
 def test_community():
@@ -101,7 +99,7 @@ def test_community_graph():
     data = pytest.data
     ROI = {"Patient": "HPAP005", "Part": "Tail", "ROI": "ROI1"}
     sp.cell_communities(data, ROI)
-    sp.cell_communities(data, ROI, use="static", display=False)
+    sp.cell_communities(data, ROI, use="_static", display=False)
 
 
 def test_cell_type_graph():

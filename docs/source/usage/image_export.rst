@@ -15,7 +15,7 @@ images, extra dependencies need to be installed. There are three visualization l
 |              | **bokeh**            | **pyecharts**         | **matplotlib**    |
 +--------------+----------------------+-----------------------+-------------------+
 | Renderer     | Canvas,              | Canvas,               | WX, GTK,          |
-|              | SVG                  | SVG (No perfect)      | Cairo ...         |
+|              | SVG                  | SVG (Not perfect)     | Cairo ...         |
 +--------------+----------------------+-----------------------+-------------------+
 | Naive export | `.html`, `.svg`      | `.html`, `.png`       | `.png`, `.jpeg`,  |
 |              |                      |                       | `.eps`, `.pdf` ...|

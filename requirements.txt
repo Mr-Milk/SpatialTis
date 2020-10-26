@@ -31,3 +31,5 @@ pytest-datadir
 # doc
 sphinx
 sphinx-rtd-theme
+
+ujson

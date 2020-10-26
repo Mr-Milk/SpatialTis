@@ -1,8 +1,9 @@
-from ._distribution import spatial_distribution
-from ._exp_neighcell import exp_neighcells
-from ._exp_neighexp import exp_neighexp
-from ._heterogeneity import spatial_heterogeneity
-from ._hotspot import hotspot
-from ._neighborhood import neighborhood_analysis, spatial_enrichment_analysis
-from ._neighbors import Neighbors
-from ._network import communities
+from .distribution import spatial_distribution
+from .enrichment import spatial_enrichment_analysis
+from .exp_neighcell import exp_neighcells
+from .exp_neighexp import exp_neighexp
+from .heterogeneity import spatial_heterogeneity
+from .hotspot import hotspot
+from .neighborhood import neighborhood_analysis
+from .neighbors import Neighbors
+from .network import communities

@@ -68,8 +68,9 @@ def test_bar_plot_failed_param_direction():
 
 def test_cell_density():
     data = pytest.data
-    st.cell_density(data, [(100, 100) for _ in range(18)])
-    st.cell_density(data, (100, 100), export_key=CONFIG.cell_density_key, return_df=True)
+    st.cell_density(data)
+    st.cell_density(data, size=[(100, 100) for _ in range(18)])
+    st.cell_density(data, size=(100, 100), export_key=CONFIG.cell_density_key, return_df=True)
 
 
 @pytest.mark.xfail
@@ -122,7 +123,7 @@ def test_cell_co_occurrence_plot():
 
 def test_cell_morphology():
     data = pytest.data
-    st.cell_morphology(data)
+    st.cell_morphology(data, export_key=CONFIG.cell_morphology_key, return_df=True)
 
 
 def test_cell_morphology_plot():

@@ -1,5 +1,3 @@
-import os
-
 import pytest
 from anndata import read_h5ad
 
