@@ -27,6 +27,9 @@ def test_get_linear_colors():
 
 def test_read_data(shared_datadir):
     data = read_h5ad(shared_datadir / 'small.h5ad')
+    centroid = data.obs['centroid']
+    if isinstance(centroid[0], bytes):
+        data.obs['centroid'] = [i.decode('utf-8') for i in centroid]
     pytest.data = data
 
 

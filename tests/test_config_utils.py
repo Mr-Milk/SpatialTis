@@ -110,15 +110,19 @@ def test_data2adata(shared_datadir):
         'a': [1, 2, 3, 4, 5, 5, 6],
         'b': [4, 5, 6, 7, 8, 9, 2],
     })
-    adata = read_h5ad(shared_datadir / 'small.h5ad')
-    pytest.data = adata
-    col = [0 for _ in range(len(adata.obs))]
+
+    data = read_h5ad(shared_datadir / 'small.h5ad')
+    centroid = data.obs['centroid']
+    if isinstance(centroid[0], bytes):
+        data.obs['centroid'] = [i.decode('utf-8') for i in centroid]
+    pytest.data = data
+    col = [0 for _ in range(len(data.obs))]
     CONFIG.VERBOSE = True
-    df2adata_uns(df, adata, 'test_df')
-    col2adata_obs(col, adata, 'test_col')
+    df2adata_uns(df, data, 'test_df')
+    col2adata_obs(col, data, 'test_col')
     CONFIG.WORKING_ENV = "jupyter_notebook"
-    df2adata_uns(df, adata, 'test_df')
-    col2adata_obs(col, adata, 'test_col')
+    df2adata_uns(df, data, 'test_df')
+    col2adata_obs(col, data, 'test_col')
 
 
 def test_svca(tmpdir):
