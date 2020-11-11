@@ -112,9 +112,6 @@ def test_data2adata(shared_datadir):
     })
 
     data = read_h5ad(shared_datadir / 'small.h5ad')
-    centroid = data.obs['centroid']
-    if isinstance(centroid[0], bytes):
-        data.obs['centroid'] = [i.decode('utf-8') for i in centroid]
     pytest.data = data
     col = [0 for _ in range(len(data.obs))]
     CONFIG.VERBOSE = True
