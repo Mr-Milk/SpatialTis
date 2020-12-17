@@ -158,22 +158,22 @@ def test_spatial_enrichment_analysis_plot():
     sp.spatial_enrichment_analysis(data, display=False)
 
 
-def test_exp_neighcell():
+def test_ncd_markers():
     n = pytest.n
-    st.exp_neighcells(n)
+    st.NCD_markers(n)
 
 
-def test_exp_neighcell_plot():
+def test_ncd_markers_plot():
     data = pytest.data
-    sp.exp_neighcells(data, score=0)
+    sp.NCD_markers(data)
 
 
-def test_exp_neighexp():
+def test_nmd_markers():
     n = pytest.n
-    st.exp_neighexp(n, score=0)
+    st.NMD_markers(n)
 
 
 def test_spatial_mp():
     n = pytest.n
     st.exp_neighcells(n, mp=True)
-    st.exp_neighexp(n, mp=True)
+    st.nmd_markers(n, mp=True)

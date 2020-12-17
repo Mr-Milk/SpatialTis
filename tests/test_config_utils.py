@@ -7,7 +7,7 @@ from spatialtis.utils import col2adata_obs, df2adata_uns, prepare_svca, timer
 from spatialtis.utils.log import pretty_time
 
 
-@timer(prefix="say sth before", suffix="say sth after")
+@timer(task_name="say sth before", suffix="say sth after")
 def fake_func(groupby=None):
     pass
 
@@ -19,7 +19,6 @@ class FakeType:
 def test_read_config_property():
     CONFIG
     CONFIG.VERBOSE
-    print(CONFIG.VERBOSE)
     CONFIG.ROI_KEY
     CONFIG.EXP_OBS
     CONFIG.CELL_TYPE_KEY

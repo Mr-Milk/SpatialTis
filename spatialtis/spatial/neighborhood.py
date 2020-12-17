@@ -2,7 +2,7 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
+from rich.progress import track
 
 from spatialtis.config import CONFIG
 from spatialtis.spatial.neighbors import Neighbors
@@ -10,7 +10,7 @@ from spatialtis.spatial.utils import check_neighbors
 from spatialtis.utils import df2adata_uns, get_default_params, reuse_docstring, timer
 
 
-@timer(prefix="Running neighborhood analysis")
+@timer(task_name="Running neighborhood analysis")
 @get_default_params
 @reuse_docstring()
 def neighborhood_analysis(
@@ -63,8 +63,10 @@ def neighborhood_analysis(
     cc = na.CellCombs(types, order)
 
     results = {}
-    for name, value in tqdm(
-        n.neighbors.items(), **CONFIG.tqdm(desc="Neighborhood analysis"),
+    for name, value in track(
+        n.neighbors.items(),
+        description="[green]Neighborhood analysis",
+        disable=(not CONFIG.VERBOSE),
     ):
         result = cc.bootstrap(
             n.types[name], value, resample, pval, method, ignore_self=True

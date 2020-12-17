@@ -23,6 +23,7 @@ snapshot_phantomjs
 spatialentropy
 tqdm
 tifffile
+rich[jupyter]
 
 # test suite
 pytest
@@ -33,3 +34,5 @@ pytest-datadir
 sphinx
 sphinx-rtd-theme
 sphinx-autodoc-typehints
+setuptools
+nbsphinx

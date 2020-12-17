@@ -1,3 +1,7 @@
+0.3.0
+1. Logging and PrgressBar using rich(https://github.com/willmcgugan/rich) to replace tqdm
+2. API changed, exp_neighcell -> NCD_markers, exp_neighexp -> NMD_marekrs
+
 0.2.0
 1. spatialtis.sta.cell_density() can compute area automatically
 2. Replace eval with ast.literal_eval() for safety concern

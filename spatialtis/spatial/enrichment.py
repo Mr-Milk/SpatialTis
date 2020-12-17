@@ -3,7 +3,7 @@ from typing import Optional, Sequence
 
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
+from rich.progress import track
 
 from spatialtis.config import CONFIG
 from spatialtis.spatial.neighbors import Neighbors
@@ -11,7 +11,7 @@ from spatialtis.spatial.utils import check_neighbors
 from spatialtis.utils import df2adata_uns, get_default_params, reuse_docstring, timer
 
 
-@timer(prefix="Running spatial enrichment analysis")
+@timer(task_name="Running spatial enrichment analysis")
 @get_default_params
 @reuse_docstring()
 def spatial_enrichment_analysis(
@@ -85,8 +85,10 @@ def spatial_enrichment_analysis(
     markers = data.var[marker_key]
     results = {}
 
-    for name, roi in tqdm(
-        data.obs.groupby(n.expobs), **CONFIG.tqdm(desc="Spatial enrichment analysis"),
+    for name, roi in track(
+        data.obs.groupby(n.expobs),
+        description="[green]Spatial enrichment analysis",
+        disable=(not CONFIG.VERBOSE),
     ):
         neighbors = n.neighbors[name]
         matrix = data[roi.index].layers[layers_key]

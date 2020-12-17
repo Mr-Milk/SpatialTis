@@ -5,25 +5,19 @@ from typing import Dict, Optional, Sequence, Union
 
 import pandas as pd
 from anndata import AnnData
-from colorama import Fore
 
 from spatialtis.config import CONFIG
+from spatialtis.console import console
 
-from .log import logger
 from .params import get_default_params
 
 
-def writer_verbose(key, verbose: Optional[bool] = None):
+def writer_verbose(key, part: str = "uns", verbose: Optional[bool] = None):
     if verbose is None:
-        verbose = CONFIG.VERBOSE.ANNDATA
+        verbose = CONFIG.VERBOSE
 
     if verbose:
-        if CONFIG.WORKING_ENV is not None:
-            logger.info(
-                f"""{Fore.GREEN}Added to AnnData, uns: {Fore.CYAN}'{key}'{Fore.RESET}"""
-            )
-        else:
-            logger.info(f"""Added to AnnData, uns: '{key}'""")
+        console.print(f":package: [green]Added to AnnData, {part}: [bold cyan] '{key}'")
 
 
 def df2adata_uns(
@@ -61,7 +55,7 @@ def df2adata_uns(
         container["params"] = params
 
     adata.uns[key] = container
-    writer_verbose(key, verbose)
+    writer_verbose(key, verbose=verbose)
 
 
 def col2adata_obs(
@@ -77,7 +71,7 @@ def col2adata_obs(
 
     """
     adata.obs[key] = col
-    writer_verbose(key, verbose)
+    writer_verbose(key, "obs", verbose=verbose)
 
 
 def adata_uns2df(

@@ -40,6 +40,8 @@ extensions = [
     "sphinx.ext.mathjax",
     "sphinx.ext.viewcode",
     "sphinx_rtd_theme",
+    "nbsphinx",
+    "nbsphinx_link"
 ]
 
 # nbsphinx_allow_errors = True
@@ -67,9 +69,9 @@ html_theme = "sphinx_rtd_theme"
 # relative to this directory. They are copied after the builtin _static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 # html_static_path = ["_static"]
-html_favicon = 'src/Logo.svg'
+html_favicon = 'img/Logo.svg'
 
-html_logo = 'src/Logo-text.png'
+html_logo = 'img/Logo-text.png'
 html_theme_options = {
     'logo_only': True,
 }
