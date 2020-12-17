@@ -1,12 +1,8 @@
 import functools
-import logging
 from time import time
 
-from colorama import Fore
-
 from spatialtis.config import CONFIG
-
-logger = logging.getLogger(__name__)
+from spatialtis.console import console
 
 
 def pretty_time(t):
@@ -26,52 +22,45 @@ def pretty_time(t):
         return f"{int(hour)}h{int(minute)}m{int(second)}s"
 
 
-def log_print(text, color="green", verbose=None):
-    color_map = {"green": Fore.GREEN, "red": Fore.RED}
-
+def log_print(text, custom=False, color="green", verbose=None):
     if verbose is None:
-        verbose = CONFIG.VERBOSE.INFO
+        verbose = CONFIG.VERBOSE
 
-    if CONFIG.WORKING_ENV is None:
-        msg = f"{text}"
-    else:
-        msg = f"{color_map[color]}{text}{Fore.RESET}"
     if verbose:
-        logger.info(msg)
+        if not custom:
+            console.print(text, style=color)
+        else:
+            console.print(text)
 
 
-def timer(prefix=None, suffix=None, verbose=None):
+def timer(task_name=None, suffix=None):
     """
     Timer decorator to measure the time a function used
 
     Args:
-        prefix: content to add at the front
+        task_name: content to add at the front
         suffix: content to add at the tail
-        verbose: whether to print
 
     Returns:
 
     """
-    if verbose is None:
-        verbose = CONFIG.VERBOSE.INFO
 
     def timeit(func):
         @functools.wraps(func)
         def timed(*args, **kw):
-            if (prefix is not None) & verbose:
-                log_print(prefix, verbose=verbose)
+            if task_name is not None:
+                log_print(
+                    f":hourglass_not_done: [green]{task_name}[/green]", custom=True
+                )
             ts = time()
             result = func(*args, **kw)
             te = time()
-            if (suffix is not None) & verbose:
-                log_print(suffix, verbose=verbose)
-            if verbose:
-                if CONFIG.WORKING_ENV is not None:
-                    logger.info(
-                        f"{Fore.GREEN}Finished! Used {Fore.CYAN}{pretty_time(te - ts)}{Fore.RESET}"
-                    )
-                else:
-                    logger.info(f"Finished! Used {pretty_time(te - ts)}")
+            if suffix is not None:
+                log_print(suffix)
+            log_print(
+                f":stopwatch: [green]Finished![/green] [bold cyan]{pretty_time(te - ts)}[/bold cyan]",
+                custom=True,
+            )
             return result
 
         return timed

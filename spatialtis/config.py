@@ -2,25 +2,15 @@
 Setting Global config for whole processing level
 """
 import platform
-import sys
 import warnings
 from typing import List, Optional, Sequence
 
-from colorama import Fore
 from pyecharts.globals import WarningType
+from rich.table import Table
+
+from spatialtis.console import console
 
 WarningType.ShowWarning = False
-
-
-class _VERBOSE(object):
-    def __init__(self):
-        self.PBAR = True
-        self.ANNDATA = True
-        self.INFO = True
-
-    def __repr__(self):
-        info = [f"PBAR: {self.PBAR}", f"ANNDATA: {self.ANNDATA}", f"INFO: {self.INFO}"]
-        return "\n".join(info)
 
 
 class _CONFIG(object):
@@ -28,21 +18,11 @@ class _CONFIG(object):
         self._EXP_OBS: Optional[List[str]] = None
         self._CELL_TYPE_KEY: Optional[str] = None
         self._WORKING_ENV: Optional[str] = None
-        self._CPU_ALLOC: Optional[int] = None
-        self._CONFIG_VERBOSE: _VERBOSE = _VERBOSE()
+        self._VERBOSE: bool = True
 
         self._ROI_KEY: Optional[str] = None
         self.OS: Optional[str] = None
         self.MULTI_PROCESSING: bool = False
-
-        # set tqdm bar foramt
-        self._INBUILT_PBAR_FORMAT = "%s{l_bar}%s{bar}%s{r_bar}%s" % (
-            Fore.GREEN,
-            Fore.CYAN,
-            Fore.GREEN,
-            Fore.RESET,
-        )
-        self.PBAR_FORMAT = self._INBUILT_PBAR_FORMAT
 
         # used key name to store info in anndata
         self.CENTROID_KEY: str = "centroid"
@@ -68,41 +48,30 @@ class _CONFIG(object):
         self.spatial_enrichment_analysis_layers_key: str = "markers_sign"
         self.neighbors_key: str = "cell_neighbors"
         self.neighbors_count_key: str = "neighbors_count"
-        self.exp_neighcell_key: str = "exp_neighcell"
-        self.exp_neighexp_key: str = "exp_neighexp"
+        self.ncd_markers_key: str = "ncd_markers"
+        self.nmd_markers_key: str = "nmd_markers"
 
     def __repr__(self):
-        head = "Current configurations of SpatialTis:"
-        info = [
-            "\n======CONFIGURATIONS======",
-            f"EXP_OBS: {self.EXP_OBS}",
-            f"OS: {self.OS}",
-            f"MULTI_PROCESSING: {self.MULTI_PROCESSING}",
-            f"WORKING_ENV: {self.WORKING_ENV}",
-            f"VERBOSE.PBAR: {self.VERBOSE.PBAR}",
-            f"VERBOSE.ANNDATA: {self.VERBOSE.ANNDATA}",
-            f"VERBOSE.INFO: {self.VERBOSE.INFO}",
-            "\n======KEYS======",
-            f"CELL_TYPE_KEY: {self.CELL_TYPE_KEY}",
-            f"CENTROID_KEY: {self.CENTROID_KEY}",
-            f"AREA_KEY: {self.AREA_KEY}",
-            f"SHAPE_KEY: {self.SHAPE_KEY}",
-            f"ECCENTRICITY_KEY: {self.ECCENTRICITY_KEY}",
-            f"MARKER_KEY: {self.MARKER_KEY}",
-        ]
-        info = "\n".join(info)
-        return f"{head}\n{info}"
+        table = Table(title="Current configurations of SpatialTis")
+        table.add_column("Option", style="cyan")
+        table.add_column("Value", style="magenta")
 
-    def tqdm(self, **kwargs):
-        all_kwargs = dict(
-            unit="ROI",
-            bar_format=self.PBAR_FORMAT,
-            disable=(not self.VERBOSE.PBAR),
-            file=sys.stdout,
-        )
-        for k, v in kwargs.items():
-            all_kwargs[k] = v
-        return all_kwargs
+        table.add_row("OS", self.OS)
+        table.add_row("MULTI_PROCESSING", str(self.MULTI_PROCESSING))
+        table.add_row("WORKING_ENV", str(self.WORKING_ENV))
+        table.add_row("VERBOSE", str(self.VERBOSE))
+        table.add_row("EXP_OBS", str(self.EXP_OBS))
+        table.add_row("ROI_KEY", self.ROI_KEY)
+        table.add_row("CELL_TYPE_KEY", self.CELL_TYPE_KEY)
+        table.add_row("CENTROID_KEY", self.CENTROID_KEY)
+        table.add_row("AREA_KEY", self.AREA_KEY)
+        table.add_row("SHAPE_KEY", self.SHAPE_KEY)
+        table.add_row("ECCENTRICITY_KEY", self.ECCENTRICITY_KEY)
+        table.add_row("MARKER_KEY", self.MARKER_KEY)
+
+        console.print(table)
+
+        return ""
 
     @property
     def ROI_KEY(self):
@@ -159,63 +128,40 @@ class _CONFIG(object):
 
     @WORKING_ENV.setter
     def WORKING_ENV(self, env):
-        if env not in [
-            "jupyter_notebook",
-            "jupyter_lab",
-            "nteract",
-            "zeppelin",
-            "interactive",
-            None,
-        ]:
-            warnings.warn("Unknown working environments", UserWarning)
         self._WORKING_ENV = env
+        from pyecharts.globals import CurrentConfig, NotebookType
+        from bokeh.io import output_notebook
+
+        output_notebook(hide_banner=True)
+
         if env is None:
-            self.VERBOSE.PBAR = False
+            pass
+        elif env == "jupyter_notebook":
+            pass
+        elif env == "jupyter_lab":
+            CurrentConfig.NOTEBOOK_TYPE = NotebookType.JUPYTER_LAB
+        elif env == "nteract":
+            CurrentConfig.NOTEBOOK_TYPE = NotebookType.NTERACT
+        elif env == "zeppelin":
+            CurrentConfig.NOTEBOOK_TYPE = NotebookType.ZEPPELIN
+        elif env == "terminal":
+            pass
         else:
-            self.VERBOSE.PBAR = True
-            self.PBAR_FORMAT = self._INBUILT_PBAR_FORMAT
-
-            # TODO: Currently we have to turn of tqdm when run in notebook env in Windows,
-            if (CONFIG.OS == "Windows") & (env != "interactive"):
-                CONFIG.VERBOSE.PBAR = False
-
-            from pyecharts.globals import CurrentConfig, NotebookType
-            from bokeh.io import output_notebook
-
-            output_notebook(hide_banner=True)
-
-            if env == "jupyter_notebook":
-                pass
-            elif env == "jupyter_lab":
-                CurrentConfig.NOTEBOOK_TYPE = NotebookType.JUPYTER_LAB
-            elif env == "nteract":
-                CurrentConfig.NOTEBOOK_TYPE = NotebookType.NTERACT
-            elif env == "zeppelin":
-                CurrentConfig.NOTEBOOK_TYPE = NotebookType.ZEPPELIN
+            self._WORKING_ENV = None
+            warnings.warn("Unknown working environments, fallback to None", UserWarning)
 
     @property
     def VERBOSE(self):
-        return self._CONFIG_VERBOSE
+        return self._VERBOSE
 
     @VERBOSE.setter
     def VERBOSE(self, v):
         if not isinstance(v, bool):
             raise ValueError("CONFIG.verbose only accept bool value")
-
-        if v:
-            self._CONFIG_VERBOSE.PBAR = True
-            self._CONFIG_VERBOSE.ANNDATA = True
-            self._CONFIG_VERBOSE.INFO = True
-        else:
-            self._CONFIG_VERBOSE.PBAR = False
-            self._CONFIG_VERBOSE.ANNDATA = False
-            self._CONFIG_VERBOSE.INFO = False
+        self._VERBOSE = v
 
 
 CONFIG = _CONFIG()
 # get system os
 system_os = platform.system()
 CONFIG.OS = system_os
-# I have no idea how to fix tqdm multi lines on jupyter environment for windows
-if CONFIG.OS == "windows":
-    CONFIG.VERBOSE.PBAR = False

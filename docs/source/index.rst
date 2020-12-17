@@ -6,7 +6,7 @@
 Welcome to SpatialTis's documentation!
 ==========================================
 
-.. image:: src/Logo.svg
+.. image:: img/Logo.svg
    :align: center
    :width: 20%
 
@@ -24,10 +24,10 @@ For a quick view of what it's does, check our following examples:
 - MIBI breast cancer 180K cells: |MIBI-tutorial|_
 - IMC diabetes 1.7M cells: |IMC-tutorial|_
 
-.. |MIBI-tutorial| image:: https://flat.badgen.net/badge/view%20on/nbviewer/orange
+.. |MIBI-tutorial| image:: ../../img/view_on_nbviewer.svg
 .. _MIBI-tutorial: https://nbviewer.jupyter.org/github/Mr-Milk/SpatialTis-Tutorial/blob/master/Tutorial-1%20%28MIBI-dataset%29.ipynb
 
-.. |IMC-tutorial| image:: https://flat.badgen.net/badge/view%20on/nbviewer/orange
+.. |IMC-tutorial| image:: ../../img/view_on_nbviewer.svg
 .. _IMC-tutorial: https://nbviewer.jupyter.org/github/Mr-Milk/SpatialTis-Tutorial/blob/master/Tutorial-2%20%28IMC-dataset%29.ipynb
 
 
@@ -41,6 +41,7 @@ For a quick view of what it's does, check our following examples:
    usage/installation
    usage/image_export
    usage/notebook
+   tutorial/tutorial1
 
 .. toctree::
    :maxdepth: 1

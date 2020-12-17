@@ -9,7 +9,7 @@ from spatialtis.utils import adata_uns2df, reuse_docstring
 
 
 @reuse_docstring()
-def exp_neighcells(
+def NCD_markers(
     adata: AnnData,
     key: Optional[str] = None,
     score: float = 0.5,
@@ -27,7 +27,7 @@ def exp_neighcells(
 
     """
     if key is None:
-        key = CONFIG.exp_neighcell_key
+        key = CONFIG.ncd_markers_key
 
     df = adata_uns2df(adata, key)
     df = df[df["Score"] >= score]

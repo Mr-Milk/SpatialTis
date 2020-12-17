@@ -27,6 +27,14 @@ These are implemented in rust, it will automatically run in parallel, supported 
     - :func:`spatialtis.spatial.neighborhood_analysis`
     - :func:`spatialtis.spatial.spatial_enrichment_analysis`
 
+Could you provide a conda installation?
+########################################
+
+Current pip is already great enough to handle dependencies installation for you.
+A conda recipe require every dependencies on conda channel, however, many of the dependencies of SptialTis are not
+avialable in conda.
+
+
 MacOS Issues
 -------------
 

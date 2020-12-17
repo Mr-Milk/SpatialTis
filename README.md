@@ -12,11 +12,11 @@
 
 SpatialTis is a high-performance spatial analysis toolkit for single-cell multiplexed tissue data using [`AnnData`](https://icb-anndata.readthedocs-hosted.com/en/stable/#) object as input with **parallel processing** support.
 
-**Documentation**: [![rtd](https://flat.badgen.net/badge/view%20on/read%20the%20docs/blue)](https://spatialtis.readthedocs.io/en/latest/)
+**Documentation**: [![rtd](img/view_on_rtd.svg)](https://spatialtis.readthedocs.io/en/latest/)
 
 **Tutorial**: 
-- MIBI Data (Breast cancer, 180K cells) [![nbviewer](https://flat.badgen.net/badge/view%20on/nbviewer/orange)](https://nbviewer.jupyter.org/github/Mr-Milk/SpatialTis-Tutorial/blob/master/Tutorial-1%20%28MIBI-dataset%29.ipynb) | [Download data](https://uofmacau-my.sharepoint.com/:u:/g/personal/yb97643_umac_mo/ET7-chqWIc9EqSEtY-foQ7IBURusGw9hlTSBC3xD_bNdgw?download=1)
-- IMC Data (Diabetes, 1.7M cells) [![nbviewer](https://flat.badgen.net/badge/view%20on/nbviewer/orange)](https://nbviewer.jupyter.org/github/Mr-Milk/SpatialTis-Tutorial/blob/master/Tutorial-2%20%28IMC-dataset%29.ipynb) | [Download data](https://uofmacau-my.sharepoint.com/:u:/g/personal/yb97643_umac_mo/EXJFp1Nn_k5NphOp986lGvABmDNC_fNPGjrw5xN4NUPnRA?download=1)
+- MIBI Data (Breast cancer, 180K cells) [![nbviewer](img/view_on_nbviewer.svg)](https://nbviewer.jupyter.org/github/Mr-Milk/SpatialTis-Tutorial/blob/master/Tutorial-1%20%28MIBI-dataset%29.ipynb) | [Download data](https://uofmacau-my.sharepoint.com/:u:/g/personal/yb97643_umac_mo/ET7-chqWIc9EqSEtY-foQ7IBURusGw9hlTSBC3xD_bNdgw?download=1)
+- IMC Data (Diabetes, 1.7M cells) [![nbviewer](img/view_on_nbviewer.svg)](https://nbviewer.jupyter.org/github/Mr-Milk/SpatialTis-Tutorial/blob/master/Tutorial-2%20%28IMC-dataset%29.ipynb) | [Download data](https://uofmacau-my.sharepoint.com/:u:/g/personal/yb97643_umac_mo/EXJFp1Nn_k5NphOp986lGvABmDNC_fNPGjrw5xN4NUPnRA?download=1)
 
 [Download](https://github.com/Mr-Milk/SpatialTis-Tutorial) the examples and try it on your own, see how fast SpatialTis is.
 
@@ -33,9 +33,6 @@ pip install spatialtis
 For the full features
 
 ```shell
-pip install spatialtis[all]
-
-# In some terminal environment you may try
 pip install 'spatialtis[all]'
 ```
 
@@ -44,8 +41,6 @@ Install the current development version
 ```shell
 pip install git+https://github.com/Mr-Milk/SpatialTis.git
 ```
-
-
 
 ## SpatialTis modules
 
@@ -63,4 +58,4 @@ pip install git+https://github.com/Mr-Milk/SpatialTis.git
     - Cell-cell interaction
     - Markers co-expression
     - Spatial community detection
-    - Marker influence by neighbor cell/marker
+    - Neighbor dependent markers

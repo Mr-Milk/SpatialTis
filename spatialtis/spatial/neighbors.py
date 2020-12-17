@@ -4,10 +4,11 @@ from typing import Optional, Sequence, Union
 
 import numpy as np
 from anndata import AnnData
+from rich.progress import track
 from scipy.spatial.distance import euclidean
-from tqdm import tqdm
 
 from spatialtis.config import CONFIG
+from spatialtis.console import console
 from spatialtis.utils import (
     col2adata_obs,
     get_default_params,
@@ -31,7 +32,6 @@ class Neighbors(object):
 
     """
 
-    @timer(verbose=False)
     @get_default_params
     def __init__(
         self,
@@ -64,13 +64,17 @@ class Neighbors(object):
         # define vars for storage
         self.__polycellsdb = None
         self.__neighborsdb = None
-        self.__uniquetypes = np.unique(self.__data[type_key])
-        self.__types = {n: list(g[self.__typekey]) for n, g in self.__groups}
+        self.__uniquetypes = None
+        self.__types = None
+
+        if self.__typekey is not None:
+            self.__uniquetypes = np.unique(self.__data[type_key])
+            self.__types = {n: list(g[self.__typekey]) for n, g in self.__groups}
 
     def __repr__(self):
-        return "A spatialtis.Neighbors instance"
+        return f"A spatialtis.Neighbors instance, neighbor computed: {self.__neighborsbuilt}"
 
-    @timer(prefix="Finding cell neighbors")
+    @timer(task_name="Finding cell neighbors")
     def find_neighbors(
         self, expand: Optional[float] = None, scale: Optional[float] = None,
     ):
@@ -92,20 +96,24 @@ class Neighbors(object):
 
         if (expand is None) & (scale is None):
             scale = 1.0
-            expand = None
+            expand = 1.0
             warnings.warn("Neither 'expand' or 'scale' are specific")
-        elif (expand is not None) & (scale is not None):
+
+        if expand is not None:
+            if expand < 0:
+                raise ValueError("Can't shrink cell, 'expand' must >= 0")
+
+        if scale is not None:
+            if scale < 1:
+                raise ValueError("Can't shrink cell, 'scale' must >= 1")
+
+        if (expand is not None) & (scale is not None):
             warnings.warn(
                 f"Conflict parameters, can't set 'expand' and 'scale' in the same time, use expand={expand}"
             )
-        elif (expand is None) & (self.__geom == "point"):
+
+        if (expand is None) & (self.__geom == "point"):
             raise ValueError("Parameter 'expand' is not specific")
-        elif expand is not None:
-            if expand < 0:
-                raise ValueError("Can't shrink cell, 'expand' must >= 0")
-        elif scale is not None:
-            if scale < 1:
-                raise ValueError("Can't shrink cell, 'scale' must >= 1")
 
         if self.__geom == "point":
             log_print("Cell resolved as point data, searching neighbors using KD-tree")
@@ -116,7 +124,11 @@ class Neighbors(object):
         if (self.__geom == "shape") & (not self.__polycells):
             results = []
             names = []
-            for n, g in tqdm(self.__groups, **CONFIG.tqdm(desc="Get cells' bbox",),):
+            for n, g in track(
+                self.__groups,
+                description="[green]Get cells' bbox",
+                disable=(not CONFIG.VERBOSE),
+            ):
                 shapes = g[self.__shapekey]
                 polycells = na.get_bbox([literal_eval(cell) for cell in shapes])
                 results.append(polycells)
@@ -129,8 +141,10 @@ class Neighbors(object):
         names = []
         # shape neighbor search
         if self.__geom == "shape":
-            for n, polycells in tqdm(
-                self.__polycellsdb.items(), **CONFIG.tqdm(desc="Find neighbors"),
+            for n, polycells in track(
+                self.__polycellsdb.items(),
+                description="[green]Find neighbors",
+                disable=(not CONFIG.VERBOSE),
             ):
                 if expand is not None:
                     results.append(na.get_bbox_neighbors(polycells, expand=expand))
@@ -139,13 +153,19 @@ class Neighbors(object):
                 names.append(n)
         # point neighbor search
         else:
-            for n, g in tqdm(self.__groups, **CONFIG.tqdm(desc="Find neighbors"),):
+            for n, g in track(
+                self.__groups,
+                description="[green]Find neighbors",
+                disable=(not CONFIG.VERBOSE),
+            ):
                 cells = [literal_eval(c) for c in g[self.__centkey]]
+                print(type(cells))
                 results.append(na.get_point_neighbors(cells, expand))
                 names.append(n)
 
         self.__neighborsdb = dict(zip(names, results))
         self.__neighborsbuilt = True
+        self.export_neighbors()
 
         return self
 
@@ -173,13 +193,8 @@ class Neighbors(object):
 
         neighbors = []
         for n, g in self.__groups:
-            neighdict = self.__neighborsdb[n]
-            for i in range(0, len(g)):
-                try:
-                    neighs = neighdict[i]
-                except KeyError:
-                    neighs = []
-                neighbors.append(str(neighs))
+            neigh = [str(i) for i in self.__neighborsdb[n]]
+            neighbors += neigh
         col2adata_obs(neighbors, self.__adata, export_key)
 
         return self
@@ -237,45 +252,46 @@ class Neighbors(object):
         self.__groups = self.__data.groupby(self.__groupby)
         neighborsdb = {}
         for n, g in self.__groups:
-            neighborsdb[n] = dict(zip(range(len(g)), [literal_eval(i) for i in g[key]]))
+            neighborsdb[n] = [literal_eval(i) for i in g[key]]
         self.__neighborsdb = neighborsdb
         self.__neighborsbuilt = True
 
         return self
 
     def to_graphs(self):
-        try:
-            import igraph as ig
-        except ImportError:
-            raise ImportError(
-                "Required python-igraph, try `pip install python-igraph`."
-            )
-        if not self.__neighborsbuilt:
-            raise ValueError(
-                "Neighbors info not found. Please run Neighbors.find_neighbors() before further analysis."
-            )
+        with console.status("Constructing graph..."):
+            try:
+                import igraph as ig
+            except ImportError:
+                raise ImportError(
+                    "Required python-igraph, try `pip install python-igraph`."
+                )
+            if not self.__neighborsbuilt:
+                raise ValueError(
+                    "Neighbors info not found. Please run Neighbors.find_neighbors() before further analysis."
+                )
 
-        graphs = []
-        names = []
-        for n, g in self.__groups:
-            centroids = [literal_eval(c) for c in g[self.__centkey]]
-            vertices = [
-                {"name": i, "x": x, "y": y} for i, (x, y) in enumerate(centroids)
-            ]
-            edges = self.__neighborsdb[n]
-            graph_edges = []
-            for k, vs in edges.items():
-                if len(vs) > 0:
-                    for v in vs:
-                        if k != v:
-                            distance = euclidean(centroids[k], centroids[v])
-                            graph_edges.append(
-                                {"source": k, "target": v, "weight": distance}
-                            )
-            graphs.append(ig.Graph.DictList(vertices, graph_edges))
-            names.append(n)
+            graphs = []
+            names = []
+            for n, g in self.__groups:
+                centroids = [literal_eval(c) for c in g[self.__centkey]]
+                vertices = [
+                    {"name": i, "x": x, "y": y} for i, (x, y) in enumerate(centroids)
+                ]
+                edges = self.__neighborsdb[n]
+                graph_edges = []
+                for k, vs in enumerate(edges):
+                    if len(vs) > 0:
+                        for v in vs:
+                            if k != v:
+                                distance = euclidean(centroids[k], centroids[v])
+                                graph_edges.append(
+                                    {"source": k, "target": v, "weight": distance}
+                                )
+                graphs.append(ig.Graph.DictList(vertices, graph_edges))
+                names.append(n)
 
-        new_graphs = dict(zip(names, graphs))
+            new_graphs = dict(zip(names, graphs))
 
         return new_graphs
 
@@ -324,3 +340,7 @@ class Neighbors(object):
     def expobs(self):
         """The experiment observations used to process neighbors"""
         return self.__groupby
+
+    @property
+    def groups(self):
+        return self.__groups

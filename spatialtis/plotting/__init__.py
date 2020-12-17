@@ -15,11 +15,11 @@ from .base import (
 )
 from .roi_viz import cell_communities, cell_map, cell_neighbors, expression_map
 from .wrapper import (
+    NCD_markers,
     cell_co_occurrence,
     cell_components,
     cell_density,
     cell_morphology,
-    exp_neighcells,
     neighborhood_analysis,
     spatial_distribution,
     spatial_enrichment_analysis,

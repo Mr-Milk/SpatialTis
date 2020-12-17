@@ -4,12 +4,12 @@ from typing import Optional, Sequence, Union
 
 import pandas as pd
 from anndata import AnnData
+from rich.progress import track
 from scipy.stats import entropy
 from spatialentropy import altieri_entropy, leibovici_entropy
-from tqdm import tqdm
 
+from spatialtis.basic.basic import type_counter
 from spatialtis.config import CONFIG
-from spatialtis.stats.statistics import type_counter
 from spatialtis.utils import (
     create_remote,
     df2adata_uns,
@@ -21,7 +21,7 @@ from spatialtis.utils import (
 )
 
 
-@timer(prefix="Running spatial heterogeneity")
+@timer(task_name="Running spatial heterogeneity")
 @get_default_params
 @reuse_docstring()
 def spatial_heterogeneity(
@@ -81,7 +81,7 @@ def spatial_heterogeneity(
         )
 
     if method == "shannon":
-        log_print("Method: Shannon entropy")
+        log_print(":hammer_and_wrench: Method: Shannon entropy")
         df = type_counter(adata, groupby, type_key=type_key)
 
         if len(df.columns) == 1:
@@ -116,9 +116,9 @@ def spatial_heterogeneity(
 
     else:
         if method == "altieri":
-            log_print("Method: Altieri entropy")
+            log_print(":hammer_and_wrench: Method: Altieri entropy")
         if method == "leibovici":
-            log_print("Method: Leibovici entropy")
+            log_print(":hammer_and_wrench: Method: Leibovici entropy")
 
         df = adata.obs[groupby + [type_key, centroid_key]]
 
@@ -159,8 +159,10 @@ def spatial_heterogeneity(
 
             mp_results = run_ray(
                 jobs,
-                tqdm_config=CONFIG.tqdm(
-                    total=len(jobs), desc="Calculating heterogeneity"
+                dict(
+                    total=len(jobs),
+                    description="[green]Calculating heterogeneity",
+                    disable=(not CONFIG.VERBOSE),
                 ),
             )
 
@@ -169,7 +171,11 @@ def spatial_heterogeneity(
 
         else:
             for i, (n, g) in enumerate(
-                tqdm(groups, **CONFIG.tqdm(desc="Calculating heterogeneity",))
+                track(
+                    groups,
+                    description="[green]Calculating heterogeneity",
+                    disable=(not CONFIG.VERBOSE),
+                )
             ):
                 types = list(g[type_key])
                 points = [literal_eval(i) for i in g[centroid_key]]

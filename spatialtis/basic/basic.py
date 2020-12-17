@@ -30,7 +30,7 @@ def type_counter(
 
     """
 
-    df = adata.obs[groupby + [type_key]]
+    df = adata.obs[groupby + [type_key]]  # noqa
 
     # the order of types will follow the order in df
     groups = df.groupby(groupby)
@@ -55,7 +55,7 @@ def type_counter(
     return all_results  # obs as index, var as columns
 
 
-@timer(prefix="Running cell components")
+@timer(task_name="Running cell components")
 @get_default_params
 @reuse_docstring()
 def cell_components(
@@ -91,7 +91,7 @@ def cell_components(
         return counter
 
 
-@timer(prefix="Running cell co-occurrence")
+@timer(task_name="Running cell co-occurrence")
 @get_default_params
 @reuse_docstring()
 def cell_co_occurrence(
@@ -156,7 +156,7 @@ def cell_co_occurrence(
         return pdf
 
 
-@timer(prefix="Running cell density")
+@timer(task_name="Running cell density")
 @get_default_params
 @reuse_docstring()
 def cell_density(
@@ -223,7 +223,7 @@ def cell_density(
         return results
 
 
-@timer(prefix="Running cell morphology")
+@timer(task_name="Running cell morphology")
 @get_default_params
 @reuse_docstring()
 def cell_morphology(

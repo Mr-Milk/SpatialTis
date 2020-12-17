@@ -4,9 +4,9 @@ from typing import Optional, Sequence, Union
 import numpy as np
 import pandas as pd
 from anndata import AnnData
+from rich.progress import track
 from scipy.spatial import cKDTree
 from scipy.stats import chi2, norm
-from tqdm import tqdm
 
 from spatialtis.config import CONFIG
 from spatialtis.spatial.utils import QuadStats
@@ -113,7 +113,7 @@ def NNS(points, pval):
     return pattern
 
 
-@timer(prefix="Running spatial distribution")
+@timer(task_name="Running spatial distribution")
 @get_default_params
 @reuse_docstring()
 def spatial_distribution(
@@ -183,15 +183,15 @@ def spatial_distribution(
     groups = df.groupby(groupby)
 
     if method == "vmr":
-        log_print("Method: Variance-to-mean ratio")
+        log_print(":hammer_and_wrench: Method: Variance-to-mean ratio")
         _dist_func = VMR
         args = [resample, r, pval]
     elif method == "quad":
-        log_print("Method: Quadratic statistic")
+        log_print(":hammer_and_wrench: Method: Quadratic statistic")
         _dist_func = QUAD
         args = [quad, pval]
     elif method == "nns":
-        log_print("Method: Nearest neighbors search")
+        log_print(":hammer_and_wrench: Method: Nearest neighbors search")
         _dist_func = NNS
         args = [pval]
     else:
@@ -218,14 +218,18 @@ def spatial_distribution(
 
         patterns = run_ray(
             jobs,
-            tqdm_config=CONFIG.tqdm(
-                total=len(jobs), desc="Finding distribution pattern", unit="task"
+            dict(
+                total=len(jobs),
+                description="[green]Finding distribution pattern",
+                disable=(not CONFIG.VERBOSE),
             ),
         )
 
     else:
-        for name, group in tqdm(
-            groups, **CONFIG.tqdm(desc="Finding distribution pattern"),
+        for name, group in track(
+            groups,
+            description="[green]Finding distribution pattern",
+            disable=(not CONFIG.VERBOSE),
         ):
             for t, tg in group.groupby(type_key):
                 if len(tg) > 1:
