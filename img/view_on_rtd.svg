@@ -1,0 +1,14 @@
+<svg width="138.2" height="20" viewBox="0 0 1382 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="view on: read the docs">
+  <title>view on: read the docs</title>
+  <g>
+    <rect fill="#555" width="527" height="200"/>
+    <rect fill="#08C" x="527" width="855" height="200"/>
+  </g>
+  <g aria-hidden="true" fill="#fff" text-anchor="start" font-family="Verdana,DejaVu Sans,sans-serif" font-size="110">
+    <text x="60" y="148" textLength="427" fill="#000" opacity="0.1">view on</text>
+    <text x="50" y="138" textLength="427">view on</text>
+    <text x="582" y="148" textLength="755" fill="#000" opacity="0.1">read the docs</text>
+    <text x="572" y="138" textLength="755">read the docs</text>
+  </g>
+
+</svg>
