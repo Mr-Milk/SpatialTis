@@ -64,7 +64,7 @@ exclude_patterns = []
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "sphinx_rtd_theme"
+html_theme = "sphinx_book_theme"
 
 # Add any paths that contain custom _static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin _static files,
@@ -72,9 +72,12 @@ html_theme = "sphinx_rtd_theme"
 # html_static_path = ["_static"]
 html_favicon = 'img/Logo.svg'
 
-html_logo = 'img/Logo-text.png'
+html_logo = 'img/Logo.svg'
 html_theme_options = {
-    'logo_only': True,
+    "repository_url": "https://github.com/Mr-Milk/SpatialTis",
+    "use_repository_button": True,
+    "use_issues_button": True,
+    "use_edit_page_button": True,
 }
 
 # html_theme = "#ef8992"
