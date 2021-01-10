@@ -63,6 +63,7 @@ class _CONFIG(object):
         table.add_row("MULTI_PROCESSING", str(self.MULTI_PROCESSING))
         table.add_row("WORKING_ENV", str(self.WORKING_ENV))
         table.add_row("VERBOSE", str(self.VERBOSE))
+        table.add_row("PBAR", str(self.PBAR))
         table.add_row("EXP_OBS", str(self.EXP_OBS))
         table.add_row("ROI_KEY", str(self.ROI_KEY))
         table.add_row("CELL_TYPE_KEY", str(self.CELL_TYPE_KEY))
@@ -162,6 +163,7 @@ class _CONFIG(object):
         if not isinstance(v, bool):
             raise ValueError("CONFIG.verbose only accept bool value")
         self._VERBOSE = v
+        self.PBAR = v
 
     def pbar(self, **kwargs):
         pbar_config = dict(

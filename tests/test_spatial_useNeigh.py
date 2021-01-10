@@ -175,5 +175,5 @@ def test_nmd_markers():
 
 def test_spatial_mp():
     n = pytest.n
-    st.exp_neighcells(n, mp=True)
-    st.nmd_markers(n, mp=True)
+    st.NCD_markers(n, mp=True)
+    st.NMD_markers(n, mp=True)

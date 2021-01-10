@@ -41,7 +41,17 @@ For a quick view of what it's does, check our following examples:
    usage/installation
    usage/image_export
    usage/notebook
-   tutorial/tutorial1
+
+.. toctree::
+   :maxdepth: 1
+   :glob:
+   :caption: Tutorial
+
+   tutorial/basic_usage
+   tutorial/set_config
+   tutorial/plotting
+   tutorial/example1
+   tutorial/example2
 
 .. toctree::
    :maxdepth: 1

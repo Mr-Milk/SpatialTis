@@ -44,12 +44,12 @@ communities
 
 .. autofunction:: spatialtis.communities
 
-exp_neighcells
+NCD_markers
 ##############
 
-.. autofunction:: spatialtis.exp_neighcells
+.. autofunction:: spatialtis.NCD_markers
 
-exp_neighexp
+NMD_markers
 #############
 
-.. autofunction:: spatialtis.exp_neighexp
+.. autofunction:: spatialtis.NMD_markers

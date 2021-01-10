@@ -18,8 +18,8 @@ Following functions in spatialtis can have parallel processing supported by `Ray
     - :func:`spatialtis.spatial_distribution`
     - :func:`spatialtis.spatial_heterogeneity`
     - :func:`spatialtis.hotspot`
-    - :func:`spatialtis.exp_neighcells`
-    - :func:`spatialtis.exp_neighexp`
+    - :func:`spatialtis.NCD_markers`
+    - :func:`spatialtis.NMD_markers`
 
 These are implemented in rust, it will automatically run in parallel, supported by `rayon <https://github.com/rayon-rs/rayon>`_.
 

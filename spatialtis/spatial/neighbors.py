@@ -138,9 +138,7 @@ class Neighbors(object):
         # shape neighbor search
         if self.__geom == "shape":
             for n, polycells in tqdm(
-                self.__polycellsdb.items(),
-                desc="[green]Find neighbors",
-                disable=(not CONFIG.VERBOSE),
+                self.__polycellsdb.items(), **CONFIG.pbar(desc="Find neighbors")
             ):
                 if expand is not None:
                     results.append(na.get_bbox_neighbors(polycells, expand=expand))

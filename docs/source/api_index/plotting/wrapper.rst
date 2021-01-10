@@ -74,7 +74,7 @@ plotting.spatial_heterogeneity
 
 .. autofunction:: spatialtis.plotting.spatial_heterogeneity
 
-plotting.exp_neighcells
+plotting.NCD_markers
 ###########################
 
-.. autofunction:: spatialtis.plotting.exp_neighcells
+.. autofunction:: spatialtis.plotting.NCD_markers

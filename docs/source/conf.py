@@ -15,7 +15,6 @@ import sys
 
 sys.path.insert(0, os.path.abspath("../.."))
 
-
 # -- Project information -----------------------------------------------------
 
 project = "SpatialTis"
@@ -23,7 +22,7 @@ copyright = "2020, Mr-Milk"
 author = "Mr-Milk"
 
 # The full version, including alpha/beta/rc tags
-release = "0.2.0"
+release = "0.3.0"
 
 master_doc = "index"
 
@@ -45,6 +44,8 @@ extensions = [
 ]
 
 # nbsphinx_allow_errors = True
+# nbsphinx_input_prompt = ''
+# nbsphinx_output_prompt = ''
 autodoc_typehints = "description"
 autoclass_content = "both"
 autodoc_member_order = 'groupwise'
@@ -77,7 +78,7 @@ html_theme_options = {
 }
 
 # html_theme = "#ef8992"
-#html_theme_options = {
+# html_theme_options = {
 #    "rightsidebar": "true",
 #    "relbarbgcolor": "#ef8992"
-#}
+# }
