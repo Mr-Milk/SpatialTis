@@ -6,8 +6,8 @@ cell-cell interaction between SpatialTis and Giotto.
 Latest result:
 
 <p align="center">
-    <img src="nns.png" width="45%">
-    <img src="cci.png" width="45%">
+    <img src="compare_neighbor_search.png" width="45%">
+    <img src="compare_cell_cell_interaction.png.png" width="45%">
 </p>
 
 
