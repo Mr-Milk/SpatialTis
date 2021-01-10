@@ -4,8 +4,8 @@ from typing import Optional, Sequence, Union
 
 import numpy as np
 from anndata import AnnData
-from rich.progress import track
 from scipy.spatial.distance import euclidean
+from tqdm import tqdm
 
 from spatialtis.config import CONFIG
 from spatialtis.console import console
@@ -124,11 +124,7 @@ class Neighbors(object):
         if (self.__geom == "shape") & (not self.__polycells):
             results = []
             names = []
-            for n, g in track(
-                self.__groups,
-                description="[green]Get cells' bbox",
-                disable=(not CONFIG.VERBOSE),
-            ):
+            for n, g in tqdm(self.__groups, **CONFIG.pbar(desc="Get cells' bbox"),):
                 shapes = g[self.__shapekey]
                 polycells = na.get_bbox([literal_eval(cell) for cell in shapes])
                 results.append(polycells)
@@ -141,9 +137,9 @@ class Neighbors(object):
         names = []
         # shape neighbor search
         if self.__geom == "shape":
-            for n, polycells in track(
+            for n, polycells in tqdm(
                 self.__polycellsdb.items(),
-                description="[green]Find neighbors",
+                desc="[green]Find neighbors",
                 disable=(not CONFIG.VERBOSE),
             ):
                 if expand is not None:
@@ -153,11 +149,7 @@ class Neighbors(object):
                 names.append(n)
         # point neighbor search
         else:
-            for n, g in track(
-                self.__groups,
-                description="[green]Find neighbors",
-                disable=(not CONFIG.VERBOSE),
-            ):
+            for n, g in tqdm(self.__groups, **CONFIG.pbar(desc="Find neighbors")):
                 cells = [literal_eval(c) for c in g[self.__centkey]]
                 print(type(cells))
                 results.append(na.get_point_neighbors(cells, expand))

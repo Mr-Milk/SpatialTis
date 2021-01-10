@@ -2,9 +2,11 @@
 Setting Global config for whole processing level
 """
 import platform
+import sys
 import warnings
 from typing import List, Optional, Sequence
 
+from colorama import Fore
 from pyecharts.globals import WarningType
 from rich.table import Table
 
@@ -19,6 +21,7 @@ class _CONFIG(object):
         self._CELL_TYPE_KEY: Optional[str] = None
         self._WORKING_ENV: Optional[str] = None
         self._VERBOSE: bool = True
+        self.PBAR: bool = True
 
         self._ROI_KEY: Optional[str] = None
         self.OS: Optional[str] = None
@@ -61,8 +64,8 @@ class _CONFIG(object):
         table.add_row("WORKING_ENV", str(self.WORKING_ENV))
         table.add_row("VERBOSE", str(self.VERBOSE))
         table.add_row("EXP_OBS", str(self.EXP_OBS))
-        table.add_row("ROI_KEY", self.ROI_KEY)
-        table.add_row("CELL_TYPE_KEY", self.CELL_TYPE_KEY)
+        table.add_row("ROI_KEY", str(self.ROI_KEY))
+        table.add_row("CELL_TYPE_KEY", str(self.CELL_TYPE_KEY))
         table.add_row("CENTROID_KEY", self.CENTROID_KEY)
         table.add_row("AREA_KEY", self.AREA_KEY)
         table.add_row("SHAPE_KEY", self.SHAPE_KEY)
@@ -160,8 +163,29 @@ class _CONFIG(object):
             raise ValueError("CONFIG.verbose only accept bool value")
         self._VERBOSE = v
 
+    def pbar(self, **kwargs):
+        pbar_config = dict(
+            **kwargs,
+            file=sys.stdout,
+            disable=not self.PBAR,
+            bar_format=f"{Fore.GREEN}{{desc}} {{bar}} {{percentage:3.0f}}% {{remaining}}|{{elapsed}}{Fore.RESET}",
+        )
+
+        return pbar_config
+
 
 CONFIG = _CONFIG()
 # get system os
 system_os = platform.system()
 CONFIG.OS = system_os
+
+if console.is_dumb_terminal:
+    CONFIG.WORKING_ENV = None
+    CONFIG.PBAR = False
+elif console.is_jupyter:
+    CONFIG.WORKING_ENV = "jupyter_notebook"
+elif console.is_terminal:
+    CONFIG.WORKING_ENV = "terminal"
+else:
+    CONFIG.WORKING_ENV = None
+    CONFIG.PBAR = False

@@ -1,5 +1,5 @@
 <p align="center">
-<img src="https://raw.githubusercontent.com/Mr-Milk/SpatialTis/master/src/Logo.svg" width="200"/>
+<img src="img/Logo.svg" width="200"/>
 <p/>
 
 

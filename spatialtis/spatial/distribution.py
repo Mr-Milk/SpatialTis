@@ -4,9 +4,9 @@ from typing import Optional, Sequence, Union
 import numpy as np
 import pandas as pd
 from anndata import AnnData
-from rich.progress import track
 from scipy.spatial import cKDTree
 from scipy.stats import chi2, norm
+from tqdm import tqdm
 
 from spatialtis.config import CONFIG
 from spatialtis.spatial.utils import QuadStats
@@ -217,19 +217,12 @@ def spatial_distribution(
                     name_tags.append(name)
 
         patterns = run_ray(
-            jobs,
-            dict(
-                total=len(jobs),
-                description="[green]Finding distribution pattern",
-                disable=(not CONFIG.VERBOSE),
-            ),
+            jobs, CONFIG.pbar(total=len(jobs), desc="Finding distribution pattern",)
         )
 
     else:
-        for name, group in track(
-            groups,
-            description="[green]Finding distribution pattern",
-            disable=(not CONFIG.VERBOSE),
+        for name, group in tqdm(
+            groups, **CONFIG.pbar(desc="Finding distribution pattern"),
         ):
             for t, tg in group.groupby(type_key):
                 if len(tg) > 1:

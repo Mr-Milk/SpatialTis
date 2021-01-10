@@ -1,7 +1,7 @@
 import logging
 from typing import Callable, List, Union
 
-from rich.progress import track
+from tqdm import tqdm
 
 
 def create_remote(funcs: Union[List[Callable], Callable]):
@@ -33,7 +33,7 @@ def run_ray(jobs, pbar_config=None):
             done, obj_ids = ray.wait(obj_ids)
             yield ray.get(done[0])
 
-    for _ in track(exec_iterator(jobs), **pbar_config):
+    for _ in tqdm(exec_iterator(jobs), **pbar_config):
         pass
 
     results = ray.get(jobs)

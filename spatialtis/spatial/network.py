@@ -1,7 +1,7 @@
 from typing import Any, Optional
 
 import pandas as pd
-from rich.progress import track
+from tqdm import tqdm
 
 from spatialtis.config import CONFIG
 from spatialtis.spatial.neighbors import Neighbors
@@ -52,11 +52,7 @@ def communities(
 
     sub_comm = []
     graphs = n.to_graphs()
-    for _, graph in track(
-        graphs.items(),
-        description="[green]Communities detection",
-        disable=(not CONFIG.VERBOSE),
-    ):
+    for _, graph in tqdm(graphs.items(), **CONFIG.pbar(desc="Communities detection")):
         part = leidenalg.find_partition(graph, partition_type, **partition_kwargs)
         sub_comm += part.membership
 

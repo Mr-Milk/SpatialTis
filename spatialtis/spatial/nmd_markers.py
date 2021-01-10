@@ -2,7 +2,7 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
-from rich.progress import track
+from tqdm import tqdm
 
 from spatialtis.config import CONFIG
 from spatialtis.spatial.neighbors import Neighbors
@@ -93,14 +93,7 @@ def NMD_markers(
                 jobs.append(_max_feature_mp.remote(X, y.T, method, **reg_kwargs))
                 used_markers.append(m)
 
-        mp_results = run_ray(
-            jobs,
-            dict(
-                total=len(jobs),
-                description="[green]Fitting model",
-                disable=(not CONFIG.VERBOSE),
-            ),
-        )
+        mp_results = run_ray(jobs, CONFIG.pbar(total=len(jobs), desc="Fitting model",))
 
         results = []
         for m, (max_ix, max_weights) in zip(used_markers, mp_results):
@@ -109,11 +102,8 @@ def NMD_markers(
 
     else:
         results = []
-        for m, y in track(
-            Y.items(),
-            total=len(markers),
-            description="[green]Fitting model",
-            disable=(not CONFIG.VERBOSE),
+        for m, y in tqdm(
+            Y.items(), **CONFIG.pbar(total=len(markers), desc="Fitting model")
         ):
             if np.std(y) >= expression_std_cutoff:
                 [max_ix, max_weights] = _max_feature(X, y, method, **reg_kwargs)

@@ -5,7 +5,7 @@ from typing import Optional, Sequence, Union
 import anndata as ad
 import numpy as np
 import pandas as pd
-from rich.progress import track
+from tqdm import tqdm
 
 from spatialtis.config import CONFIG
 from spatialtis.preprocessing.geom import get_cell_exp_stack, mask2cells
@@ -193,12 +193,7 @@ class read_ROIs:
                 )
 
             mp_results = run_ray(
-                jobs,
-                dict(
-                    total=len(self._tree),
-                    description="process images",
-                    disable=(not CONFIG.VERBOSE),
-                ),
+                jobs, CONFIG.pbar(total=len(self._tree), desc="Process images")
             )
 
             for (exp, cells), obs in zip(mp_results, self.obs):
@@ -210,11 +205,9 @@ class read_ROIs:
                 eccentricities += cells[3]
 
         else:
-            for exp_img, mask_img, obs in track(
+            for exp_img, mask_img, obs in tqdm(
                 zip(self._exp_img, self._mask_img, self.obs),
-                total=len(self._tree),
-                description="process images",
-                disable=(not CONFIG.VERBOSE),
+                **CONFIG.pbar(total=len(self._tree), desc="Process images",),
             ):
                 [exp, cells] = get_roi(
                     exp_img,

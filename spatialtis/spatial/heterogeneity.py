@@ -4,9 +4,9 @@ from typing import Optional, Sequence, Union
 
 import pandas as pd
 from anndata import AnnData
-from rich.progress import track
 from scipy.stats import entropy
 from spatialentropy import altieri_entropy, leibovici_entropy
+from tqdm import tqdm
 
 from spatialtis.basic.basic import type_counter
 from spatialtis.config import CONFIG
@@ -158,12 +158,7 @@ def spatial_heterogeneity(
                     mindex.append((*n, i,))
 
             mp_results = run_ray(
-                jobs,
-                dict(
-                    total=len(jobs),
-                    description="[green]Calculating heterogeneity",
-                    disable=(not CONFIG.VERBOSE),
-                ),
+                jobs, CONFIG.pbar(total=len(jobs), desc="Calculating heterogeneity",)
             )
 
             for e in mp_results:
@@ -171,11 +166,7 @@ def spatial_heterogeneity(
 
         else:
             for i, (n, g) in enumerate(
-                track(
-                    groups,
-                    description="[green]Calculating heterogeneity",
-                    disable=(not CONFIG.VERBOSE),
-                )
+                tqdm(groups, **CONFIG.pbar(desc="Calculating heterogeneity"))
             ):
                 types = list(g[type_key])
                 points = [literal_eval(i) for i in g[centroid_key]]

@@ -1,7 +1,6 @@
 # Exclude dev files
 prune tests
 prune docs
-prune src
 prune .github
 exclude .gitignore
 exclude .isort.cfg

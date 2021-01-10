@@ -3,7 +3,7 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
-from rich.progress import Progress
+from tqdm import tqdm
 
 from spatialtis.config import CONFIG
 from spatialtis.spatial.neighbors import Neighbors
@@ -115,14 +115,7 @@ def NCD_markers(
                     m_.append(m)
                     c1_.append(c1)
 
-        mp_results = run_ray(
-            jobs,
-            dict(
-                total=len(jobs),
-                description="Fitting model",
-                disable=(not CONFIG.VERBOSE),
-            ),
-        )
+        mp_results = run_ray(jobs, CONFIG.pbar(total=len(jobs), desc="Fitting model",))
 
         for (m, c1, (max_ix, max_weights)) in zip(m_, c1_, mp_results):
             if max_weights > 0:
@@ -130,8 +123,9 @@ def NCD_markers(
                 results.append([c1, m, c2, max_weights])
 
     else:
-        with Progress(disable=(not CONFIG.VERBOSE)) as pbar:
-            task = pbar.add_task("Fitting model", total=len(n.unitypes) * len(markers))
+        with tqdm(
+            **CONFIG.pbar(total=len(n.unitypes) * len(markers), desc="Fitting model")
+        ) as pbar:
             for c1 in n.unitypes:
                 y = np.asarray(Y[c1]).T
                 x = np.asarray(X[c1])
@@ -144,11 +138,9 @@ def NCD_markers(
                             if max_weights > 0:
                                 c2 = n.unitypes[max_ix]
                                 results.append([c1, m, c2, max_weights])
-                        pbar.update(task, advance=1)
-                        pbar.refresh()
+                        pbar.update(1)
                 else:
-                    pbar.update(task, advance=len(markers))
-                    pbar.refresh()
+                    pbar.update(len(markers))
 
     df = (
         pd.DataFrame(

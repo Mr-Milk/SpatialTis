@@ -4,9 +4,9 @@ from typing import Optional, Sequence, Union
 import numpy as np
 import pandas as pd
 from anndata import AnnData
-from rich.progress import track
 from scipy.spatial import cKDTree
 from scipy.stats import norm
+from tqdm import tqdm
 
 from spatialtis.config import CONFIG
 from spatialtis.spatial.utils import QuadStats
@@ -149,22 +149,13 @@ def hotspot(
                 elif len(tg) == 1:
                     hotcells.append(pd.Series(["cold"], index=tg.index))
 
-        results = run_ray(
-            jobs,
-            dict(
-                total=len(jobs),
-                description="[green]Hotspot analysis",
-                disable=(not CONFIG.VERBOSE),
-            ),
-        )
+        results = run_ray(jobs, CONFIG.pbar(total=len(jobs), desc="Hotspot analysis",))
 
         for hots, i in zip(results, indexs):
             hotcells.append(pd.Series(hots, index=i))
 
     else:
-        for name, group in track(
-            groups, description="[green]Hotspot analysis", disable=(not CONFIG.VERBOSE)
-        ):
+        for name, group in tqdm(groups, **CONFIG.pbar(desc="Hotspot analysis")):
             for t, tg in group.groupby(type_key):
                 if len(tg) > 1:
                     cells = [literal_eval(c) for c in tg[centroid_key]]

@@ -2,7 +2,7 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
-from rich.progress import track
+from tqdm import tqdm
 
 from spatialtis.config import CONFIG
 from spatialtis.spatial.neighbors import Neighbors
@@ -63,10 +63,8 @@ def neighborhood_analysis(
     cc = na.CellCombs(types, order)
 
     results = {}
-    for name, value in track(
-        n.neighbors.items(),
-        description="[green]Neighborhood analysis",
-        disable=(not CONFIG.VERBOSE),
+    for name, value in tqdm(
+        n.neighbors.items(), **CONFIG.pbar(desc="Neighborhood analysis")
     ):
         result = cc.bootstrap(
             n.types[name], value, resample, pval, method, ignore_self=True

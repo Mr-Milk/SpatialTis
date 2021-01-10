@@ -22,8 +22,6 @@ Here is some useful configurations you will deal with a lot, all the names are *
 +---------------------------------+-------------------+
 | :code:`CONFIG.OS`               | :code:`None`      |
 +---------------------------------+-------------------+
-| :code:`CONFIG.CPU_ALLOC`        | :code:`None`      |
-+---------------------------------+-------------------+
 | :code:`CONFIG.VERBOSE`          | :code:`True`      |
 +---------------------------------+-------------------+
 | :code:`CONFIG.MULTI_PROCESSING` | :code:`False`     |
@@ -76,12 +74,6 @@ CONFIG.MULTI_PROCESSING
 
 To enable paralle processing globally in spatialtis. We used Ray to support this features, the support for windows platform
 is still in experimental stage, if something went wrong, you should turn it off.
-
-
-CONFIG.CPU_ALLOC
-================
-
-Number of CPU to allocate in paralle processing, the defualt is to use all available resources.
 
 
 CONFIG.VERBOSE
