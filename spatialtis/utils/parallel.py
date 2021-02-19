@@ -1,10 +1,12 @@
 import logging
-from typing import Callable, List, Union
+from typing import Callable
 
 from tqdm import tqdm
 
+from spatialtis.config import CONFIG
 
-def create_remote(funcs: Union[List[Callable], Callable]):
+
+def create_remote(funcs: Callable):
     try:
         import ray
 
@@ -16,13 +18,11 @@ def create_remote(funcs: Union[List[Callable], Callable]):
 
     if isinstance(funcs, Callable):
         return ray.remote(funcs)
-    elif isinstance(funcs, List):
-        return [ray.remote(f) for f in funcs]
     else:
         raise TypeError("Must be a function or a list of function")
 
 
-def run_ray(jobs, pbar_config=None):
+def run_ray(jobs, desc=""):
     try:
         import ray
     except Exception:
@@ -33,7 +33,7 @@ def run_ray(jobs, pbar_config=None):
             done, obj_ids = ray.wait(obj_ids)
             yield ray.get(done[0])
 
-    for _ in tqdm(exec_iterator(jobs), **pbar_config):
+    for _ in tqdm(exec_iterator(jobs), **CONFIG.pbar(total=len(jobs), desc=desc)):
         pass
 
     results = ray.get(jobs)

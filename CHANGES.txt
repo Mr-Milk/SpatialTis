@@ -1,6 +1,19 @@
 0.3.0
-1. Logging and PrgressBar using rich(https://github.com/willmcgugan/rich) to replace tqdm
+
+`size` parameter is deprecated in cell_density, the size for each ROI will be auot-computed
+rewrite the logic of co-occurrence
+marker co-expression using pearson corralation
+Auto-detect working environment
+
+API name changed: adata_uns2df -> read_result
+1. Logging using rich(https://github.com/willmcgugan/rich)
+ProgressBar working with Ray is now with the help of Ray Actor
 2. API changed, exp_neighcell -> NCD_markers, exp_neighexp -> NMD_marekrs
+
+Plotting
+
+seperate static and interactive plotting
+except for sankey plot, all ploting supports static rendering using matplotlib
 
 0.2.0
 1. spatialtis.sta.cell_density() can compute area automatically

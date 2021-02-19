@@ -1,3 +1,10 @@
-.wy-nav-content {
-max-width: 1200px !important;
+@import "sphinx-book-theme.css";
+
+.container-xl {
+    max-width: none;
+}
+
+div.nbinput.container div.prompt,
+div.nboutput.container div.prompt {
+    width: 2ex !important;
 }

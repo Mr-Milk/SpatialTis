@@ -1,13 +1,32 @@
+import pandas as pd
 import pytest
-from anndata import read_h5ad
 
+import spatialtis as st
 import spatialtis.plotting as sp
 from spatialtis import CONFIG
 
-CONFIG.EXP_OBS = ["Patients", "Sample", "ROI"]
-CONFIG.CELL_TYPE_KEY = "leiden"
-CONFIG.MARKER_KEY = "Markers"
-CONFIG.WORKING_ENV = None
+plotting_kwargs = dict(
+    title="just a title",
+    xaxis_title="x title",
+    yaxis_title="y title",
+    legend_title="legend_title",
+    xtickslabel_rotation=0,
+    ytickslabel_rotation=0,
+)
+
+ROI = {"Patient": "HPAP005", "Part": "Tail", "ROI": "ROI1"}
+TYPES = ["12", "14", "8"]
+MARKERS = ['CD20', 'CD57', 'C-peptide', 'Ghrelin']
+GORDER = {"Patient": ["HPAP005", "HPAP002"]}
+
+
+def test_set_config(tmpdir):
+    CONFIG.EXP_OBS = ["Patient", "Part", "ROI"]
+    CONFIG.CELL_TYPE_KEY = "leiden"
+    CONFIG.MARKER_KEY = "Markers"
+    CONFIG.WORKING_ENV = None
+    CONFIG.AUTO_SAVE = True
+    CONFIG.SAVE_PATH = tmpdir
 
 
 @pytest.mark.xfail
@@ -25,46 +44,115 @@ def test_get_linear_colors():
     sp.get_linear_colors(["Spectral", "Set3"])
 
 
-def test_read_data(shared_datadir):
-    data = read_h5ad(shared_datadir / 'small.h5ad')
-    pytest.data = data
+def test_cell_map(data):
+    sp.cell_map(data, ROI, use_shape=True, **plotting_kwargs)
+    sp.cell_map(data, ROI, selected_types=TYPES)
+    sp.cell_map(data, ROI, use_shape=True, use="interactive")
+    sp.cell_map(data, ROI, selected_types=TYPES, use="interactive")
 
 
-def test_cell_map():
-    data = pytest.data
-    ROI = {"Patient": "HPAP005", "Part": "Tail", "ROI": "ROI1"}
-    sp.cell_map(data, ROI, return_plot=True)
-    sp.cell_map(data, ROI, shape_key="not_exist_key")
-    sp.cell_map(data, ROI, selected_types=['12', '2'], size=(600, 600))
-    sp.cell_map(data, ROI, geom="point", title="sth", palette="Spectral")
-    sp.cell_map(data, ROI, geom="point", selected_types=['12', '2'], save="test.svg")
+def test_expression_map(data):
+    sp.expression_map(data, ROI, "CD20", **plotting_kwargs)
+    sp.expression_map(data, ROI, "CD20", use="interactive").render()
 
 
-@pytest.mark.xfail
-def test_cell_map_failed_param_centroied_key():
-    data = pytest.data
-    ROI = {"Patient": "HPAP005", "Part": "Tail", "ROI": "ROI1"}
-    sp.cell_map(data, ROI, geom="point", centroid_key="not_exist_key")
+def test_neighbors_map(data):
+    sp.neighbors_map(data, ROI, **plotting_kwargs)
+    sp.neighbors_map(data, ROI, use="interactive")
 
 
-@pytest.mark.xfail
-def test_cell_map_failed_param_geom():
-    data = pytest.data
-    ROI = {"Patient": "HPAP005", "Part": "Tail", "ROI": "ROI1"}
-    sp.cell_map(data, ROI, geom="ttt")
+def test_community_map(data):
+    sp.community_map(data, ROI, **plotting_kwargs)
+    sp.community_map(data, ROI, use="interactive")
 
 
-def test_expression_map():
-    data = pytest.data
-    ROI = {"Patient": "HPAP005", "Part": "Tail", "ROI": "ROI1"}
-    sp.expression_map(data, ROI, selected_types=['11', '6', '8'], order=['CD20'], display=True, return_plot=True)
-    sp.expression_map(data, ROI, use="scatter", expression_max=10, expression_min=0)
-    sp.expression_map(data, ROI, use="scatter", expression_min=0)
-    sp.expression_map(data, ROI, use="scatter", expression_max=10)
+def test_cell_components(data):
+    # one group
+    sp.cell_components(data, ["Patient"], selected_types=TYPES, **plotting_kwargs)
+    sp.cell_components(data, ["Patient"], direction="horizontal", group_order=GORDER)
+    sp.cell_components(data, ["Patient", "Part"])
+    sp.cell_components(data, ["Patient", "Part"], direction="horizontal", group_order=GORDER)
+
+    sp.cell_components(data, ["Patient"], use="interactive", selected_types=TYPES, **plotting_kwargs)
+    sp.cell_components(data, ["Patient"], use="interactive", direction="horizontal", group_order=GORDER)
+    sp.cell_components(data, ["Patient", "Part"], use="interactive", selected_types=TYPES)
+    sp.cell_components(data, ["Patient", "Part"], use="interactive", direction="horizontal", group_order=GORDER)
 
 
-@pytest.mark.xfail
-def test_expression_map_failed_param_use():
-    data = pytest.data
-    ROI = {"Patient": "HPAP005", "Part": "Tail", "ROI": "ROI1"}
-    sp.expression_map(data, ROI, use="ttt")
+def test_cell_density(data):
+    sp.cell_density(data, ["Patient"], selected_types=TYPES, **plotting_kwargs)
+    sp.cell_density(data, ["Patient"], direction="horizontal", group_order=GORDER)
+    sp.cell_density(data, ["Patient", "Part"])
+    sp.cell_density(data, ["Patient", "Part"], direction="horizontal", group_order=GORDER)
+
+
+def test_cell_morphology(data):
+    sp.cell_morphology(data, ['Patient', 'Part'], selected_types=TYPES)
+
+
+def test_cell_co_occurrence(data):
+    sp.cell_co_occurrence(data, selected_types=TYPES)
+    sp.cell_co_occurrence(data, use='heatmap')
+
+
+def test_spatial_distribution(data):
+    sp.spatial_distribution(data, selected_types=TYPES)
+    sp.spatial_distribution(data, use='heatmap')
+
+
+def test_spatial_heterogeneity(data):
+    sp.spatial_heterogeneity(data)
+
+
+def test_neighborhood_analysis(data):
+    sp.neighborhood_analysis(data, selected_types=TYPES, use="heatmap")
+    sp.neighborhood_analysis(data, use="dot_matrix")
+    sp.neighborhood_analysis(data, use="graph_static")
+    sp.neighborhood_analysis(data, use="graph_interactive").render()
+
+
+def test_neighborhood_analysis_order(data):
+    sp.neighborhood_analysis(data, selected_types=TYPES, use="heatmap", key="neighborhood_order")
+    sp.neighborhood_analysis(data, use="dot_matrix", key="neighborhood_order")
+    sp.neighborhood_analysis(data, use="graph_static", key="neighborhood_order")
+    sp.neighborhood_analysis(data, use="graph_interactive", key="neighborhood_order").render()
+
+
+def test_spatial_enrichment(data):
+    sp.spatial_enrichment_analysis(data, selected_markers=MARKERS, use="heatmap")
+    sp.spatial_enrichment_analysis(data, use="dot")
+    sp.spatial_enrichment_analysis(data, use="graph_static")
+    sp.spatial_enrichment_analysis(data, use="graph_interactive").render()
+
+
+def test_spatial_enrichment_order(data):
+    sp.spatial_enrichment_analysis(data, selected_markers=MARKERS, use="heatmap", key="enrichment_order")
+    sp.spatial_enrichment_analysis(data, use="dot", key="enrichment_order")
+    sp.spatial_enrichment_analysis(data, use="graph_static", key="enrichment_order")
+    sp.spatial_enrichment_analysis(data, use="graph_interactive", key="enrichment_order").render()
+
+
+def test_co_expression(data):
+    sp.spatial_co_expression(data, selected_markers=MARKERS, use="heatmap")
+    sp.spatial_co_expression(data, use="graph_static")
+    sp.spatial_co_expression(data, use="graph_interactive")
+
+
+def test_NCDMarkers(data):
+    test_df = pd.DataFrame(data=[['CD20', 'B', 0.5, 0.4, 0.0001],
+                                 ['CD23', 'C', 0.9, -0.4, 0.0001]],
+                           columns=['marker', 'neighbor_type', 'dependency', 'corr', 'pvalue'])
+    st.utils.df2adata_uns(test_df, data, 'ncd_markers')
+    sp.NCDMarkers(data)
+
+
+def test_NMDMarkers(data):
+    sp.NMDMarkers(data)
+
+
+def test_base_bar():
+    df = pd.DataFrame({"x": list(range(10)),
+                       "y": list(range(10)),
+                       })
+    sp.base.bar_static(df, x="x", y="y")
+    sp.base.bar_static(df, x="x", y="y", direction="horizontal")

@@ -1,9 +1,6 @@
 Q&A
 ====
 
-Basic
-------
-
 What is SpatialTis?
 #######################
 
@@ -14,18 +11,23 @@ How parallel processing works?
 
 Following functions in spatialtis can have parallel processing supported by `Ray <https://docs.ray.io/en/latest/>`_, use argument :code:`mp=True` to enable.
 
-    - :class:`spatialtis.read_ROIs`
-    - :func:`spatialtis.spatial_distribution`
-    - :func:`spatialtis.spatial_heterogeneity`
-    - :func:`spatialtis.hotspot`
-    - :func:`spatialtis.NCD_markers`
-    - :func:`spatialtis.NMD_markers`
+- :class:`spatialtis.read_ROIs`
+- :func:`spatialtis.spatial_distribution`
+- :func:`spatialtis.spatial_heterogeneity`
+- :func:`spatialtis.hotspot`
 
 These are implemented in rust, it will automatically run in parallel, supported by `rayon <https://github.com/rayon-rs/rayon>`_.
 
-    - :meth:`spatialtis.Neighbors.find_neighbors`
-    - :func:`spatialtis.spatial.neighborhood_analysis`
-    - :func:`spatialtis.spatial.spatial_enrichment_analysis`
+- :class:`spatialtis.find_neighbors`
+- :class:`spatialtis.neighborhood_analysis`
+- :class:`spatialtis.spatial_enrichment_analysis`
+
+These functions have internal support.
+
+- :class:`spatialtis.NCDMarkers`
+- :class:`spatialtis.NMDMarkers`
+
+As for the rest, there is no need to implement parallel for now.
 
 Could you provide a conda installation?
 ########################################
@@ -35,13 +37,10 @@ A conda recipe require every dependencies on conda channel, however, many of the
 avialable in conda.
 
 
-MacOS Issues
--------------
-
 Do you want the application "Python.app" to accept the incoming network connection?
 #####################################################################################
 
-.. image:: ../src/mac_connections_issue.png
+.. figure:: ../img/mac_connections_issue.png
     :width: 50%
     :align: center
 

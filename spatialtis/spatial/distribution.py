@@ -1,5 +1,5 @@
 from ast import literal_eval
-from typing import Optional, Sequence, Union
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -8,18 +8,11 @@ from scipy.spatial import cKDTree
 from scipy.stats import chi2, norm
 from tqdm import tqdm
 
+from spatialtis.abc import AnalysisBase
 from spatialtis.config import CONFIG
 from spatialtis.spatial.utils import QuadStats
-from spatialtis.utils import (
-    create_remote,
-    df2adata_uns,
-    filter_adata,
-    get_default_params,
-    log_print,
-    reuse_docstring,
-    run_ray,
-    timer,
-)
+from spatialtis.typing import Number, Tuple
+from spatialtis.utils import create_remote, doc, run_ray
 
 
 def VMR(points, resample, r, pval):
@@ -113,37 +106,21 @@ def NNS(points, pval):
     return pattern
 
 
-@timer(task_name="Running spatial distribution")
-@get_default_params
-@reuse_docstring()
-def spatial_distribution(
-    adata: AnnData,
-    groupby: Union[Sequence, str, None] = None,
-    method: str = "nns",
-    pval: float = 0.01,
-    r: Optional[float] = 10,
-    resample: int = 500,
-    quad: Sequence[int] = (10, 10),
-    type_key: Optional[str] = None,
-    centroid_key: Optional[str] = None,
-    export: bool = True,
-    export_key: Optional[str] = None,
-    return_df: bool = False,
-    mp: Optional[bool] = None,
-):
+@doc
+class spatial_distribution(AnalysisBase):
     """Cell distribution pattern
 
     There are three type of distribution pattern (0 if no cells)
 
-     - random (1)
-     - regular (2)
-     - cluster (3)
+    - Random (1)
+    - Regular (2)
+    - Cluster (3)
 
     Three methods are provided
 
-     - Variance-to-mean ratio (vmr): `Index of Dispersion <../about/implementation.html#index-of-dispersion>`_
-     - Quadratic statistics (quad): `Morisita’s index of dispersion <../about/implementation.html#morisitas-index-of-dispersion>`_
-     - Nearest neighbors search (nns): `Clark and Evans aggregation index <../about/implementation.html#clark-and-evans-aggregation-index>`_
+    - Variance-to-mean ratio (vmr): `Index of Dispersion <../about/implementation.html#index-of-dispersion>`_
+    - Quadratic statistics (quad): `Morisita’s index of dispersion <../about/implementation.html#morisitas-index-of-dispersion>`_
+    - Nearest neighbors search (nns): `Clark and Evans aggregation index <../about/implementation.html#clark-and-evans-aggregation-index>`_
 
     +--------------------------------------+--------+---------+---------+
     |                                      | Random | Regular | Cluster |
@@ -156,90 +133,94 @@ def spatial_distribution(
     +--------------------------------------+--------+---------+---------+
 
     Args:
-        adata: {adata}
-        groupby: {groupby}
-        method: Options are "vmr", "quad", and "nns"
+        data: {adata}
+        method: "vmr", "quad", and "nns" (Default: "nns")
         pval: {pval}
         r: Only use when method="vmr", diameter of sample window
         resample: Only use when method="vmr", the number of random permutations to perform
         quad: Only use when method="quad", how to perform rectangle tessellation
-        type_key: {type_key}
-        centroid_key: {centroid_key}
-        export: {export}
-        export_key: {export_key}
-        return_df: {return_df}
-        mp: {mp}
+        **kwargs: {analysis_kwargs}
+
 
     "quad" is quadratic statistic, it cuts a ROI into few rectangles, quad=(10,10) means the ROI will have 10*10 grid.
 
     """
-    if export_key is None:
-        export_key = CONFIG.spatial_distribution_key
-    else:
-        CONFIG.spatial_distribution_key = export_key
 
-    df = filter_adata(adata, groupby, type_key, centroid_key,)
-    types = pd.unique(df[type_key])
-    groups = df.groupby(groupby)
+    def __init__(
+        self,
+        data: AnnData,
+        method: str = "nns",
+        pval: float = 0.01,
+        r: Optional[Number] = 10,
+        resample: int = 500,
+        quad: Tuple[int, int] = (10, 10),
+        **kwargs,
+    ):
 
-    if method == "vmr":
-        log_print(":hammer_and_wrench: Method: Variance-to-mean ratio")
-        _dist_func = VMR
-        args = [resample, r, pval]
-    elif method == "quad":
-        log_print(":hammer_and_wrench: Method: Quadratic statistic")
-        _dist_func = QUAD
-        args = [quad, pval]
-    elif method == "nns":
-        log_print(":hammer_and_wrench: Method: Nearest neighbors search")
-        _dist_func = NNS
-        args = [pval]
-    else:
-        raise ValueError(
-            f"'{method}' No such method, available options are 'vmr','quad' and 'nns'."
+        if method == "vmr":
+            self.method = "Variance-to-mean ratio"
+            self._dist_func = VMR
+            self._args = [resample, r, pval]
+        elif method == "quad":
+            self.method = "Quadratic statistic"
+            self._dist_func = QUAD
+            self._args = [quad, pval]
+        else:
+            self.method = "Nearest neighbors search"
+            self._dist_func = NNS
+            self._args = [pval]
+
+        super().__init__(data, task_name="spatial_distribution", **kwargs)
+
+        df = data.obs[self.exp_obs + [self.centroid_key, self.cell_type_key]]
+        groups = df.groupby(self.exp_obs)
+
+        patterns = []
+        name_tags = []
+        type_tags = []
+
+        need_eval = self.is_col_str(self.centroid_key)
+
+        if self.mp:
+
+            dist_mp = create_remote(self._dist_func)
+
+            jobs = []
+            for name, group in groups:
+                if isinstance(name, str):
+                    name = [name]
+                for t, tg in group.groupby(self.cell_type_key):
+                    if len(tg) > 1:
+                        if need_eval:
+                            cells = [literal_eval(c) for c in tg[self.centroid_key]]
+                        else:
+                            cells = [c for c in tg[self.centroid_key]]
+                        jobs.append(dist_mp.remote(cells, *self._args))
+                        type_tags.append(t)
+                        name_tags.append(name)
+
+            patterns = run_ray(jobs, desc="Finding distribution pattern")
+
+        else:
+            for name, group in tqdm(
+                groups, **CONFIG.pbar(desc="Finding distribution pattern"),
+            ):
+                if isinstance(name, str):
+                    name = [name]
+                for t, tg in group.groupby(self.cell_type_key):
+                    if len(tg) > 1:
+                        if need_eval:
+                            cells = [literal_eval(c) for c in tg[self.centroid_key]]
+                        else:
+                            cells = [c for c in tg[self.centroid_key]]
+                        patterns.append(self._dist_func(cells, *self._args))
+                        type_tags.append(t)
+                        name_tags.append(name)
+
+        dist_patterns = []
+        for n, t, p in zip(name_tags, type_tags, patterns):
+            dist_patterns.append([*n, t, p])
+
+        self.result = pd.DataFrame(
+            data=dist_patterns, columns=self.exp_obs + ["type", "pattern"]
         )
-
-    patterns = []
-    name_tags = []
-    type_tags = []
-
-    if mp:
-
-        _dist_mp = create_remote(_dist_func)
-
-        jobs = []
-        for name, group in groups:
-            for t, tg in group.groupby(type_key):
-                if len(tg) > 1:
-                    cells = [literal_eval(c) for c in tg[centroid_key]]
-                    jobs.append(_dist_mp.remote(cells, *args))
-                    type_tags.append(t)
-                    name_tags.append(name)
-
-        patterns = run_ray(
-            jobs, CONFIG.pbar(total=len(jobs), desc="Finding distribution pattern",)
-        )
-
-    else:
-        for name, group in tqdm(
-            groups, **CONFIG.pbar(desc="Finding distribution pattern"),
-        ):
-            for t, tg in group.groupby(type_key):
-                if len(tg) > 1:
-                    cells = [literal_eval(c) for c in tg[centroid_key]]
-                    patterns.append(_dist_func(cells, *args))
-                    type_tags.append(t)
-                    name_tags.append(name)
-
-    dist_patterns = {n: {t: 0 for t in types} for n in name_tags}
-    for n, t, p in zip(name_tags, type_tags, patterns):
-        dist_patterns[n][t] = p
-
-    results = pd.DataFrame(dist_patterns)
-    results = results.rename_axis(index=["Cell type"], columns=groupby).T
-
-    if export:
-        df2adata_uns(results, adata, export_key, params={"method": method})
-
-    if return_df:
-        return results

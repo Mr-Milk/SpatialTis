@@ -13,12 +13,16 @@
 import os
 import sys
 
+import matplotlib
+
 sys.path.insert(0, os.path.abspath("../.."))
+
+matplotlib.use('agg')
 
 # -- Project information -----------------------------------------------------
 
 project = "SpatialTis"
-copyright = "2020, Mr-Milk"
+copyright = "2021, Mr-Milk"
 author = "Mr-Milk"
 
 # The full version, including alpha/beta/rc tags
@@ -38,14 +42,13 @@ extensions = [
     "sphinx.ext.autosectionlabel",
     "sphinx.ext.mathjax",
     "sphinx.ext.viewcode",
-    "sphinx_rtd_theme",
     "nbsphinx",
     "nbsphinx_link"
 ]
 
 # nbsphinx_allow_errors = True
-# nbsphinx_input_prompt = ''
-# nbsphinx_output_prompt = ''
+nbsphinx_input_prompt = '[%s]:'
+nbsphinx_output_prompt = '[%s]:'
 autodoc_typehints = "description"
 autoclass_content = "both"
 autodoc_member_order = 'groupwise'

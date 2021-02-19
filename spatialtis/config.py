@@ -4,6 +4,8 @@ Setting Global config for whole processing level
 import platform
 import sys
 import warnings
+from dataclasses import dataclass, field
+from pathlib import Path
 from typing import List, Optional, Sequence
 
 from colorama import Fore
@@ -15,17 +17,67 @@ from spatialtis.console import console
 WarningType.ShowWarning = False
 
 
+@dataclass
+class Analysis(object):
+    task_name: str
+    display_name: str
+    export_key: str
+    last_used_key: Optional[str] = field(default=None)
+
+
+ANALYSIS = {
+    "cell_components": Analysis(
+        "cell_components", "Cell Components", "cell_components"
+    ),
+    "cell_density": Analysis("cell_density", "Cell Density", "cell_density"),
+    "cell_co_occurrence": Analysis(
+        "cell_co_occurrence", "Cell Co-occurrence", "co_occurrence"
+    ),
+    "cell_morphology": Analysis("cell_morphology", "Cell Morphology", "morphology"),
+    "spatial_distribution": Analysis(
+        "spatial_distribution", "Spatial Distribution", "spatial_distribution"
+    ),
+    "spatial_heterogeneity": Analysis(
+        "spatial_heterogeneity", "Spatial Heterogeneity", "spatial_heterogeneity"
+    ),
+    "hotspot": Analysis("hotspot", "Hotspot Analysis", "hotspot"),
+    "find_neighbors": Analysis(
+        "find_neighbors", "Find Cell Neighbors", "cell_neighbors"
+    ),
+    "neighborhood_analysis": Analysis(
+        "neighborhood_analysis", "Neighborhood Analysis", "neighborhood_analysis"
+    ),
+    "spatial_enrichment_analysis": Analysis(
+        "spatial_enrichment_analysis",
+        "Spatial Enrichment Analysis",
+        "spatial_enrichment",
+    ),
+    "spatial_co_expression": Analysis(
+        "spatial_co_expression", "Spatial Co-expression", "co_expression"
+    ),
+    "cell_community": Analysis("cell_community", "Cell Community", "community"),
+    "NCDMarkers": Analysis(
+        "NCDMarkers", "Neighbor cell dependent markers", "ncd_markers"
+    ),
+    "NMDMarkers": Analysis(
+        "NMDMarkers", "Neighbor marker dependent markers", "nmd_markers"
+    ),
+    "prepare_svca": Analysis("prepare_scva", "Prepare files for running svca", "svca"),
+}
+
+
 class _CONFIG(object):
     def __init__(self):
         self._EXP_OBS: Optional[List[str]] = None
         self._CELL_TYPE_KEY: Optional[str] = None
         self._WORKING_ENV: Optional[str] = None
         self._VERBOSE: bool = True
+        self.SAVE_PATH: Optional[Path] = None
         self.PBAR: bool = True
 
         self._ROI_KEY: Optional[str] = None
         self.OS: Optional[str] = None
-        self.MULTI_PROCESSING: bool = False
+        self.MP: bool = True
 
         # used key name to store info in anndata
         self.CENTROID_KEY: str = "centroid"
@@ -33,26 +85,8 @@ class _CONFIG(object):
         self.SHAPE_KEY: str = "cell_shape"
         self.ECCENTRICITY_KEY: str = "eccentricity"
         self.MARKER_KEY: str = "marker"
-
-        # export key, the key name used to store results, private to user
-        # statistic part
-        self.cell_components_key: str = "cell_components"
-        self.cell_co_occurrence_key: str = "cell_co_occurrence"
-        self.cell_density_key: str = "cell_density"
-        self.cell_morphology_key: str = "cell_morphology"
-
-        # plotting part
-        self.spatial_distribution_key: str = "spatial_distribution"
-        self.spatial_heterogeneity_key: str = "spatial_heterogeneity"
-        self.hotspot_key: str = "hotspot"
-        self.community_key: str = "communities"
-        self.neighborhood_analysis_key: str = "neighborhood_analysis"
-        self.spatial_enrichment_analysis_key: str = "spatial_enrichment_analysis"
-        self.spatial_enrichment_analysis_layers_key: str = "markers_sign"
-        self.neighbors_key: str = "cell_neighbors"
-        self.neighbors_count_key: str = "neighbors_count"
-        self.ncd_markers_key: str = "ncd_markers"
-        self.nmd_markers_key: str = "nmd_markers"
+        self.NEIGHBORS_KEY: str = "cell_neighbors"
+        self.pbar_format: str = f"{Fore.GREEN}{{desc}} {{bar}} {{percentage:3.0f}}% {{remaining}}|{{elapsed}}{Fore.RESET}"
 
     def __repr__(self):
         table = Table(title="Current configurations of SpatialTis")
@@ -60,7 +94,7 @@ class _CONFIG(object):
         table.add_column("Value", style="magenta")
 
         table.add_row("OS", self.OS)
-        table.add_row("MULTI_PROCESSING", str(self.MULTI_PROCESSING))
+        table.add_row("MULTI_PROCESSING", str(self.MP))
         table.add_row("WORKING_ENV", str(self.WORKING_ENV))
         table.add_row("VERBOSE", str(self.VERBOSE))
         table.add_row("PBAR", str(self.PBAR))
@@ -133,21 +167,14 @@ class _CONFIG(object):
     @WORKING_ENV.setter
     def WORKING_ENV(self, env):
         self._WORKING_ENV = env
-        from pyecharts.globals import CurrentConfig, NotebookType
         from bokeh.io import output_notebook
 
         output_notebook(hide_banner=True)
 
         if env is None:
             pass
-        elif env == "jupyter_notebook":
+        elif env == "jupyter":
             pass
-        elif env == "jupyter_lab":
-            CurrentConfig.NOTEBOOK_TYPE = NotebookType.JUPYTER_LAB
-        elif env == "nteract":
-            CurrentConfig.NOTEBOOK_TYPE = NotebookType.NTERACT
-        elif env == "zeppelin":
-            CurrentConfig.NOTEBOOK_TYPE = NotebookType.ZEPPELIN
         elif env == "terminal":
             pass
         else:
@@ -165,12 +192,34 @@ class _CONFIG(object):
         self._VERBOSE = v
         self.PBAR = v
 
+    @property
+    def AUTO_SAVE(self):
+        if self.SAVE_PATH is not None:
+            return True
+        else:
+            return False
+
+    @AUTO_SAVE.setter
+    def AUTO_SAVE(self, path):
+        if isinstance(path, (str, Path)):
+            path = Path(path)
+            path.mkdir(exist_ok=True)
+        elif isinstance(path, bool):
+            if path:
+                path = Path().cwd() / "spatialti-result"
+                path.mkdir(exist_ok=True)
+            else:
+                path = None
+        else:
+            raise TypeError("You can set a directory or set it True/False.")
+        self.SAVE_PATH = path
+
     def pbar(self, **kwargs):
         pbar_config = dict(
             **kwargs,
             file=sys.stdout,
             disable=not self.PBAR,
-            bar_format=f"{Fore.GREEN}{{desc}} {{bar}} {{percentage:3.0f}}% {{remaining}}|{{elapsed}}{Fore.RESET}",
+            bar_format=self.pbar_format,
         )
 
         return pbar_config
@@ -183,9 +232,11 @@ CONFIG.OS = system_os
 
 if console.is_dumb_terminal:
     CONFIG.WORKING_ENV = None
-    CONFIG.PBAR = False
+    CONFIG.pbar_format = (
+        f"{{desc}} {{bar}} {{percentage:3.0f}}% {{remaining}}|{{elapsed}}"
+    )
 elif console.is_jupyter:
-    CONFIG.WORKING_ENV = "jupyter_notebook"
+    CONFIG.WORKING_ENV = "jupyter"
 elif console.is_terminal:
     CONFIG.WORKING_ENV = "terminal"
 else:

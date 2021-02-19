@@ -1,32 +1,24 @@
 import warnings
-from typing import Optional, Sequence
+from ast import literal_eval
+from typing import Optional
 
 import numpy as np
 import pandas as pd
+from anndata import AnnData
+from scipy.stats import norm
 from tqdm import tqdm
 
+from spatialtis.abc import AnalysisBase
 from spatialtis.config import CONFIG
-from spatialtis.spatial.neighbors import Neighbors
-from spatialtis.spatial.utils import check_neighbors
-from spatialtis.utils import df2adata_uns, get_default_params, reuse_docstring, timer
+from spatialtis.spatial.utils import NeighborsNotFoundError
+from spatialtis.typing import Array
+from spatialtis.utils import doc
 
 
-@timer(task_name="Running spatial enrichment analysis")
-@get_default_params
-@reuse_docstring()
-def spatial_enrichment_analysis(
-    n: Neighbors,
-    threshold: Optional[float] = None,
-    layers_key: Optional[str] = None,
-    selected_markers: Optional[Sequence] = None,
-    marker_key: Optional[str] = None,
-    resample: int = 500,
-    pval: float = 0.01,
-    export: bool = True,
-    export_key: Optional[str] = None,
-    return_df: bool = False,
-):
-    """`Profiling markers co-expression <about/implementation.html#profiling-of-markers-co-expression>`_ using permutation test
+@doc
+class spatial_enrichment_analysis(AnalysisBase):
+    """`Profiling markers spatial enrichment <about/implementation.html#profiling-of-markers-co-expression>`_
+    using permutation test
 
     Similar to neighborhood analysis which tells you the relationship between different type of cells.
     This analysis tells you the spatial relationship between markers.
@@ -34,84 +26,94 @@ def spatial_enrichment_analysis(
     This method is implemented in Rust, it executes in parallel automatically.
 
     Args:
-        n: {n}
+        data: {adata}
         threshold: The expression level to determine whether a marker is positive
         layers_key: {layers_key}
         selected_markers: {selected_markers}
-        marker_key: {marker_key}
         resample: Number of times to perform resample
         pval: {pval}
-        export: {export}
-        export_key: {export_key}
-        return_df: {return_df}
+        order: If False, (Cell_A, Cell_B) and (Cell_B, Cell_A) are the same interaction (Default: False)
+        **kwargs: {analysis_kwargs}
 
     .. seealso:: `neighborhood_analysis <#spatialtis.plotting.neighborhood_analysis>`_
 
     """
 
-    try:
-        import neighborhood_analysis as na
-    except ImportError:
-        raise ImportError("Package not found, try `pip install neighborhood_analysis`.")
+    def __init__(
+        self,
+        data: AnnData,
+        threshold: Optional[float] = None,
+        layers_key: Optional[str] = None,
+        selected_markers: Optional[Array] = None,
+        resample: int = 500,
+        pval: float = 0.01,
+        order: bool = False,
+        **kwargs,
+    ):
+        super().__init__(data, task_name="spatial_enrichment_analysis", **kwargs)
+        self.params = {"order": order}
+        try:
+            import neighborhood_analysis as na
+        except ImportError:
+            raise ImportError(
+                "Package not found, try `pip install neighborhood_analysis`."
+            )
 
-    check_neighbors(n)
-    data = n.adata
+        if not self.neighbors_exists:
+            raise NeighborsNotFoundError("Run `find_neighbors` first before continue.")
 
-    if export_key is None:
-        export_key = CONFIG.spatial_enrichment_analysis_key
-    else:
-        CONFIG.spatial_enrichment_analysis_key = export_key
-
-    if (threshold is None) & (layers_key is None):
-        raise ValueError("Either specific a threshold or a layers key.")
-    elif layers_key is not None:
-        if threshold is not None:
+        if (threshold is not None) & (layers_key is None):
+            layers_key = f"gt_{threshold}"
+            data.layers[layers_key] = (data.X.copy() >= threshold).astype(int)
+        elif (threshold is None) & (layers_key is not None):
             warnings.warn(
                 "You specific both threshold and layers_key, using user defined layers_key"
             )
-        CONFIG.spatial_enrichment_analysis_layers_key = layers_key
-    elif threshold is not None:
-        layers_key = CONFIG.spatial_enrichment_analysis_layers_key
-        data.layers[layers_key] = data.X >= threshold
-
-    if selected_markers is not None:
-        if len(selected_markers) > 1:
-            data_t = data.T
-            data = data_t[data_t.obs[marker_key].isin(selected_markers)].copy()
-            data = data.T
         else:
-            raise ValueError("You need at least two markers for `selected_markers`.")
+            layers_key = f"mean_cut"
+            data.layers[layers_key] = (data.X.copy() >= data.X.mean(axis=0)).astype(int)
 
-    markers = data.var[marker_key]
-    results = {}
+        markers, _, data = self.get_exp_matrix(selected_markers, layers_key)
+        need_eval = self.is_col_str(self.neighbors_key)
+        results_data = []
 
-    for name, roi in tqdm(
-        data.obs.groupby(n.expobs), **CONFIG.pbar(desc="Spatial enrichment analysis")
-    ):
-        neighbors = n.neighbors[name]
-        matrix = data[roi.index].layers[layers_key]
-        result = {}
+        for name, roi in tqdm(
+            data.obs.groupby(self.exp_obs),
+            **CONFIG.pbar(desc="Spatial enrichment analysis"),
+        ):
+            if isinstance(name, str):
+                name = [name]
+            if need_eval:
+                neighbors = [literal_eval(n) for n in roi[self.neighbors_key]]
+            else:
+                neighbors = [n for n in roi[self.neighbors_key]]
+            matrix = data[roi.index].layers[layers_key]
 
-        for ix, x in enumerate(markers):
-            x_status = [bool(i) for i in matrix[:, ix]]
-            for iy, y in enumerate(markers):
-                y_status = [bool(i) for i in matrix[:, iy]]
-                z = na.comb_bootstrap(
-                    x_status, y_status, neighbors, times=resample, ignore_self=False
-                )
-                result[(x, y)] = z
-        results[name] = result
+            for ix, x in enumerate(markers):
+                x_status = [bool(i) for i in matrix[:, ix]]
+                for iy, y in enumerate(markers):
+                    if (not order) & (iy < ix):
+                        pass
+                    else:
+                        y_status = [bool(i) for i in matrix[:, iy]]
+                        z = na.comb_bootstrap(
+                            x_status,
+                            y_status,
+                            neighbors,
+                            times=resample,
+                            ignore_self=False,
+                        )
+                        results_data.append([*name, x, y, z])
+        df = pd.DataFrame(
+            data=results_data, columns=self.exp_obs + ["marker1", "marker2", "value"]
+        )
 
-    df = pd.DataFrame(results)
-    df.index = pd.MultiIndex.from_tuples(df.index, names=("Marker1", "Marker2"))
-    df.rename_axis(columns=n.expobs, inplace=True)
-    df.replace(np.inf, 10.0, inplace=True)
-    df.replace(-np.inf, -10.0, inplace=True)
-    df.fillna(0, inplace=True)
-    df = df.T
+        def sign(x):
+            p = norm.sf(abs(x))
+            if p < pval:
+                return np.sign(x)
+            else:
+                return 0
 
-    if export:
-        df2adata_uns(df, n.adata, export_key, params={"pval": pval})
-
-    if return_df:
-        return df
+        df.loc[:, ["value"]] = df["value"].apply(sign).astype(int)
+        self.result = df

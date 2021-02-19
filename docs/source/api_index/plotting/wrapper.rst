@@ -2,13 +2,14 @@ Plotting
 --------
 
 .. toctree::
-   :maxdepth: 1
+    :maxdepth: 2
 
-   plotting
-   palette
+    plot_api
+    base
+    palette
 
-ROI Visualization functions
-============================
+ROI Visualization
+==================
 
 cell_map
 #########
@@ -20,19 +21,19 @@ expression_map
 
 .. autofunction:: spatialtis.plotting.expression_map
 
-cell_neighbors
+neighbors_map
 ################
 
-.. autofunction:: spatialtis.plotting.cell_neighbors
+.. autofunction:: spatialtis.plotting.neighbors_map
 
-cell_communities
+community_map
 ##################
 
-.. autofunction:: spatialtis.plotting.cell_communities
+.. autofunction:: spatialtis.plotting.community_map
 
 
-Analysis Visualization functions
-==================================
+Analysis Visualization
+=======================
 
 plotting.cell_components
 ##########################
@@ -74,7 +75,17 @@ plotting.spatial_heterogeneity
 
 .. autofunction:: spatialtis.plotting.spatial_heterogeneity
 
-plotting.NCD_markers
+plotting.spatial_co_expression
+#################################
+
+.. autofunction:: spatialtis.plotting.spatial_co_expression
+
+plotting.NCDMarkers
 ###########################
 
-.. autofunction:: spatialtis.plotting.NCD_markers
+.. autofunction:: spatialtis.plotting.NCDMarkers
+
+plotting.NMDMarkers
+###########################
+
+.. autofunction:: spatialtis.plotting.NMDMarkers

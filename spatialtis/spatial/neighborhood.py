@@ -1,29 +1,21 @@
-from typing import Optional
+from ast import literal_eval
 
 import numpy as np
 import pandas as pd
+from anndata import AnnData
+from scipy.stats import norm
 from tqdm import tqdm
 
+from spatialtis.abc import AnalysisBase
 from spatialtis.config import CONFIG
-from spatialtis.spatial.neighbors import Neighbors
-from spatialtis.spatial.utils import check_neighbors
-from spatialtis.utils import df2adata_uns, get_default_params, reuse_docstring, timer
+from spatialtis.spatial.utils import NeighborsNotFoundError
+from spatialtis.utils import doc
 
 
-@timer(task_name="Running neighborhood analysis")
-@get_default_params
-@reuse_docstring()
-def neighborhood_analysis(
-    n: Neighbors,
-    method: str = "pval",
-    resample: int = 500,
-    pval: float = 0.01,
-    order: bool = True,
-    export: bool = True,
-    export_key: Optional[str] = None,
-    return_df: bool = False,
-):
-    """`Profiling cell-cell interaction <about/implementation.html#profiling-of-cell-cell-interaction>`_ using permutation test
+@doc
+class neighborhood_analysis(AnalysisBase):
+    """`Profiling cell-cell interaction <about/implementation.html#profiling-of-cell-cell-interaction>`_
+    using permutation test
 
     Neighborhood analysis tells you the relationship between different type of cells
 
@@ -34,62 +26,78 @@ def neighborhood_analysis(
     This method is implemented in Rust, it executes in parallel automatically.
 
     Args:
-        n: {n}
-        method: Options are "pval" and "zscore"
+        data: {adata}
+        method: "pval" and "zscore" (Default: "pval")
         resample: Number of times to perform resample
         pval: {pval}
-        order: if False, (Cell_A, Cell_B) and (Cell_B, Cell_A) are the same interaction.
-        export: {export}
-        export_key: {export_key}
-        return_df: {return_df}
+        order: If False, (Cell_A, Cell_B) and (Cell_B, Cell_A) are the same interaction (Default: False)
+        **kwargs: {analysis_kwargs}
 
     .. seealso:: `spatial_enrichment_analysis <#spatialtis.plotting.spatial_enrichment_analysis>`_
 
-
     """
 
-    if export_key is None:
-        export_key = CONFIG.neighborhood_analysis_key
-    else:
-        CONFIG.neighborhood_analysis_key = export_key
-
-    try:
-        import neighborhood_analysis as na
-    except ImportError:
-        raise ImportError("Package not found, try `pip install neighborhood_analysis`.")
-
-    check_neighbors(n)
-    types = n.unitypes
-    cc = na.CellCombs(types, order)
-
-    results = {}
-    for name, value in tqdm(
-        n.neighbors.items(), **CONFIG.pbar(desc="Neighborhood analysis")
+    def __init__(
+        self,
+        data: AnnData,
+        method: str = "pval",
+        resample: int = 1000,
+        pval: float = 0.01,
+        order: bool = False,
+        **kwargs,
     ):
-        result = cc.bootstrap(
-            n.types[name], value, resample, pval, method, ignore_self=True
+        if method == "pval":
+            self.method = "pseudo p-value"
+        else:
+            self.method = "z-score"
+        super().__init__(data, task_name="neighborhood_analysis", **kwargs)
+        self.params = {"order": order}
+
+        try:
+            import neighborhood_analysis as na
+        except ImportError:
+            raise ImportError(
+                "Package not found, try `pip install neighborhood_analysis`."
+            )
+
+        if not self.neighbors_exists:
+            raise NeighborsNotFoundError("Run `find_neighbors` first before continue.")
+
+        need_eval = self.is_col_str(self.neighbors_key)
+        unitypes = data.obs[self.cell_type_key].unique()
+        cc = na.CellCombs(unitypes, order)
+
+        results_data = []
+        for name, g in tqdm(
+            data.obs.groupby(self.exp_obs), **CONFIG.pbar(desc="Neighborhood analysis")
+        ):
+            if isinstance(name, str):
+                name = [name]
+            if need_eval:
+                neighbors = [literal_eval(n) for n in g[self.neighbors_key]]
+            else:
+                neighbors = [n for n in g[self.neighbors_key]]
+            cell_types = g[self.cell_type_key]
+            result = cc.bootstrap(
+                cell_types, neighbors, resample, pval, method, ignore_self=True
+            )
+            for k, v in result:
+                results_data.append([*name, *k, v])
+
+        df = pd.DataFrame(
+            data=results_data, columns=self.exp_obs + ["type1", "type2", "value"]
         )
-        result = {tuple(k): v for (k, v) in result}
-        results[name] = result
 
-    df = pd.DataFrame(results)
-    df.index = pd.MultiIndex.from_tuples(df.index, names=("Cell type1", "Cell type2"))
-    df.rename_axis(columns=n.expobs, inplace=True)
+        if method == "pval":
+            df.loc[:, ["value"]] = df["value"].astype(int)
+        else:
 
-    if method == "pval":
-        df = df.T.astype(int)
-    else:
-        df.replace(np.inf, 10.0, inplace=True)
-        df.replace(-np.inf, -10.0, inplace=True)
-        df = df.T
+            def sign(x):
+                p = norm.sf(abs(x))
+                if p < pval:
+                    return np.sign(x)
+                else:
+                    return 0
 
-    if export:
-        df2adata_uns(
-            df,
-            n.adata,
-            export_key,
-            params={"order": order, "method": method, "pval": pval},
-        )
-
-    if return_df:
-        return df
+            df.loc[:, ["value"]] = df["value"].apply(sign).astype(int)
+        self.result = df

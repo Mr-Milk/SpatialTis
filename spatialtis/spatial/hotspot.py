@@ -1,5 +1,5 @@
 from ast import literal_eval
-from typing import Optional, Sequence, Union
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -8,17 +8,11 @@ from scipy.spatial import cKDTree
 from scipy.stats import norm
 from tqdm import tqdm
 
+from spatialtis.abc import AnalysisBase
 from spatialtis.config import CONFIG
 from spatialtis.spatial.utils import QuadStats
-from spatialtis.utils import (
-    col2adata_obs,
-    create_remote,
-    filter_adata,
-    get_default_params,
-    reuse_docstring,
-    run_ray,
-    timer,
-)
+from spatialtis.typing import Array
+from spatialtis.utils import col2adata_obs, create_remote, doc, run_ray
 
 
 def _hotspot(cells, grid_size, level, pval):
@@ -82,95 +76,79 @@ def _hotspot(cells, grid_size, level, pval):
         return marker_hot
 
 
-@timer(task_name="Running hotspot detection")
-@get_default_params
-@reuse_docstring()
-def hotspot(
-    adata: AnnData,
-    groupby: Union[Sequence, str, None] = None,
-    type_key: Optional[str] = None,
-    centroid_key: Optional[str] = None,
-    selected_types: Optional[Sequence] = None,
-    search_level: int = 1,
-    grid_size: int = 50,
-    pval: float = 0.01,
-    export: bool = True,
-    export_key: Optional[str] = None,
-    return_df: bool = False,
-    mp: Optional[bool] = None,
-):
+@doc
+class hotspot(AnalysisBase):
     """`Getis-ord hotspot detection <../about/implementation.html#hotspot-detection>`_
 
+    Used to identify cells that cluster together.
+
     Args:
-        adata: {adata}
-        groupby: {groupby}
+        data: {adata}
         selected_types: {selected_types}
         search_level: How deep the search level to reach
         grid_size: Length of the side of square grid
         pval: {pval}
-        type_key: {type_key}
-        centroid_key: {centroid_key}
-        export: {export}
-        export_key: {export_key}
-        return_df: {return_df}
-        mp: {mp}
+        kwargs: {analysis_kwargs}
 
     """
-    if export_key is None:
-        export_key = CONFIG.hotspot_key
-    else:
-        CONFIG.hotspot_key = export_key
 
-    df = filter_adata(
-        adata,
-        groupby,
-        type_key,
-        centroid_key,
-        selected_types=selected_types,
-        reset_index=False,
-    )
-    groups = df.groupby(groupby)
+    def __init__(
+        self,
+        data: AnnData,
+        selected_types: Optional[Array] = None,
+        search_level: int = 1,
+        grid_size: int = 50,
+        pval: float = 0.01,
+        **kwargs
+    ):
+        super().__init__(data, task_name="hotspot", **kwargs)
 
-    hotcells = []
-    if mp:
+        df = data.obs[self.exp_obs + [self.cell_type_key, self.centroid_key]]
+        if selected_types is not None:
+            df = df[df[self.cell_type_key].isin(selected_types)]
+        groups = df.groupby(self.exp_obs)
 
-        _hotspot_mp = create_remote(_hotspot)
+        hotcells = []
+        if self.mp:
 
-        jobs = []
-        indexs = []
-        for name, group in groups:
-            for t, tg in group.groupby(type_key):
-                if len(tg) > 1:
-                    cells = [literal_eval(c) for c in tg[centroid_key]]
-                    jobs.append(
-                        _hotspot_mp.remote(cells, grid_size, search_level, pval)
-                    )
-                    indexs.append(tg.index)
-                elif len(tg) == 1:
-                    hotcells.append(pd.Series(["cold"], index=tg.index))
+            hotspot_mp = create_remote(_hotspot)
 
-        results = run_ray(jobs, CONFIG.pbar(total=len(jobs), desc="Hotspot analysis",))
+            jobs = []
+            indexs = []
+            for name, group in groups:
+                for t, tg in group.groupby(self.cell_type_key):
+                    if len(tg) > 1:
+                        cells = [literal_eval(c) for c in tg[self.centroid_key]]
+                        jobs.append(
+                            hotspot_mp.remote(cells, grid_size, search_level, pval)
+                        )
+                        indexs.append(tg.index)
+                    elif len(tg) == 1:
+                        hotcells.append(pd.Series(["cold"], index=tg.index))
 
-        for hots, i in zip(results, indexs):
-            hotcells.append(pd.Series(hots, index=i))
+            results = run_ray(jobs, desc="Hotspot analysis")
 
-    else:
-        for name, group in tqdm(groups, **CONFIG.pbar(desc="Hotspot analysis")):
-            for t, tg in group.groupby(type_key):
-                if len(tg) > 1:
-                    cells = [literal_eval(c) for c in tg[centroid_key]]
-                    hots = _hotspot(cells, grid_size, search_level, pval)
-                    hotcells.append(pd.Series(hots, index=tg.index))
-                elif len(tg) == 1:
-                    hotcells.append(pd.Series(["cold"], index=tg.index))
+            for hots, i in zip(results, indexs):
+                hotcells.append(pd.Series(hots, index=i))
 
-    hotcells = pd.concat(hotcells)
+        else:
+            for name, group in tqdm(groups, **CONFIG.pbar(desc="Hotspot analysis")):
+                for t, tg in group.groupby(self.cell_type_key):
+                    if len(tg) > 1:
+                        cells = [literal_eval(c) for c in tg[self.centroid_key]]
+                        hots = _hotspot(cells, grid_size, search_level, pval)
+                        hotcells.append(pd.Series(hots, index=tg.index))
+                    elif len(tg) == 1:
+                        hotcells.append(pd.Series(["cold"], index=tg.index))
 
-    if export:
-        adata.obs[export_key] = hotcells
+        result = pd.concat(hotcells)
+        self.data.obs[self.export_key] = result
         # Cell map will leave blank if fill with None value
-        adata.obs[export_key].fillna("other", inplace=True)
-        col2adata_obs(adata.obs[export_key], adata, export_key)
+        self.data.obs[self.export_key].fillna("other", inplace=True)
+        # Call this to invoke the print
+        col2adata_obs(self.data.obs[self.export_key], self.data, self.export_key)
+        self.stop_timer()
 
-    if return_df:
-        return hotcells
+    @property
+    def result(self):
+        return self.data.obs[self.exp_obs + [self.cell_type_key, self.export_key]]

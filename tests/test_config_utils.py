@@ -1,15 +1,9 @@
 import pandas as pd
 import pytest
-from anndata import read_h5ad
 
 from spatialtis import CONFIG
-from spatialtis.utils import col2adata_obs, df2adata_uns, prepare_svca, timer
+from spatialtis.utils import col2adata_obs, df2adata_uns
 from spatialtis.utils.log import pretty_time
-
-
-@timer(task_name="say sth before", suffix="say sth after")
-def fake_func(groupby=None):
-    pass
 
 
 class FakeType:
@@ -65,10 +59,7 @@ def test_set_cell_type_key_failed():
 
 def test_set_working_env():
     CONFIG.WORKING_ENV = "what"
-    CONFIG.WORKING_ENV = "jupyter_notebook"
-    CONFIG.WORKING_ENV = "jupyter_lab"
-    CONFIG.WORKING_ENV = "nteract"
-    CONFIG.WORKING_ENV = "zeppelin"
+    CONFIG.WORKING_ENV = "jupyter"
 
 
 def test_set_verbose():
@@ -89,46 +80,24 @@ def test_pretty_time():
     assert pretty_time(3661) == "1h1m1s"
 
 
-@pytest.mark.xfail
-def test_timer_failed():
-    fake_func()
-
-
 CONFIG.EXP_OBS = ["Patient", "Part", "ROI"]
 CONFIG.CELL_TYPE_KEY = "leiden"
 CONFIG.MARKER_KEY = "Markers"
 CONFIG.WORKING_ENV = None
 
 
-def test_timer():
-    fake_func(groupby="what")
+def test_data2adata(data):
+    df = pd.DataFrame(
+        {
+            "a": [1, 2, 3, 4, 5, 5, 6],
+            "b": [4, 5, 6, 7, 8, 9, 2],
+        }
+    )
 
-
-def test_data2adata(shared_datadir):
-    df = pd.DataFrame({
-        'a': [1, 2, 3, 4, 5, 5, 6],
-        'b': [4, 5, 6, 7, 8, 9, 2],
-    })
-
-    data = read_h5ad(shared_datadir / 'small.h5ad')
-    pytest.data = data
     col = [0 for _ in range(len(data.obs))]
     CONFIG.VERBOSE = True
-    df2adata_uns(df, data, 'test_df')
-    col2adata_obs(col, data, 'test_col')
+    df2adata_uns(df, data, "test_df")
+    col2adata_obs(col, data, "test_col")
     CONFIG.WORKING_ENV = "jupyter_notebook"
-    df2adata_uns(df, data, 'test_df')
-    col2adata_obs(col, data, 'test_col')
-
-
-def test_svca(tmpdir):
-    CONFIG.EXP_OBS = ["Patient", "Part", "ROI"]
-    CONFIG.CELL_TYPE_KEY = "leiden"
-    data = pytest.data
-    prepare_svca(data, tmpdir)
-
-
-@pytest.mark.xfail
-def test_svca_failed(tmpdir):
-    data = pytest.data
-    prepare_svca(data, tmpdir, marker_key="wrong_key")
+    df2adata_uns(df, data, "test_df")
+    col2adata_obs(col, data, "test_col")

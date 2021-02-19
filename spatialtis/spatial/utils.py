@@ -1,29 +1,10 @@
 from collections import OrderedDict
-from typing import Any
 
-import numpy as np
 from shapely.geometry import MultiPoint
-from sklearn.feature_selection import mutual_info_regression
-from sklearn.linear_model import LassoCV
-from xgboost import XGBRegressor
-
-from .neighbors import Neighbors
 
 
 class NeighborsNotFoundError(Exception):
     pass
-
-
-def check_neighbors(n: Any):
-    if not isinstance(n, Neighbors):
-        raise TypeError("A spatialtis.Neighbors subject is needed.")
-
-    if not n.neighborsbuilt:
-        raise NeighborsNotFoundError(
-            "Please run .find_neighbors() before further analysis."
-        )
-    if n.unitypes is None:
-        raise ValueError("The types are not specific.")
 
 
 # modify from PySAL pointpats
@@ -65,17 +46,3 @@ class QuadStats:
             dict_id_count[id_] += 1
 
         return dict_id_count
-
-
-def _max_feature(x, y, method="xgboost", **kwargs):
-    if method == "mutual_info":
-        weights = mutual_info_regression(x, y, **kwargs)
-    elif method == "lasso":
-        reg = LassoCV(**kwargs).fit(x, y)
-        weights = reg.coef_
-    else:
-        reg = XGBRegressor(**kwargs).fit(x, y)
-        weights = reg.feature_importances_
-    max_ix = np.argmax(weights)
-    max_weight = weights[max_ix]
-    return [max_ix, max_weight]

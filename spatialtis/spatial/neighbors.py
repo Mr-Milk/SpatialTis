@@ -1,92 +1,53 @@
 import warnings
 from ast import literal_eval
-from typing import Optional, Sequence, Union
+from typing import Optional
 
-import numpy as np
+import pandas as pd
 from anndata import AnnData
-from scipy.spatial.distance import euclidean
 from tqdm import tqdm
 
+from spatialtis.abc import AnalysisBase
 from spatialtis.config import CONFIG
-from spatialtis.console import console
-from spatialtis.utils import (
-    col2adata_obs,
-    get_default_params,
-    log_print,
-    reuse_docstring,
-    timer,
-)
+from spatialtis.typing import Number
+from spatialtis.utils import col2adata_obs, doc
 
 
-@reuse_docstring()
-class Neighbors(object):
-    """Storage object for cell relationship
+@doc
+class find_neighbors(AnalysisBase):
+    """To `find the neighbors <../about/implementation.html#find-cell-neighbors>`_ of each cell
+
+    KD-tree is used when cells are points
+
+    R-tree is used when cells are polygons (use_shape=True)
 
     Args:
-        adata: {adata}
-        geom: How to resolve cell data, as "point" or "shape"
-        groupby: {groupby}
-        type_key: {type_key}
-        shape_key: {shape_key}
-        centroid_key: {centroid_key}
+        data: {adata}
+        expand: If the cell has shape, it means how much units to expand each cell;
+                If the cell is point, it's the search radius;
+        scale: How much to scale each cell, only if cell has shape
+        count: Count the number of neighbors for each cell (Default: True)
+        use_shape: Cell representation is shape instead of point (Default: False)
+        **kwargs: {analysis_kwargs}
 
     """
 
-    @get_default_params
     def __init__(
         self,
-        adata: AnnData,
-        geom: str = "shape",
-        *,
-        groupby: Union[Sequence, str, None] = None,
-        type_key: Optional[str] = None,
-        shape_key: Optional[str] = None,
-        centroid_key: Optional[str] = None,
+        data: AnnData,
+        expand: Optional[Number] = None,
+        scale: Optional[Number] = None,
+        count: Optional[bool] = True,
+        use_shape: Optional[bool] = False,
+        **kwargs,
     ):
+        if use_shape:
+            self.method = "R-tree"
+        else:
+            self.method = "KD-tree"
+        if "export_key" not in kwargs:
+            kwargs["export_key"] = CONFIG.NEIGHBORS_KEY
+        super().__init__(data, task_name="find_neighbors", **kwargs)
 
-        # keys for query info from anndata
-        if geom not in ["shape", "point"]:
-            raise ValueError("Available options for 'geom' are 'shape', 'point'")
-
-        # verify if neighbors and polycells built
-        self.__polycells = False
-        self.__neighborsbuilt = False
-
-        self.__adata = adata
-        self.__data = adata.obs
-        self.__geom = geom
-        self.__typekey = type_key
-        self.__shapekey = shape_key
-        self.__centkey = centroid_key
-        self.__groupby = groupby
-        self.__groups = self.__data.groupby(groupby, sort=False)
-
-        # define vars for storage
-        self.__polycellsdb = None
-        self.__neighborsdb = None
-        self.__uniquetypes = None
-        self.__types = None
-
-        if self.__typekey is not None:
-            self.__uniquetypes = np.unique(self.__data[type_key])
-            self.__types = {n: list(g[self.__typekey]) for n, g in self.__groups}
-
-    def __repr__(self):
-        return f"A spatialtis.Neighbors instance, neighbor computed: {self.__neighborsbuilt}"
-
-    @timer(task_name="Finding cell neighbors")
-    def find_neighbors(
-        self, expand: Optional[float] = None, scale: Optional[float] = None,
-    ):
-        """To `find the neighbors <../about/implementation.html#find-cell-neighbors>`_ of each cell
-
-        Args:
-            expand: If the cell has shape, it means how much units to expand each cell;
-                    If the cell is point, it's the search radius;
-            scale: How much to scale each cell, only if cell has shape
-
-        """
-        # handle parameters
         try:
             import neighborhood_analysis as na
         except ImportError:
@@ -95,9 +56,7 @@ class Neighbors(object):
             )
 
         if (expand is None) & (scale is None):
-            scale = 1.0
-            expand = 1.0
-            warnings.warn("Neither 'expand' or 'scale' are specific")
+            raise ValueError("Neither 'expand' or 'scale' are specific")
 
         if expand is not None:
             if expand < 0:
@@ -112,225 +71,47 @@ class Neighbors(object):
                 f"Conflict parameters, can't set 'expand' and 'scale' in the same time, use expand={expand}"
             )
 
-        if (expand is None) & (self.__geom == "point"):
-            raise ValueError("Parameter 'expand' is not specific")
-
-        if self.__geom == "point":
-            log_print("Cell resolved as point data, searching neighbors using KD-tree")
-        if self.__geom == "shape":
-            log_print("Cell resolved as shape data, searching neighbors using R-tree")
+        if (expand is None) & (not use_shape):
+            raise ValueError("Cannot scale a point, use 'expand' instead")
 
         # prepare data for shape neighbor search
-        if (self.__geom == "shape") & (not self.__polycells):
-            results = []
-            names = []
-            for n, g in tqdm(self.__groups, **CONFIG.pbar(desc="Get cells' bbox"),):
-                shapes = g[self.__shapekey]
-                polycells = na.get_bbox([literal_eval(cell) for cell in shapes])
-                results.append(polycells)
-                names.append(n)
-
-            self.__polycellsdb = dict(zip(names, results))
-            self.__polycells = True
-
-        results = []
-        names = []
-        # shape neighbor search
-        if self.__geom == "shape":
-            for n, polycells in tqdm(
-                self.__polycellsdb.items(), **CONFIG.pbar(desc="Find neighbors")
-            ):
-                if expand is not None:
-                    results.append(na.get_bbox_neighbors(polycells, expand=expand))
-                else:
-                    results.append(na.get_bbox_neighbors(polycells, scale=scale))
-                names.append(n)
-        # point neighbor search
-        else:
-            for n, g in tqdm(self.__groups, **CONFIG.pbar(desc="Find neighbors")):
-                cells = [literal_eval(c) for c in g[self.__centkey]]
-                print(type(cells))
-                results.append(na.get_point_neighbors(cells, expand))
-                names.append(n)
-
-        self.__neighborsdb = dict(zip(names, results))
-        self.__neighborsbuilt = True
-        self.export_neighbors()
-
-        return self
-
-    @reuse_docstring()
-    def export_neighbors(self, export_key: Optional[str] = None):
-        """Export computed neighbors
-
-        Export to `AnnData.obs`. The neighbors relationship are stored in dict, the value is index of cell in each ROI
-        Correspond to the order in `AnnData` object
-
-        Args:
-            export_key: {export_key}
-
-        """
-
-        if export_key is None:
-            export_key = CONFIG.neighbors_key
-        else:
-            CONFIG.neighbors_key = export_key
-
-        if not self.__neighborsbuilt:
-            raise ValueError(
-                "Neighbors info not found. Please run Neighbors.find_neighbors() before further analysis."
-            )
-
+        track_ix = []
         neighbors = []
-        for n, g in self.__groups:
-            neigh = [str(i) for i in self.__neighborsdb[n]]
-            neighbors += neigh
-        col2adata_obs(neighbors, self.__adata, export_key)
+        if use_shape:
+            need_eval = self.is_col_str(self.shape_key)
+            bboxs = []
+            for n, g in tqdm(
+                data.obs.groupby(self.exp_obs, sort=False),
+                **CONFIG.pbar(desc="Get cell bbox"),
+            ):
+                shapes = g[self.shape_key]
+                if need_eval:
+                    cell_shapes = [literal_eval(cell) for cell in shapes]
+                else:
+                    cell_shapes = [cell for cell in shapes]
+                bbox = na.get_bbox(cell_shapes)
+                bboxs.append(bbox)
+                track_ix += list(g.index)
 
-        return self
-
-    @reuse_docstring()
-    def neighbors_count(
-        self, export_key: Optional[str] = None,
-    ):
-        """Get the number of neighbors for each cell
-
-        Export to `AnnData.obs`.
-
-        Args:
-            export_key: {export_key}
-
-        """
-
-        if export_key is None:
-            export_key = CONFIG.neighbors_count_key
+            for bbox in tqdm(bboxs, **CONFIG.pbar(desc="Find neighbors")):
+                if expand is not None:
+                    neighbors += na.get_bbox_neighbors(bbox, expand=expand)
+                else:
+                    neighbors += na.get_bbox_neighbors(bbox, scale=scale)
         else:
-            CONFIG.neighbors_count_key = export_key
-
-        if not self.__neighborsbuilt:
-            raise ValueError(
-                "Neighbors info not found. Please run Neighbors.find_neighbors() before further analysis."
-            )
-
-        counts = []
-        for n, g in self.__groups:
-            neighdict = self.__neighborsdb[n]
-            for i in range(0, len(g)):
-                try:
-                    count = len(neighdict[i])
-                except KeyError:
-                    count = 0
-                counts.append(count)
-        col2adata_obs(counts, self.__adata, export_key)
-
-        return self
-
-    def read_neighbors(self, key: Optional[str] = None):
-        """Read computed neighbors from anndata
-
-        Args:
-            key: The key stores the data for storing neighbors in `AnnData.obs`
-
-        """
-
-        if key is None:
-            key = CONFIG.neighbors_key
-
-        if key not in self.__adata.obs.keys():
-            raise KeyError(f"{key} not exists.")
-
-        self.__groups = self.__data.groupby(self.__groupby)
-        neighborsdb = {}
-        for n, g in self.__groups:
-            neighborsdb[n] = [literal_eval(i) for i in g[key]]
-        self.__neighborsdb = neighborsdb
-        self.__neighborsbuilt = True
-
-        return self
-
-    def to_graphs(self):
-        with console.status("Constructing graph..."):
-            try:
-                import igraph as ig
-            except ImportError:
-                raise ImportError(
-                    "Required python-igraph, try `pip install python-igraph`."
-                )
-            if not self.__neighborsbuilt:
-                raise ValueError(
-                    "Neighbors info not found. Please run Neighbors.find_neighbors() before further analysis."
-                )
-
-            graphs = []
-            names = []
-            for n, g in self.__groups:
-                centroids = [literal_eval(c) for c in g[self.__centkey]]
-                vertices = [
-                    {"name": i, "x": x, "y": y} for i, (x, y) in enumerate(centroids)
-                ]
-                edges = self.__neighborsdb[n]
-                graph_edges = []
-                for k, vs in enumerate(edges):
-                    if len(vs) > 0:
-                        for v in vs:
-                            if k != v:
-                                distance = euclidean(centroids[k], centroids[v])
-                                graph_edges.append(
-                                    {"source": k, "target": v, "weight": distance}
-                                )
-                graphs.append(ig.Graph.DictList(vertices, graph_edges))
-                names.append(n)
-
-            new_graphs = dict(zip(names, graphs))
-
-        return new_graphs
+            for n, g in tqdm(
+                data.obs.groupby(self.exp_obs, sort=False),
+                **CONFIG.pbar(desc="Find neighbors"),
+            ):
+                cells = [literal_eval(c) for c in g[self.centroid_key]]
+                neighbors += na.get_point_neighbors(cells, expand)
+                track_ix += list(g.index)
+        col2adata_obs(pd.Series(neighbors, index=track_ix), data, self.export_key)
+        if count:
+            counts = [len(i) for i in neighbors]
+            col2adata_obs(counts, data, f"{self.export_key}_count")
+        self.stop_timer()
 
     @property
-    def neighborsbuilt(self):
-        """Check if the neighbors have been built"""
-        return self.__neighborsbuilt
-
-    @property
-    def unitypes(self):
-        """The unique cell types"""
-        if self.__typekey is not None:
-            return self.__uniquetypes
-        else:
-            return None
-
-    @property
-    def types(self):
-        """Cell types order by their index number in anndata"""
-        if self.__typekey is not None:
-            return self.__types
-        else:
-            return None
-
-    @property
-    def type_key(self):
-        """key in anndata.uns use to store cell type info"""
-        return self.__typekey
-
-    @property
-    def data(self):
-        """The info in anndata.obs"""
-        return self.__data
-
-    @property
-    def adata(self):
-        """Soft link to anndata object"""
-        return self.__adata
-
-    @property
-    def neighbors(self):
-        """Return the computed neighbors relationship"""
-        return self.__neighborsdb
-
-    @property
-    def expobs(self):
-        """The experiment observations used to process neighbors"""
-        return self.__groupby
-
-    @property
-    def groups(self):
-        return self.__groups
+    def result(self):
+        return self.data.obs[self.exp_obs + [self.export_key]]

@@ -33,7 +33,6 @@ For a quick view of what it's does, check our following examples:
 
 .. toctree::
    :maxdepth: 1
-   :glob:
    :caption: Usage
 
    usage/get_started
@@ -44,7 +43,6 @@ For a quick view of what it's does, check our following examples:
 
 .. toctree::
    :maxdepth: 1
-   :glob:
    :caption: Tutorial
 
    tutorial/basic_usage
@@ -55,7 +53,6 @@ For a quick view of what it's does, check our following examples:
 
 .. toctree::
    :maxdepth: 1
-   :glob:
    :caption: About
 
    api_index/api_index

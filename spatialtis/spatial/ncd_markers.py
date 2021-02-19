@@ -1,162 +1,82 @@
 from collections import Counter
-from typing import Optional
+from typing import Dict, Optional
 
 import numpy as np
 import pandas as pd
+from anndata import AnnData
+from scipy.stats import spearmanr
 from tqdm import tqdm
+from xgboost import XGBRegressor
 
-from spatialtis.config import CONFIG
-from spatialtis.spatial.neighbors import Neighbors
-from spatialtis.spatial.utils import _max_feature, check_neighbors
-from spatialtis.utils import (
-    create_remote,
-    df2adata_uns,
-    get_default_params,
-    reuse_docstring,
-    run_ray,
-    timer,
-)
+from spatialtis import CONFIG
+from spatialtis.abc import AnalysisBase
+from spatialtis.spatial.utils import NeighborsNotFoundError
+from spatialtis.typing import Array, Number
+from spatialtis.utils import doc
 
 
-@timer(task_name="Finding neighbor cells dependent markers")
-@get_default_params
-@reuse_docstring()
-def NCD_markers(
-    n: Neighbors,
-    expression_std_cutoff: float = 2.0,
-    method: str = "xgboost",  # lasso, mutual_info
-    layer_key: Optional[str] = None,
-    marker_key: Optional[str] = None,
-    export: bool = True,
-    export_key: Optional[str] = None,
-    return_df: bool = False,
-    mp: Optional[bool] = None,
-    **kwargs,
-):
+@doc
+class NCDMarkers(AnalysisBase):
     """Identify neighbor cells dependent marker
 
-    We used features selection methods to estimate the importance of different types of neighbor cells on
-    marker expression level.
-    Y is the marker expression, normalize by mean.
-    X is the number of different cell types.
-    For example: for cell type A with gene T 700, the neighbors of cells are type A 3, type B 2, type C 5
-    then Y = 700, X = (3, 2, 5)
+    This method tells you the dependency and correlation between markers and its neighbor cell type.
+    The dependency is calculated by building a gradiant boosting tree (in here XGBoost) to determine
+    the feature importance. And the the spearman correlation is calculated.
 
-    A reasonable std should be set, the marker expression need to have certain degree of variance.
+    A reasonable std cutoff should be set, the marker expression need to have certain degree of variance.
 
     Args:
-        n: {n}
-        expression_std_cutoff: Standard deviation, threshold to filter out markers that are not variant enough
-        method: 'xgboost', 'lasso', 'mutual_info'
-        layer_key: {layer_key}
-        marker_key: {marker_key}
-        export: {export}
-        export_key: {export_key}
-        return_df: {return_df}
-        mp: {mp}
-        **kwargs: Pass to different feature selection method (Default: random_state=0)
+        data: {adata}
+        exp_std_cutoff: Standard deviation, threshold to filter out markers that are not variant enough
+        pval: {pval}
+        selected_markers: {selected_markers}
+        layers_key: {layers_key}
+        tree_kwargs: {tree_kwargs}
+        **kwargs: {analysis_kwargs}
 
     """
-    if export_key is None:
-        export_key = CONFIG.ncd_markers_key
-    else:
-        CONFIG.ncd_markers_key = export_key
 
-    check_neighbors(n)
+    def __init__(
+        self,
+        data: AnnData,
+        exp_std_cutoff: Number = 2.0,
+        pval: float = 0.01,
+        selected_markers: Optional[Array] = None,
+        layers_key: Optional[str] = None,
+        tree_kwargs: Optional[Dict] = None,
+        **kwargs,
+    ):
+        super().__init__(data, task_name="NCDMarkers", **kwargs)
 
-    reg_kwargs = dict(random_state=0)
-    for k, v in kwargs:
-        reg_kwargs[k] = v
+        if not self.neighbors_exists:
+            raise NeighborsNotFoundError("Run `find_neighbors` first before continue.")
 
-    Y = dict(zip(n.unitypes, [[] for _ in range(len(n.unitypes))]))  # gene expression
-    X = dict(zip(n.unitypes, [[] for _ in range(len(n.unitypes))]))  # cell components
+        tree_kwargs_ = {"n_jobs": -1, "random_state": 0}
+        if tree_kwargs is not None:
+            for k, v in tree_kwargs.items():
+                tree_kwargs_[k] = v
 
-    adata = n.adata
-    neighbors_data = n.neighbors
-
-    for name, roi in n.groups:
-        neighbors = neighbors_data[name]
-        type_map = dict(zip(range(len(roi)), roi[n.type_key]))
-        if layer_key is not None:
-            expmat = adata[roi.index].layers[layer_key].tolist()
-        else:
-            expmat = adata[roi.index].X.tolist()
-        for (center, neighs), exp in zip(enumerate(neighbors), expmat):
-            t = type_map[center]
-            X[t].append(Counter([type_map[i] for i in neighs if i != center]))
-            Y[t].append(exp)
-
-    t_cols = n.unitypes
-    for t, d in X.items():
-        df = pd.DataFrame(d, columns=t_cols).fillna(0)
-        X[t] = df.to_numpy()
-
-    markers = adata.var[marker_key]
-
-    results = (
-        list()
-    )  # [cell A, cell A's gene A, cell B that exert influences on cell A's gene A, weights]
-
-    if mp:
-
-        _max_feature_mp = create_remote(_max_feature)
-
-        jobs = []
-        m_ = []
-        c1_ = []
-        for c1 in n.unitypes:
-
-            y = np.asarray(Y[c1]).T
-            x = np.asarray(X[c1])
-
-            if np.std(y) >= expression_std_cutoff:
-                for g, m in zip(y, markers):
-                    jobs.append(_max_feature_mp.remote(x, g, method, **reg_kwargs))
-                    m_.append(m)
-                    c1_.append(c1)
-
-        mp_results = run_ray(jobs, CONFIG.pbar(total=len(jobs), desc="Fitting model",))
-
-        for (m, c1, (max_ix, max_weights)) in zip(m_, c1_, mp_results):
-            if max_weights > 0:
-                c2 = n.unitypes[max_ix]
-                results.append([c1, m, c2, max_weights])
-
-    else:
-        with tqdm(
-            **CONFIG.pbar(total=len(n.unitypes) * len(markers), desc="Fitting model")
-        ) as pbar:
-            for c1 in n.unitypes:
-                y = np.asarray(Y[c1]).T
-                x = np.asarray(X[c1])
-                if np.std(y) >= expression_std_cutoff:
-                    for g, m in zip(y, markers):
-                        if np.std(g) >= expression_std_cutoff:
-                            [max_ix, max_weights] = _max_feature(
-                                x, g, method, **reg_kwargs
-                            )
-                            if max_weights > 0:
-                                c2 = n.unitypes[max_ix]
-                                results.append([c1, m, c2, max_weights])
-                        pbar.update(1)
-                else:
-                    pbar.update(len(markers))
-
-    df = (
-        pd.DataFrame(
-            results, columns=["Cell_1", "Marker", "(Affected_by)Cell_2", "Score"]
-        )
-        .sort_values("Score", ascending=False)
-        .reset_index(drop=True)
-    )
-
-    if export:
-        df2adata_uns(
-            df,
-            adata,
-            export_key,
-            params={"expression_std_cutoff": expression_std_cutoff, "method": method},
+        markers, exp_matrix, data = self.get_exp_matrix(selected_markers, layers_key)
+        cent_cell, neigh_cells = self.get_neighbors_ix()
+        cent_markers_exp = exp_matrix[cent_cell].T
+        neigh_types = pd.DataFrame(
+            [Counter(i) for i in data.obs[self.cell_type_key][neigh_cells]]
         )
 
-    if return_df:
-        return df
+        results_data = []
+        for ix, m in enumerate(tqdm(markers, **CONFIG.pbar(desc="NCD Markers"))):
+            y = cent_markers_exp[ix].copy()
+            if np.std(y) >= exp_std_cutoff:
+                reg = XGBRegressor(**tree_kwargs_).fit(neigh_types, y)
+                weights = reg.feature_importances_
+                max_ix = np.argmax(weights)
+                max_weight = weights[max_ix]
+                max_type = neigh_types.columns[max_ix]
+                corr, pvalue = spearmanr(y, neigh_types[max_type])
+                if pvalue < pval:
+                    results_data.append([m, max_type, max_weight, corr, pvalue])
+
+        self.result = pd.DataFrame(
+            data=results_data,
+            columns=["marker", "neighbor_type", "dependency", "corr", "pvalue"],
+        )

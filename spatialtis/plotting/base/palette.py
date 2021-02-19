@@ -6,7 +6,7 @@ import numpy as np
 from colour import Color
 
 
-def colorcycle(*palette: Union[Sequence, str]):
+def colorcycle(*palette: Union[List[str], str]):
     if isinstance(palette, Sequence):
         palette = [str(i) for i in palette]
 
@@ -35,7 +35,7 @@ def colorcycle(*palette: Union[Sequence, str]):
     return cycle(new_palette), new_palette
 
 
-def get_colors(n: int, palette: Union[Sequence, str]) -> List[str]:
+def get_colors(n: int, palette: Union[List[str], str]) -> List[str]:
     """Get numbers of color from palettes
 
     Args:
@@ -49,7 +49,7 @@ def get_colors(n: int, palette: Union[Sequence, str]) -> List[str]:
     return [next(cycler) for _ in range(0, n)]
 
 
-def get_linear_colors(palette: Union[Sequence, str]) -> List[str]:
+def get_linear_colors(palette: Union[List[str], str]) -> List[str]:
     """Gradient colors from a gradient palette
 
     Args:

@@ -7,49 +7,49 @@ Spatial
 spatial_distribution
 ######################
 
-.. autofunction:: spatialtis.spatial_distribution
+.. autoclass:: spatialtis.spatial_distribution
 
 spatial_heterogeneity
 ######################
 
-.. autofunction:: spatialtis.spatial_heterogeneity
+.. autoclass:: spatialtis.spatial_heterogeneity
 
 hotspot
 ##################
 
-.. autofunction:: spatialtis.hotspot
+.. autoclass:: spatialtis.hotspot
 
-Neighbors
-##########
+find_neighbors
+###############
 
-.. autoclass:: spatialtis.Neighbors
-
-    .. automethod:: spatialtis.Neighbors.find_neighbors
-    .. automethod:: spatialtis.Neighbors.export_neighbors
-    .. automethod:: spatialtis.Neighbors.read_neighbors
-    .. automethod:: spatialtis.Neighbors.neighbors_count
+.. autoclass:: spatialtis.find_neighbors
 
 neighborhood_analysis
 #######################
 
-.. autofunction:: spatialtis.neighborhood_analysis
+.. autoclass:: spatialtis.neighborhood_analysis
 
 spatial_enrichment_analysis
 ##############################
 
-.. autofunction:: spatialtis.spatial_enrichment_analysis
+.. autoclass:: spatialtis.spatial_enrichment_analysis
 
-communities
+spatial_co_expression
+##############################
+
+.. autoclass:: spatialtis.spatial_co_expression
+
+cell_community
 ######################
 
-.. autofunction:: spatialtis.communities
+.. autoclass:: spatialtis.cell_community
 
-NCD_markers
+NCDMarkers
 ##############
 
-.. autofunction:: spatialtis.NCD_markers
+.. autoclass:: spatialtis.NCDMarkers
 
-NMD_markers
+NMDMarkers
 #############
 
-.. autofunction:: spatialtis.NMD_markers
+.. autoclass:: spatialtis.NMDMarkers

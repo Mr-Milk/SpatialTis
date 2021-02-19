@@ -83,6 +83,8 @@ def get_cell_exp_stack(
     cells_density = list()
     for cell in cells:
         cell_pixels = stack[:, [i[0] for i in cell], [i[1] for i in cell]]
-        exec(f"cells_density.append([np.{method}(density) for density in cell_pixels])")
+        cells_density.append(
+            [getattr(np, method).__call__(density) for density in cell_pixels]
+        )
     # each secondary array as a channel
     return cells_density

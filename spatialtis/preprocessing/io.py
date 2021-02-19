@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 from spatialtis.config import CONFIG
 from spatialtis.preprocessing.geom import get_cell_exp_stack, mask2cells
-from spatialtis.utils import create_remote, reuse_docstring, run_ray
+from spatialtis.utils import create_remote, doc, run_ray
 
 
 def get_roi(
@@ -131,7 +131,7 @@ class read_ROIs:
                 self._tree.remove(f.parent)
             self._exhaust_dir(f)
 
-    @reuse_docstring()
+    @doc
     def to_anndata(
         self,
         bg: Optional[int] = 0,
@@ -162,7 +162,7 @@ class read_ROIs:
         """
 
         if mp is None:
-            mp = CONFIG.MULTI_PROCESSING
+            mp = CONFIG.MP
 
         X = []
         ann_obs = []
@@ -192,9 +192,7 @@ class read_ROIs:
                     )
                 )
 
-            mp_results = run_ray(
-                jobs, CONFIG.pbar(total=len(self._tree), desc="Process images")
-            )
+            mp_results = run_ray(jobs, desc="Process images")
 
             for (exp, cells), obs in zip(mp_results, self.obs):
                 X += exp

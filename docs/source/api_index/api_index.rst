@@ -4,9 +4,11 @@ API Reference
 .. toctree::
    :maxdepth: 1
 
+   base
    preprocessing
-   statistic
+   basic
    spatial
    plotting/wrapper
-   utils
    config
+   others
+   base

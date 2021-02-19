@@ -1,7 +1,5 @@
-import shutil
 from ast import literal_eval
-from pathlib import Path
-from typing import Dict, Optional, Sequence, Union
+from typing import Dict, Optional, Sequence, Tuple, Union
 
 import pandas as pd
 from anndata import AnnData
@@ -9,15 +7,13 @@ from anndata import AnnData
 from spatialtis.config import CONFIG
 from spatialtis.console import console
 
-from .params import get_default_params
-
 
 def writer_verbose(key, part: str = "uns", verbose: Optional[bool] = None):
     if verbose is None:
         verbose = CONFIG.VERBOSE
 
     if verbose:
-        console.print(f":package: [green]Added to AnnData, {part}: [bold cyan] '{key}'")
+        console.print(f":package: [green]Added to AnnData, {part}: [bold cyan]'{key}'")
 
 
 def df2adata_uns(
@@ -74,10 +70,12 @@ def col2adata_obs(
     writer_verbose(key, "obs", verbose=verbose)
 
 
-def adata_uns2df(
+def get_result(
     adata: AnnData, key: str, params: bool = False,
-):
-    """Read `pandas.DataFrame` object from `AnnData.uns` written by df2adata_uns
+) -> Union[pd.DataFrame, Tuple[pd.DataFrame, Dict]]:
+    """Read spatialtis result from `AnnData.uns` as `pandas.DataFrame` object
+
+    To get the params, use `params=True`
 
     Args:
         adata: The `AnnData` object for storage
@@ -95,81 +93,3 @@ def adata_uns2df(
         return df, container["params"]
     else:
         return df
-
-
-def filter_adata(
-    adata, groupby, type_col, *keys, selected_types=None, reset_index=True
-):
-    """(Private) Filter `AnnData.obs` (`pandas.DataFrame`)"""
-
-    keys = [k for k in keys if k is not None]
-    df = adata.obs[groupby + keys + [type_col]]
-    if selected_types is not None:
-        df = df[df[type_col].isin(selected_types)]
-    if reset_index:
-        df = df.reset_index()
-
-    return df
-
-
-@get_default_params
-def prepare_svca(
-    adata: AnnData,
-    export: Union[Path, str],
-    entry_folder: str = "svca_data",
-    groupby: Union[Sequence, str, None] = None,
-    marker_key: Optional[str] = None,
-    centroid_key: Optional[str] = None,
-):
-    """Prepare data for SVCA analysis
-
-    Spatial Variance Components Analysis: `SVCA <https://github.com/damienArnol/svca>`_
-
-    The input format is separated folder for each ROI with `expressions.txt` and `positions.txt`.
-
-    Args:
-        adata: The `AnnData` object to process
-        export: The directory to store the data
-        entry_folder: The name of new folder to store the data
-        groupby: How your experiments data grouped, (Default: `spatialtis.CONFIG.EXP_OBS`)
-        marker_key: The key to store markers in `AnnData.var` (Default: `spatialtis.CONFIG.MARKER_KEY`)
-                    used in the header of the expressions.txt
-        centroid_key: The key to store cell centroid in `AnnData.obs` (Default: `spatialtis.CONFIG.CENTROID_KEY`)
-
-    """
-
-    if marker_key not in adata.var.keys():
-        raise ValueError(f"{marker_key} not in anndata object's var field")
-    else:
-        marker_info = adata.var[marker_key]
-
-    keys = list(groupby) + [centroid_key]
-
-    groups = adata.obs[keys].groupby(groupby)
-
-    p = Path(export) / entry_folder
-
-    if p.exists():
-        shutil.rmtree(p)
-
-    p.mkdir(exist_ok=True)
-
-    for n, g in groups:
-        folder_name = "_".join([str(i) for i in n])
-        folder_path = p / folder_name
-        folder_path.mkdir()
-
-        expression_path = folder_path / "expressions.txt"
-        position_path = folder_path / "positions.txt"
-
-        # export to expressions.txt
-        pd.DataFrame(adata.X[[int(i) for i in g.index]], columns=marker_info).to_csv(
-            expression_path, sep="\t", index=False
-        )
-
-        # export to positions.txt
-        cents = []
-        for c in g[centroid_key]:
-            c = literal_eval(c)
-            cents.append([c[0], c[1]])
-        pd.DataFrame(cents).to_csv(position_path, sep="\t", index=False, header=False)

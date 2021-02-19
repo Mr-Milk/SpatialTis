@@ -13,15 +13,15 @@ parameter, an alpha value. This will influence the `cell_shape` but no other geo
 look more authentic using concave hull, spatialtis use `alphashape <https://github.com/bellockk/alphashape>`_ which is pure-python
 implementation so it's super slow. We highly recommend using "convex hull" which is the default setting.
 
-.. image:: ../src/convex_concave.png
+.. figure:: ../img/convex_concave.png
     :align: center
     :width: 60%
 
 Cell co-occurrence
 ------------------
 
-The occurrence or absence of a cell type in a ROI (Region of interest) is determined by a user-defined threshold value,
-for example if we set the threshold at 50, the cell type is determined as occurrence if it's counts exceed 50 otherwise
+The occurrence or absence of a cell type in a ROI (Region of interest) is determined by a threshold value,
+the default is mean cut. The cell type is determined as occurrence if it's counts exceed 50 otherwise
 it's absence. Afterwards, if two types of cell are both determine as occurrence, one-way :math:`\chi^2` test are
 conducted to determine the significance, if one or both are absence would be determined as non co-occurrence.
 
@@ -48,7 +48,7 @@ from the real dataset of the number of Cell B at the neighborhood of Cell A. Aft
 randomly reassign cell type to different cell while keep the number of each cell type unchanged. Therefore we can draw
 another distribution. This randomization process can perform multiple times (usually 1000 times) to draw a null distribution.
 
-.. image:: ../src/permutation_test.png
+.. figure:: ../img/permutation_test.png
     :align: center
     :width: 60%
 
@@ -72,7 +72,7 @@ Or using z-score:
 This analysis is implemented with rust for a better performance.
 See `neighborhood_analysis <https://github.com/Mr-Milk/neighborhood_analysis>`_
 
-Profiling of markers co-expression
+Profiling of markers enrichment
 ----------------------------------
 
 User defines the positive / negative of a marker in a cell, same bootstrap method is conducted as above.
@@ -85,15 +85,15 @@ Spatial distribution
 There are three point distribution patterns in general, random, regular and cluster. Random means the point pattern follows the poisson process,
 the regular means evenly distributed and cluster means the points tend to aggregate. (Cells are represented by their centroid)
 
-.. image:: ../src/distribution_pattern.png
-    :align: center
+.. figure:: ../img/distribution_pattern.png
     :width: 50%
+    :align: center
 
 To determine the cell distribution patterns in each ROI, spatialtis provided three methods.
 
-     - Index of Dispersion (ID)
-     - Morisita’s index of dispersion (MID)
-     - Clark and Evans aggregation index (CE)
+- Index of Dispersion (ID)
+- Morisita’s index of dispersion (MID)
+- Clark and Evans aggregation index (CE)
 
 +--------------------------------------+--------+---------+---------+
 |                                      | Random | Regular | Clumped |
@@ -108,10 +108,9 @@ To determine the cell distribution patterns in each ROI, spatialtis provided thr
 Index of dispersion
 ###################
 
-.. figure:: ../src/index_of_dispersion.png
+.. figure:: ../img/index_of_dispersion.png
     :width: 50%
     :align: center
-    :figclass: align-center
 
     Sampling process, the orange circle is the sampling windows, the number is the count of points
 
@@ -129,7 +128,7 @@ Morisita’s index of dispersion
 
 This is a quadratic statistic method, user need to define how to rasterize the ROI.
 
-.. figure:: ../src/quadratic_statistic.png
+.. figure:: ../img/quadratic_statistic.png
     :width: 50%
     :align: center
     :figclass: align-center
@@ -250,7 +249,7 @@ Getis–Ord hotspot analysis. First we rasterize the ROI into grids, for each sm
 square, we will compare it to its neighbor cells. User can define the level of neighbors
 to search.
 
-.. image:: ../src/hotspot_search.png
+.. image:: ../img/hotspot_search.png
     :width: 50%
     :align: center
 
@@ -289,12 +288,22 @@ they are neighbors, edge weight is represented by distance. Using leidenalg algo
 the communities within a ROI.
 
 
-Marker influences on neighbor cells/markers
+Spatial Co-expression
+----------------------
+
+For all pair of neighbor cells, to compute the correlation between two markers :math:`A` and :math:`B`.
+Two vector can be constructed, :math:`{\{A_1, A_2, ..., A_x\}}` :math:`{\{B_1, B_2, ..., B_x\}}`.
+:math:`A_1` is the expression of marker :math:`A` in :math:`Cell N`,
+:math:`B_1` is the expression of marker :math:`B` in :math:`Cell M`.
+:math:`Cell N` and :math:`Cell M` is a pair of neighbor. In spatialtis, `pearson` or `spearman` correlation
+can be computed.
+
+
+Neighbor dependent markers
 -------------------------------------------
 
-The word *marker* can refer to gene/transcript/protein/metabolite... depends on your own data.
-
-Random forest regressor estimator is constructed to find the cells/markers that explain more of the
-interest markers.
+This method tells you the dependency and correlation between markers and its neighbor cell/markers.
+The dependency is calculated by building a gradiant boosting tree (in here XGBoost) to determine
+the feature importance. And the the spearman correlation is calculated.
 
 

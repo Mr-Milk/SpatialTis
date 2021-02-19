@@ -24,7 +24,7 @@ Here is some useful configurations you will deal with a lot, all the names are *
 +---------------------------------+-------------------+
 | :code:`CONFIG.VERBOSE`          | :code:`True`      |
 +---------------------------------+-------------------+
-| :code:`CONFIG.MULTI_PROCESSING` | :code:`False`     |
+| :code:`CONFIG.MP`               | :code:`False`     |
 +---------------------------------+-------------------+
 
 Storage keys, please explicitly specify for your own data
@@ -69,10 +69,10 @@ Available options: :code:`["Linux", "Darwin", "Windows"]`.
 Normally, you don't need to specific your system, it will be auto detected by SpatialTis
 
 
-CONFIG.MULTI_PROCESSING
+CONFIG.MP
 =========================
 
-To enable paralle processing globally in spatialtis. We used Ray to support this features, the support for windows platform
+To enable parallel processing globally in spatialtis. We used Ray to support this features, the support for windows platform
 is still in experimental stage, if something went wrong, you should turn it off.
 
 
@@ -81,16 +81,15 @@ CONFIG.VERBOSE
 
 Config the amount of information print by SpatialTis
 
-:code:`VERBOSE.ANNDATA`: :code:`[True, False]` whether to display the change made to anndata object
 
-:code:`VERBOSE.PBAR`: :code:`[True, False]` whether to display the progress bar.
+CONFIG.PBAR
+===============
 
-:code:`VERBOSE.INFO`: :code:`[True, False]` whether to display the runtime info and timer.
+Whether to use progress bar to display analysis progress
+
 
 CONFIG.PBAR_FORMAT
 ====================
 
-Default value: :code:`"%s{l_bar}%s{bar}%s{r_bar}%s" % (Fore.GREEN, Fore.CYAN, Fore.GREEN, Fore.RESET,)`
-
-To configure the appearance of progress bar
+To configure the appearance of progress bar, check `tqdm` for details.
 
