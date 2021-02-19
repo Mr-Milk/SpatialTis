@@ -3,7 +3,7 @@ from typing import List, Optional, Sequence
 import numpy as np
 from anndata import AnnData
 
-from spatialtis.config import ANALYSIS, CONFIG
+from spatialtis.config import ANALYSIS
 from spatialtis.plotting.base import (
     dot_plot,
     heatmap,

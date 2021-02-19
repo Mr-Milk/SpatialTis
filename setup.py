@@ -17,13 +17,17 @@ setup(name="spatialtis",
       classifiers=[
           "License :: OSI Approved :: Apache Software License",
           "Programming Language :: Python :: 3",
+          "Programming Language :: Python :: 3.6",
+          "Programming Language :: Python :: 3.7",
+          "Programming Language :: Python :: 3.8",
+          "Programming Language :: Python :: 3.9",
           "Intended Audience :: Science/Research",
           "Topic :: Scientific/Engineering :: Bio-Informatics",
       ],
       python_requires='>=3.6',
       install_requires=['anndata', 'numpy', 'pandas', 'tqdm',
                         'scipy', 'shapely', 'bokeh', 'rich[jupyter]',
-                        'seaborn', 'matplotlib', 'pyecharts', 'ray', 'xgboost', 'scikit-learn',
+                        'seaborn', 'matplotlib', 'pyecharts', 'ray; python_version < "3.9"', 'xgboost', 'scikit-learn',
                         'spatialentropy', 'snapshot_phantomjs', 'neighborhood_analysis'],
       extras_require={'all': ['scikit-image', 'python-igraph', 'leidenalg', 'alphashape', 'tifffile', ]}
       )

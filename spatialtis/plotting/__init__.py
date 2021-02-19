@@ -14,7 +14,6 @@
 #     violin_plot,
 # )
 import matplotlib as mpl
-import themepy
 
 from .api import (
     NCDMarkers,
@@ -35,8 +34,13 @@ from .api import (
 )
 from .base import get_colors, get_linear_colors
 
-theme = themepy.Theme()
-theme.set_theme("gadfly")
+try:
+    import themepy
+
+    theme = themepy.Theme()
+    theme.set_theme("gadfly")
+except ImportError:
+    pass
 
 mpl.rcParams["font.size"] = 8
 

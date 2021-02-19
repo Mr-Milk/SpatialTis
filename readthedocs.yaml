@@ -1,5 +1,9 @@
 version: 2
 
+submodules:
+  include:
+    - tutorial
+
 sphinx:
   configuration: docs/source/conf.py
   fail_on_warning: false
