@@ -11,85 +11,44 @@ To set the config::
 Here is some useful configurations you will deal with a lot, all the names are *CAPITALIZED*.
 
 
-+---------------------------------+-------------------+
-| :code:`CONFIG.EXP_OBS`          | :code:`None`      |
-+---------------------------------+-------------------+
-| :code:`CONFIG.ROI_KEY`          | :code:`None`      |
-+---------------------------------+-------------------+
-| :code:`CONFIG.CELL_TYPE_KEY`    | :code:`None`      |
-+---------------------------------+-------------------+
-| :code:`CONFIG.WORKING_ENV`      | :code:`"jupyter"` |
-+---------------------------------+-------------------+
-| :code:`CONFIG.OS`               | :code:`None`      |
-+---------------------------------+-------------------+
-| :code:`CONFIG.VERBOSE`          | :code:`True`      |
-+---------------------------------+-------------------+
-| :code:`CONFIG.MP`               | :code:`False`     |
-+---------------------------------+-------------------+
++---------------------+---------------------------------------+----------------------+------------------+
+| Options             | Description                           | Default Value        | Type             |
++---------------------+---------------------------------------+----------------------+------------------+
+| :code:`OS`          | Operating system                      | Detect automatically | `str`            |
++---------------------+---------------------------------------+----------------------+------------------+
+| :code:`MP`          | Use multi-processing                  | :code:`True`         | `bool`           |
++---------------------+---------------------------------------+----------------------+------------------+
+| :code:`WORKING_ENV` | The current working environment       | Detect automatically | `str`            |
++---------------------+---------------------------------------+----------------------+------------------+
+| :code:`VERBOSE`     | Control the print statement           | :code:`True`         | `bool`           |
++---------------------+---------------------------------------+----------------------+------------------+
+| :code:`PBAR`        | Control the process bar               | :code:`True`         | `bool`           |
++---------------------+---------------------------------------+----------------------+------------------+
+| :code:`AUTO_SAVE`   | To autosave the visualization results | :code:`False`        | `bool` or `Path` |
++---------------------+---------------------------------------+----------------------+------------------+
+| :code:`EXP_OBS`     | The design of the experiment data     | :code:`None`         | `List[str]`      |
++---------------------+---------------------------------------+----------------------+------------------+
+| :code:`ROI_KEY`     | The key of ROI                        | :code:`None`         | `str`            |
++---------------------+---------------------------------------+----------------------+------------------+
 
 Storage keys, please explicitly specify for your own data
 
-+---------------------------------+------------------------+
-| :code:`CONFIG.CENTROID_KEY`     | :code:`"centroid"`     |
-+---------------------------------+------------------------+
-| :code:`CONFIG.SHAPE_KEY`        | :code:`"cell_shape"`   |
-+---------------------------------+------------------------+
-| :code:`CONFIG.AREA_KEY`         | :code:`"area"`         |
-+---------------------------------+------------------------+
-| :code:`CONFIG.ECCENTRICITY_KEY` | :code:`"eccentricity"` |
-+---------------------------------+------------------------+
-| :code:`CONFIG.MARKER_KEY`       | :code:`"markers"`      |
-+---------------------------------+------------------------+
++--------------------------+-----------------------------------+------------------------+-------+
+| Options                  | Description                       | Default Value          | Type  |
++--------------------------+-----------------------------------+------------------------+-------+
+| :code:`CELL_TYPE_KEY`    | Cell type key in `AnnData.obs`    | :code:`None`           | `str` |
++--------------------------+-----------------------------------+------------------------+-------+
+| :code:`MARKER_KEY`       | Marker key in `AnnData.var`       | :code:`marker`         | `str` |
++--------------------------+-----------------------------------+------------------------+-------+
+| :code:`NEIGHBORS_KEY`    | Neighbors key in `AnnData.obs`    | :code:`cell_neighbors` | `str` |
++--------------------------+-----------------------------------+------------------------+-------+
+| :code:`CENTROID_KEY`     | Centroid key in `AnnData.obs`     | :code:`centroid`       | `str` |
++--------------------------+-----------------------------------+------------------------+-------+
+| :code:`AREA_KEY`         | Area key in `AnnData.obs`         | :code:`area`           | `str` |
++--------------------------+-----------------------------------+------------------------+-------+
+| :code:`SHAPE_KEY`        | Shape key in `AnnData.obs`        | :code:`cell_shape`     | `str` |
++--------------------------+-----------------------------------+------------------------+-------+
+| :code:`ECCENTRICITY_KEY` | Eccentricity key in `AnnData.obs` | :code:`eccentricity`   | `str` |
++--------------------------+-----------------------------------+------------------------+-------+
 
-
-CONFIG.EXP_OBS
-=================
-
-To let spatialtis how your experiments are designed, this should be a list of `keys` from :code:`anndata.obs`.
-The order of the name do matters. The last element is assumed to be the ROI level. If not, you must specify using
-:code:`CONFIG.ROI_KEY`.
-
-
-CONFIG.CELL_TYPE_KEY
-=====================
-To let spatialtis know where to find your cell type, this should be a `key` name from :code:`anndata.obs`.
-
-
-CONFIG.WORKING_ENV
-===================
-
-Available options: :code:`["jupyter", "zepplin", None]`.
-To set working environment to :code:`None` will automatically disable progress bar.
-
-
-CONFIG.OS
-===================
-
-Available options: :code:`["Linux", "Darwin", "Windows"]`.
-Normally, you don't need to specific your system, it will be auto detected by SpatialTis
-
-
-CONFIG.MP
-=========================
-
-To enable parallel processing globally in spatialtis. We used Ray to support this features, the support for windows platform
-is still in experimental stage, if something went wrong, you should turn it off.
-
-
-CONFIG.VERBOSE
-===============
-
-Config the amount of information print by SpatialTis
-
-
-CONFIG.PBAR
-===============
-
-Whether to use progress bar to display analysis progress
-
-
-CONFIG.PBAR_FORMAT
-====================
-
-To configure the appearance of progress bar, check `tqdm` for details.
 

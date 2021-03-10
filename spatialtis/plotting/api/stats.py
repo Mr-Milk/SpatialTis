@@ -19,6 +19,7 @@ from spatialtis.utils import doc, get_result
 def cell_components(
     data: AnnData,
     groupby: List[str],
+    agg: str = "sum",
     selected_types: Optional[Sequence] = None,
     key: Optional[str] = None,
     use: str = "static",
@@ -29,6 +30,7 @@ def cell_components(
     Args:
         data: {adata_plotting}
         groupby: {groupby}
+        agg: {agg}
         selected_types: {selected_types}
         key: {key}
         use: "static" or "interactive" (Default: "static")
@@ -43,10 +45,14 @@ def cell_components(
     exp_obs = params["exp_obs"]
 
     if selected_types is not None:
-        df = df[exp_obs + selected_types]
-    stacked_types = list(df.columns)
-    for i in exp_obs:
-        stacked_types.remove(i)
+        df = df[df["type"].isin(selected_types)]
+    else:
+        selected_types = df["type"].unique()
+    stacked_types = list(selected_types)
+    df = df.pivot_table(
+        index=exp_obs, columns="type", values="value", aggfunc=getattr(np, agg)
+    )
+    df = df[selected_types].reset_index()
 
     if use == "interactive":
         return stacked_bar_interactive(
@@ -54,7 +60,7 @@ def cell_components(
         )
     else:
         return stacked_bar_static(
-            df, groupby, stacked_types, **kwargs, saved_name="cell_components"
+            df, groupby, stacked_types[::-1], **kwargs, saved_name="cell_components"
         )
 
 
@@ -76,9 +82,6 @@ def cell_density(
         **kwargs: Pass to :class:`spatialtis.plotting.base.violin_static`
 
     """
-    gl = len(groupby)
-    if gl > 2:
-        raise ValueError("Only support 2 levels depth categorical data for matplotlib")
     if key is None:
         key = ANALYSIS["cell_density"].last_used_key
 
@@ -86,6 +89,8 @@ def cell_density(
 
     if selected_types is not None:
         df = df[df["type"].isin(selected_types)]
+        df["type"] = df["type"].astype("category")
+        df["type"] = df["type"].cat.reorder_categories(selected_types)
 
     return violin_static(
         df, groupby, target="value", hue="type", **kwargs, saved_name="cell_density"
@@ -96,6 +101,7 @@ def cell_density(
 def cell_co_occurrence(
     data: AnnData,
     groupby: Optional[Array] = None,
+    agg: str = "sum",
     selected_types: Optional[Sequence] = None,
     use: str = "dot",  # dot, heatmap
     key: Optional[str] = None,
@@ -106,6 +112,7 @@ def cell_co_occurrence(
     Args:
         data: {adata_plotting}
         groupby: {groupby}
+        agg: {agg}
         selected_types: {selected_types}
         use: "dot" or "heatmap" (Default: "dot")
         key: {key}
@@ -126,11 +133,11 @@ def cell_co_occurrence(
 
     if use == "dot":
         ndf = df.pivot_table(
-            index="type1", columns="type2", values="co_occur", aggfunc=np.sum
+            index="type1", columns="type2", values="co_occur", aggfunc=getattr(np, agg)
         )
-        order = ndf.count().sort_values().index.tolist()
+        order = (ndf > 0).sum().sort_values().index.tolist()
 
-        plot_kwargs = dict(legend_title="ROI")
+        plot_kwargs = dict(legend_title="ROI", xtickslabel_rotation=90)
         for k, v in kwargs.items():
             plot_kwargs[k] = v
         p = dot_plot(
@@ -138,7 +145,10 @@ def cell_co_occurrence(
         )
     else:
         ndf = df.pivot_table(
-            index=exp_obs, columns=["type1", "type2"], values="co_occur", aggfunc=np.sum
+            index=exp_obs,
+            columns=["type1", "type2"],
+            values="co_occur",
+            aggfunc=getattr(np, agg),
         )
         plot_kwargs = dict(
             row_colors=groupby,
@@ -173,9 +183,6 @@ def cell_morphology(
         **kwargs: Pass to :class:`spatialtis.plotting.base.violin_static`
 
     """
-    gl = len(groupby)
-    if gl > 2:
-        raise ValueError("Only support 2 levels depth categorical data for matplotlib")
     if key is None:
         key = ANALYSIS["cell_morphology"].last_used_key
 
@@ -183,6 +190,8 @@ def cell_morphology(
 
     if selected_types is not None:
         df = df[df["type"].isin(selected_types)]
+        df["type"] = df["type"].astype("category")
+        df["type"] = df["type"].cat.reorder_categories(selected_types)
 
     return violin_static(
         df, groupby, target="value", hue="type", **kwargs, saved_name="cell_morphology",

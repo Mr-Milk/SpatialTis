@@ -64,8 +64,7 @@ class neighborhood_analysis(AnalysisBase):
             raise NeighborsNotFoundError("Run `find_neighbors` first before continue.")
 
         need_eval = self.is_col_str(self.neighbors_key)
-        unitypes = data.obs[self.cell_type_key].unique()
-        cc = na.CellCombs(unitypes, order)
+        cc = na.CellCombs(self.cell_types, order)
 
         results_data = []
         for name, g in tqdm(
@@ -77,6 +76,13 @@ class neighborhood_analysis(AnalysisBase):
                 neighbors = [literal_eval(n) for n in g[self.neighbors_key]]
             else:
                 neighbors = [n for n in g[self.neighbors_key]]
+
+            # here we need to move the neighbors from its real ix to starting point 0
+            neighbors_min = np.asarray(
+                [i for n in neighbors for i in n], dtype=int
+            ).min()
+            neighbors = [(np.asarray(n) - neighbors_min).tolist() for n in neighbors]
+
             cell_types = g[self.cell_type_key]
             result = cc.bootstrap(
                 cell_types, neighbors, resample, pval, method, ignore_self=True
@@ -93,7 +99,7 @@ class neighborhood_analysis(AnalysisBase):
         else:
 
             def sign(x):
-                p = norm.sf(abs(x))
+                p = norm.sf(abs(x)) * 2
                 if p < pval:
                     return np.sign(x)
                 else:

@@ -73,7 +73,9 @@ class spatial_enrichment_analysis(AnalysisBase):
             layers_key = f"mean_cut"
             data.layers[layers_key] = (data.X.copy() >= data.X.mean(axis=0)).astype(int)
 
-        markers, _, data = self.get_exp_matrix(selected_markers, layers_key)
+        markers, _, data = self.get_exp_matrix_fraction(
+            markers=selected_markers, layers_key=layers_key
+        )
         need_eval = self.is_col_str(self.neighbors_key)
         results_data = []
 
@@ -87,6 +89,13 @@ class spatial_enrichment_analysis(AnalysisBase):
                 neighbors = [literal_eval(n) for n in roi[self.neighbors_key]]
             else:
                 neighbors = [n for n in roi[self.neighbors_key]]
+
+            # here we need to move the neighbors from its real ix to starting point 0
+            neighbors_min = np.asarray(
+                [i for n in neighbors for i in n], dtype=int
+            ).min()
+            neighbors = [(np.asarray(n) - neighbors_min).tolist() for n in neighbors]
+
             matrix = data[roi.index].layers[layers_key]
 
             for ix, x in enumerate(markers):
@@ -109,7 +118,7 @@ class spatial_enrichment_analysis(AnalysisBase):
         )
 
         def sign(x):
-            p = norm.sf(abs(x))
+            p = norm.sf(abs(x)) * 2
             if p < pval:
                 return np.sign(x)
             else:

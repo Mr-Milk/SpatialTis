@@ -1,3 +1,4 @@
+import warnings
 from typing import Dict, Optional
 
 import numpy as np
@@ -34,7 +35,8 @@ class NMDMarkers(AnalysisBase):
     def __init__(
         self,
         data: AnnData,
-        exp_std_cutoff: Number = 2.0,
+        use_cell_type: bool = False,
+        exp_std_cutoff: Number = 1.0,
         pval: float = 0.01,
         selected_markers: Optional[Array] = None,
         layers_key: Optional[str] = None,
@@ -46,20 +48,27 @@ class NMDMarkers(AnalysisBase):
         if not self.neighbors_exists:
             raise NeighborsNotFoundError("Run `find_neighbors` first before continue.")
 
-        tree_kwargs_ = {"n_jobs": -1, "random_state": 0}
+        if self.cell_type_key not in self.data.obs.keys():
+            use_cell_type = False
+
+        tree_kwargs_ = {"n_jobs": -1, "random_state": 0, "importance_type": "gain"}
         if tree_kwargs is not None:
             for k, v in tree_kwargs.items():
                 tree_kwargs_[k] = v
 
-        markers, exp_matrix, _ = self.get_exp_matrix(selected_markers, layers_key)
-        cent_cells, neigh_cells = self.get_neighbors_ix()
-        cent_exp = exp_matrix[cent_cells].T
-        neigh_exp = exp_matrix[neigh_cells]
-
         results_data = []
-        for ix, m in enumerate(tqdm(markers, **CONFIG.pbar(desc="NMD Markers"))):
-            y = cent_exp[ix].copy()
-            if np.std(y) >= exp_std_cutoff:
+        cent_cells, neigh_cells = self.get_neighbors_ix_pair()
+        markers, (cent_exp, neigh_exp), _ = self.get_exp_matrix_fraction(
+            markers=selected_markers,
+            layers_key=layers_key,
+            neighbors=(cent_cells, neigh_cells),
+            std=exp_std_cutoff,
+        )
+        if len(markers) > 0:
+            cent_exp = cent_exp.T
+
+            for ix, m in enumerate(tqdm(markers, **CONFIG.pbar(desc="NMD Markers"))):
+                y = cent_exp[ix].copy()
                 reg = XGBRegressor(**tree_kwargs_).fit(neigh_exp, y)
                 weights = reg.feature_importances_
                 max_ix = np.argmax(weights)
@@ -68,6 +77,8 @@ class NMDMarkers(AnalysisBase):
                 corr, pvalue = spearmanr(y, neigh_exp.T[max_ix])
                 if pvalue < pval:
                     results_data.append([m, max_marker, max_weight, corr, pvalue])
+        else:
+            warnings.warn("No markers left after filtering.")
         self.result = pd.DataFrame(
             data=results_data,
             columns=["marker", "neighbor_marker", "dependency", "corr", "pvalue"],

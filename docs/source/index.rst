@@ -18,7 +18,11 @@ Welcome to SpatialTis's documentation!
 .. |license| image:: https://flat.badgen.net/github/license/Mr-Milk/SpatialTis
 .. |pypi| image:: https://flat.badgen.net/pypi/v/spatialtis?color=blue
 
-SpatialTis is a spatial analysis toolkit for single-cell multiplexed tissue data.
+SpatialTis is a high-performance spatial analysis toolkit for single-cell multiplexed tissue data.
+
+- Parallel processing support
+- Rich visualizations options
+
 For a quick view of what it's does, check our following examples:
 
 - MIBI breast cancer 180K cells: |MIBI-tutorial|_
@@ -38,7 +42,7 @@ For a quick view of what it's does, check our following examples:
    usage/get_started
    usage/example
    usage/installation
-   usage/image_export
+   usage/save_results
    usage/notebook
 
 .. toctree::
@@ -48,6 +52,7 @@ For a quick view of what it's does, check our following examples:
    tutorial/basic_usage
    tutorial/set_config
    tutorial/plotting
+   tutorial/preprocessing
    tutorial/example1
    tutorial/example2
 

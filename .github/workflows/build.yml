@@ -1,6 +1,8 @@
 name: Build
 
-on: create
+on: push
+  tags:
+    - '*'
 
 jobs:
   Build:

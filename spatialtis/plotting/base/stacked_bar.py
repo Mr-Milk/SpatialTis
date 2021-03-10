@@ -86,6 +86,8 @@ class stacked_bar_interactive(BokehMixin):
         default_palette = ["Category20", "Spectral"]
         if self.palette is None:
             palette = default_palette
+        else:
+            palette = self.palette
         colors = get_colors(types_count, palette)
 
         franger = FactorRange(

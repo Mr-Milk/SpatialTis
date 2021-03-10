@@ -4,6 +4,7 @@ from typing import Dict, Optional
 from anndata import AnnData
 
 from spatialtis import CONFIG
+from spatialtis.plotting.api.utils import query_df
 from spatialtis.plotting.base import expression_map_3d, expression_map_static
 from spatialtis.utils import doc
 
@@ -36,9 +37,9 @@ def expression_map(
     if centroid_key is None:
         centroid_key = CONFIG.CENTROID_KEY
 
-    locations = data.obs.query(
-        "&".join([f"({k}=='{v}')" for k, v in roi.items()])
-    ).copy()[centroid_key]
+    df = query_df(data.obs, roi)
+    locations = df[centroid_key]
+
     loc_ix = locations.index
     need_eval = isinstance(locations[0], str)
     if need_eval:

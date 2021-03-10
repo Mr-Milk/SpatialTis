@@ -43,11 +43,11 @@ def spatial_heterogeneity(
     names = []
     value = []
     for n, g in df.groupby(groupby):
-        if isinstance(n, List):
-            names.append("_".join(n))
-        else:
+        if isinstance(n, str):
             names.append(n)
-        value.append(g[metric])
+        else:
+            names.append("_".join(n))
+        value.append(g[metric].values[0])
         if len(g) <= 1:
             stacked = True
         else:
@@ -60,10 +60,5 @@ def spatial_heterogeneity(
         )
     else:
         return violin_static(
-            df,
-            groupby,
-            metric,
-            hue=groupby[-1],
-            **kwargs,
-            saved_name="spatial_heterogeneity",
+            df, groupby, metric, hue=None, **kwargs, saved_name="spatial_heterogeneity",
         )

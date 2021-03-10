@@ -75,11 +75,15 @@ class find_neighbors(AnalysisBase):
             raise ValueError("Cannot scale a point, use 'expand' instead")
 
         # prepare data for shape neighbor search
+        self.data.obs[self.neighbors_ix_key] = [
+            i for i in range(self.data.obs.shape[0])
+        ]
         track_ix = []
         neighbors = []
         if use_shape:
             need_eval = self.is_col_str(self.shape_key)
             bboxs = []
+            labels = []
             for n, g in tqdm(
                 data.obs.groupby(self.exp_obs, sort=False),
                 **CONFIG.pbar(desc="Get cell bbox"),
@@ -91,20 +95,27 @@ class find_neighbors(AnalysisBase):
                     cell_shapes = [cell for cell in shapes]
                 bbox = na.get_bbox(cell_shapes)
                 bboxs.append(bbox)
+                labels.append(list(g[self.neighbors_ix_key]))
                 track_ix += list(g.index)
 
-            for bbox in tqdm(bboxs, **CONFIG.pbar(desc="Find neighbors")):
+            for bbox, label in tqdm(
+                zip(bboxs, labels), **CONFIG.pbar(desc="Find neighbors")
+            ):
                 if expand is not None:
-                    neighbors += na.get_bbox_neighbors(bbox, expand=expand)
+                    neighbors += na.get_bbox_neighbors(
+                        bbox, expand=expand, labels=label
+                    )
                 else:
-                    neighbors += na.get_bbox_neighbors(bbox, scale=scale)
+                    neighbors += na.get_bbox_neighbors(bbox, scale=scale, labels=label)
         else:
             for n, g in tqdm(
                 data.obs.groupby(self.exp_obs, sort=False),
                 **CONFIG.pbar(desc="Find neighbors"),
             ):
                 cells = [literal_eval(c) for c in g[self.centroid_key]]
-                neighbors += na.get_point_neighbors(cells, expand)
+                neighbors += na.get_point_neighbors(
+                    cells, expand, labels=list(g[self.neighbors_ix_key])
+                )
                 track_ix += list(g.index)
         col2adata_obs(pd.Series(neighbors, index=track_ix), data, self.export_key)
         if count:

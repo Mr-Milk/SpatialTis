@@ -53,7 +53,9 @@ class cell_community(AnalysisBase):
         if partition_type is None:
             partition_type = leidenalg.CPMVertexPartition
         if partition_kwargs is None:
-            partition_kwargs = {}
+            partition_kwargs = {"resolution_parameter": 0.05}
+        else:
+            partition_kwargs = {"resolution_parameter": 0.05, **partition_kwargs}
 
         need_eval_cent = self.is_col_str(self.centroid_key)
         need_eval_neigh = self.is_col_str(self.neighbors_key)
@@ -70,7 +72,8 @@ class cell_community(AnalysisBase):
             else:
                 neighbors = [n for n in g[self.neighbors_key]]
             vertices = [
-                {"name": i, "x": x, "y": y} for i, (x, y) in enumerate(centroids)
+                {"name": i, "x": x, "y": y}
+                for i, (x, y) in zip(g[CONFIG.neighbors_ix_key], centroids)
             ]
             edges = neighbors
             graph_edges = []

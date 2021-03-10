@@ -64,13 +64,21 @@ def spatial_enrichment_analysis(
         if selected_markers is None:
             selected_markers = unique_types
         if order:
-            for i in product(selected_markers, repeat=2):
-                if i in old_cols:
-                    new_cols.append(i)
+            cols = [i for i in product(selected_markers, repeat=2)]
         else:
-            for i in combinations_with_replacement(selected_markers, 2):
-                if i in old_cols:
-                    new_cols.append(i)
+            cols = [i for i in combinations_with_replacement(selected_markers, 2)]
+
+        old_cols = df.columns.tolist()
+        # filp the order in old index
+        new_cols = []
+        for i in old_cols:
+            if i in cols:
+                new_cols.append(i)
+            else:
+                new_cols.append(i[::-1])
+        df.columns = pd.MultiIndex.from_tuples(new_cols, names=["marker1", "marker2"])
+        sortIndex = dict(zip(cols, range(len(cols))))
+        new_cols = sorted(new_cols, key=lambda x: sortIndex[x])
         sort_index = pd.MultiIndex.from_tuples(new_cols, names=["marker1", "marker2"])
         df = df.loc[:, sort_index]
         plot_kwargs = dict(
@@ -107,20 +115,23 @@ def spatial_enrichment_analysis(
             r = r["value"]
             no, association, avoidance = r[0], r[1], r[-1]
             sum_all = no + association + avoidance
-            sign_size = (association + avoidance) / sum_all
+            real_size = association + avoidance
+            sign_size = real_size / sum_all
             sign_dir = (
                 0
                 if sign_size == 0
                 else (association if association > avoidance else -avoidance)
                 / (association + avoidance)
             )
-            plot_data.append([sign_size, sign_dir])
+            plot_data.append([real_size, sign_size, sign_dir])
         plot_df = pd.DataFrame(
-            data=plot_data, columns=["size", "color"], index=ndf.index
+            data=plot_data, columns=["real_size", "size", "color"], index=ndf.index
         ).reset_index()
 
         if use == "dot":
-            plot_size = plot_df.pivot(index="marker1", columns="marker2", values="size")
+            plot_size = plot_df.pivot(
+                index="marker1", columns="marker2", values="real_size"
+            )
             plot_color = plot_df.pivot(
                 index="marker1", columns="marker2", values="color"
             )
@@ -134,6 +145,7 @@ def spatial_enrichment_analysis(
                 size_legend_title="Sign' ROI",
                 matrix_cbar_text=["-1", "1"],
                 dot_cbar_text=["Avoidance", "Association"],
+                xtickslabel_rotation=90,
             )
             for k, v in kwargs.items():
                 plot_kwargs[k] = v

@@ -24,7 +24,8 @@ class cell_components(AnalysisBase):
 
     def __init__(self, data: AnnData, **kwargs):
         super().__init__(data, task_name="cell_components", **kwargs)
-        self.result = self.type_counter()
+        counter = self.type_counter()
+        self.result = pd.melt(counter, id_vars=self.exp_obs, var_name="type")
 
 
 @doc

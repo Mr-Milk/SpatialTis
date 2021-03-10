@@ -45,16 +45,18 @@ def spatial_distribution(
 
     if use == "dot":
 
-        plot_df = pd.DataFrame(
-            [
-                {0: 0, 1: 0, 2: 0, 3: 0, **Counter(g["pattern"])}
-                for _, g in df.groupby("type")
-            ]
-        ).rename(
+        plot_data = []
+        plot_index = []
+        for t, g in df.groupby("type", sort=False):
+            plot_index.append(t)
+            plot_data.append({0: 0, 1: 0, 2: 0, 3: 0, **Counter(g["pattern"])})
+
+        plot_df = pd.DataFrame(plot_data).rename(
             columns=dict(
                 zip([0, 1, 2, 3], ["No cells", "Random", "Regular", "Cluster"])
             )
         )
+        plot_df.index = plot_index
 
         colors = np.array(["#FFC408", "#c54a52", "#4a89b9", "#5a539d"] * len(plot_df))
 

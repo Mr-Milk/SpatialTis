@@ -4,6 +4,7 @@ from typing import Dict, Optional
 from anndata import AnnData
 
 from spatialtis.config import CONFIG
+from spatialtis.plotting.api.utils import query_df
 from spatialtis.plotting.base import graph_position_interactive, graph_position_static
 from spatialtis.utils import doc
 
@@ -40,9 +41,7 @@ def neighbors_map(
     if neighbors_key is None:
         neighbors_key = CONFIG.NEIGHBORS_KEY
 
-    df = data.obs.query("&".join([f"({k}=='{v}')" for k, v in roi.items()])).copy()
-    df = df.reset_index()
-
+    df = query_df(data.obs, roi)
     need_eval_nodes = isinstance(df[centroid_key][0], str)
     if need_eval_nodes:
         nodes = [literal_eval(n) for n in df[centroid_key]]
@@ -57,7 +56,7 @@ def neighbors_map(
         neighs = [n for n in df[neighbors_key]]
 
     edges = []
-    for i, n in zip(df.index, neighs):
+    for i, n in zip(df[CONFIG.neighbors_ix_key], neighs):
         for x in n:
             edges.append((i, x))
 

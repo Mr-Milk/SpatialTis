@@ -8,6 +8,7 @@ from spatialtis.config import ANALYSIS, CONFIG
 
 from ...utils import doc
 from ..base import graph_position_interactive, graph_position_static
+from .utils import query_df
 
 
 @doc
@@ -44,7 +45,7 @@ def community_map(
     if neighbors_key is None:
         neighbors_key = CONFIG.NEIGHBORS_KEY
 
-    df = data.obs.query("&".join([f"({k}=='{v}')" for k, v in roi.items()]))
+    df = query_df(data.obs, roi)
 
     nodes_types = df[community_key].tolist()
     commus = []
@@ -55,7 +56,8 @@ def community_map(
     df = df.reset_index(drop=True)
     xdf = df[df[community_key].isin(commus)]
     xdf = xdf.reset_index()
-
+    if len(xdf) == 0:
+        raise ValueError("Seems like there is no cells left to be drawn")
     need_eval_nodes = isinstance(xdf[centroid_key][0], str)
     need_eval_neighs = isinstance(xdf[neighbors_key][0], str)
     if need_eval_nodes:

@@ -92,18 +92,14 @@ class PlotBase:
     def set_up(self):
         pass
 
-    def reorder(self, data):
-        levels = []
-        orders = []
+    def reorder(self, data: pd.DataFrame):
         for level, order in self.group_order.items():
-            levels.append(level)
-            orders.append(order)
+            data[level] = [str(i) for i in data[level]]
+            order = [str(o) for o in order]
+            orders = dict(zip(order, range(len(order))))
+            data = data.sort_values(level, key=lambda x: x.map(orders))
 
-        ix = [i for i in product(*orders)] if len(orders) > 1 else orders[0]
-        orders = dict(zip(ix, range(len(ix))))
-        return data.sort_values(levels, key=lambda x: x.map(orders)).reset_index(
-            drop=True
-        )
+        return data
 
 
 class MatplotlibMixin(PlotBase):
@@ -121,6 +117,9 @@ class MatplotlibMixin(PlotBase):
     axes: np.ndarray
 
     def __init__(self, **plot_options):
+        self.fig = None
+        self.ax = None
+        self.axes = None
         self.preset()
         self.xtickslabel_loc = "center"
         self.ytickslabel_loc = "center"
@@ -129,7 +128,10 @@ class MatplotlibMixin(PlotBase):
     def set_up(self):
         """Handle display and save"""
         if self.title is not None:
-            self.fig.suptitle(self.title)
+            if getattr(self, "ax") is not None:
+                self.ax.set_title(self.title, fontweight="bold")
+            else:
+                self.fig.suptitle(self.title, y=1.05)
         if self.display:
             plt.show()
         else:

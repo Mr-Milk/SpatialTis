@@ -1,6 +1,7 @@
 from typing import Dict, List, Optional, Sequence
 
 import matplotlib.pyplot as plt
+import pandas as pd
 import seaborn as sns
 from bokeh.models import Legend, LegendItem
 from bokeh.plotting import figure
@@ -179,7 +180,7 @@ class cell_map_static(MatplotlibMixin):
         if selected_types is None:
             selected_types = cell_types
 
-        default_palette = ["Spectral", "Category20"]
+        default_palette = ["Category20", "Spectral"]
         if self.palette is None:
             self.palette = default_palette
 
@@ -188,57 +189,61 @@ class cell_map_static(MatplotlibMixin):
         legends = []
         labels = []
         if points is not None:
-            hue = []
             x = []
             y = []
             points_colors = []
-            for (name, points), color in zip(self.data.items(), colors):
+            used_other = 0
+            for (name, cells), color in zip(points.items(), colors):
                 if name not in selected_types:
                     name = "other"
                     color = "#d3d3d3"
-                hue += [name for _ in range(len(points))]
-                labels.append(name)
-                points_colors.append(color)
-                legends.append(
-                    Line2D(
-                        [0],
-                        [0],
-                        linestyle="none",
-                        marker="o",
-                        markersize=5,
-                        markerfacecolor=color,
+                    used_other += 1
+                points_colors += [color for _ in range(len(cells))]
+                x += [c[0] for c in cells]
+                y += [c[1] for c in cells]
+                if (used_other <= 1) | ((used_other > 1) & (name != "other")):
+                    labels.append(name)
+                    legends.append(
+                        Line2D(
+                            [0],
+                            [0],
+                            linestyle="none",
+                            marker="o",
+                            markersize=5,
+                            markerfacecolor=color,
+                        )
                     )
-                )
-                x += [p[0] for p in points]
-                y += [p[1] for p in points]
-
-            ss = sns.scatterplot(
-                x=x, y=y, hue=hue, s=self.cell_size, ax=self.ax, fc=points_colors
+            self.ax.scatter(
+                x=x, y=y, c=points_colors, s=self.cell_size, alpha=0.8,
             )
             plt.tight_layout()
         else:
             patches = []
             points = []
             patch_colors = []
-            for (name, polys), color in zip(self.data.items(), colors):
+            used_other = 0
+            for (name, polys), color in zip(shapes.items(), colors):
                 if name not in selected_types:
                     name = "other"
                     color = "#d3d3d3"
+                    used_other += 1
                 for poly in polys:
                     patches.append(Polygon(poly, label=name))
                     patch_colors.append(color)
                     points += poly
-                legends.append(
-                    Line2D(
-                        [0],
-                        [0],
-                        linestyle="none",
-                        marker="o",
-                        markersize=5,
-                        markerfacecolor=color,
+                if (used_other <= 1) | ((used_other > 1) & (name != "other")):
+                    labels.append(name)
+                    legends.append(
+                        Line2D(
+                            [0],
+                            [0],
+                            linestyle="none",
+                            marker="o",
+                            markersize=5,
+                            markerfacecolor=color,
+                        )
                     )
-                )
-                labels.append(name)
+
             p = PatchCollection(patches, alpha=0.8, facecolors=patch_colors)
             xmin, ymin, xmax, ymax = MultiPoint(points).bounds
             plt.xlim(xmin, xmax)
@@ -247,14 +252,14 @@ class cell_map_static(MatplotlibMixin):
 
         self.ax.set_aspect("equal")
         plt.axis("off")
-        self.ax.legend(
-            legends,
-            labels,
+        legends_kwargs = dict(
             title=self.legend_title,
-            ncol=2,
             bbox_to_anchor=(1, 0.05),
             borderaxespad=0,
             loc="lower left",
             frameon=False,
         )
+        if len(labels) > 16:
+            legends_kwargs["ncol"] = 2
+        self.ax.legend(legends, labels, **legends_kwargs)
         self.set_up()

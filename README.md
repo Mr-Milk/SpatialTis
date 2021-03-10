@@ -10,8 +10,6 @@
 ![pypi](https://flat.badgen.net/pypi/v/spatialtis?color=blue)
 ![licence](https://flat.badgen.net/github/license/Mr-Milk/SpatialTis)
 
-> Huge update will be happen at v0.3.0, API break, change data storage, plotting will isolate static and interactive plotting.
-
 SpatialTis is a high-performance spatial analysis toolkit for single-cell multiplexed tissue data using [`AnnData`](https://icb-anndata.readthedocs-hosted.com/en/stable/#) object as input with **parallel processing** support.
 
 **Documentation**: [![rtd](img/view_on_rtd.svg)](https://spatialtis.readthedocs.io/en/latest/)
@@ -47,17 +45,17 @@ pip install git+https://github.com/Mr-Milk/SpatialTis.git
 ## SpatialTis modules
 
 - **Preprocessing**
-- **Data statistic**
+- **Basic analysis**
     - Cell components
     - Cell density
     - Cell morphology
     - Cell co-occurrence
-- **Find cell neighbors**
 - **Spatial analysis**
+    - Find cell neighbors
     - Spatial distribution
     - Spatial heterogeneity
     - Hotspot detection
     - Cell-cell interaction
-    - Markers co-expression
+    - Spatial co-expression
     - Spatial community detection
     - Neighbor dependent markers

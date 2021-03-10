@@ -5,6 +5,7 @@ from typing import Dict, Optional
 from anndata import AnnData
 
 from spatialtis import CONFIG
+from spatialtis.plotting.api.utils import query_df
 from spatialtis.plotting.base.cell_map import cell_map_interactive, cell_map_static
 from spatialtis.typing import Array
 from spatialtis.utils import doc
@@ -55,10 +56,8 @@ def cell_map(
             raise KeyError("Centroid key not exist")
         data_key = centroid_key
 
-    data = data.obs.query("&".join([f"({k}=='{v}')" for k, v in roi.items()])).copy()
-
+    data = query_df(data.obs, roi)
     need_eval = isinstance(data[data_key][0], str)
-
     plot_data = {}
     for n, df in data.groupby(cell_type_key):
         if need_eval:

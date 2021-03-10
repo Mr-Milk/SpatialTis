@@ -39,9 +39,16 @@ try:
 
     theme = themepy.Theme()
     theme.set_theme("gadfly")
+    theme.set_ticklabel_size()
 except ImportError:
     pass
 
+mpl.rcParams["figure.titlesize"] = 10
+mpl.rcParams["figure.titleweight"] = "bold"
+mpl.rcParams["axes.titlesize"] = 10
+mpl.rcParams["axes.labelsize"] = 10
+mpl.rcParams["xtick.labelsize"] = 8
+mpl.rcParams["ytick.labelsize"] = 8
 mpl.rcParams["font.size"] = 8
 
 # enable retina mode for all devices

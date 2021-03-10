@@ -1,5 +1,6 @@
 from typing import List, Sequence, Tuple
 
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pyecharts.options as opts
@@ -35,14 +36,12 @@ class expression_map_3d(PyechartsMixin):
 
         if self.palette is None:
             self.palette = ["RdYlBu"]
-        default_color = get_linear_colors(self.palette)
+        colors = get_linear_colors(self.palette)
 
         zdata = []
         for cell, exp in zip(points, expressions):
-            zdata.append([cell[0], cell[1], exp])
-
-        zrange = sorted(zdata, key=lambda k: k[2])
-
+            zdata.append([round(cell[0], 2), round(cell[1], 2), float(exp)])
+        zrange = sorted([i[2] for i in zdata])
         self.plot = Bar3D(
             init_opts=opts.InitOpts(
                 width=f"{self.size[0]}px",
@@ -64,12 +63,8 @@ class expression_map_3d(PyechartsMixin):
             ),
         ).set_global_opts(
             visualmap_opts=opts.VisualMapOpts(
-                dimension=2,
-                max_=zrange[-1][2],
-                min_=zrange[0][2],
-                range_color=default_color,
+                dimension=2, max_=zrange[-1], min_=zrange[0], range_color=colors,
             ),
-            tooltip_opts=opts.TooltipOpts(is_show=False),
             toolbox_opts=opts.ToolboxOpts(
                 feature={
                     "saveAsImage": {"title": "Save", "pixelRatio": 5,},
@@ -102,17 +97,16 @@ class expression_map_static(MatplotlibMixin):
         super().__init__(**plot_options)
 
         if self.palette is None:
-            self.palette = "magma"
-        else:
-            if isinstance(self.palette, Sequence):
-                self.palette = self.palette[0]
+            self.palette = ["Magma"]
+        colors = get_linear_colors(self.palette)[::-1]
+        cmap = mpl.colors.LinearSegmentedColormap.from_list("", colors)
 
         x, y = [], []
         for p in points:
             x.append(p[0])
             y.append(p[1])
         self.fig, self.ax = plt.subplots(figsize=self.size)
-        ss = self.ax.scatter(x=x, y=y, c=expressions, s=cell_size, cmap=self.palette)
+        ss = self.ax.scatter(x=x, y=y, c=expressions, s=cell_size, cmap=cmap)
         # Remove the legend and add a colorbar
         self.ax.set_aspect("equal")
         plt.axis("off")

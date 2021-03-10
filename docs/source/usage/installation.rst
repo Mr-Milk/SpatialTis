@@ -3,6 +3,11 @@ Installation
 
 SpatialTis requires **Python >= 3.6**, it's recommended that you install it in a new environment.
 
+.. warning::
+    If you are using **python 3.9**, Ray doesn't provide a py39 wheel yet.
+    You need to build it from source. Otherwise,
+    Some of the parallel processing in SpatialTis will not work.
+
 pypi
 ----
 Install the basic of spatialtis::

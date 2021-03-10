@@ -33,9 +33,8 @@ def run_ray(jobs, desc=""):
             done, obj_ids = ray.wait(obj_ids)
             yield ray.get(done[0])
 
-    for _ in tqdm(exec_iterator(jobs), **CONFIG.pbar(total=len(jobs), desc=desc)):
-        pass
-
-    results = ray.get(jobs)
+    results = []
+    for x in tqdm(exec_iterator(jobs), **CONFIG.pbar(total=len(jobs), desc=desc)):
+        results.append(x)
 
     return results

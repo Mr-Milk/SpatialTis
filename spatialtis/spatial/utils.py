@@ -46,3 +46,16 @@ class QuadStats:
             dict_id_count[id_] += 1
 
         return dict_id_count
+
+
+def job_cutter(total, nums):
+    if total > nums:
+        order = int(total / nums) * nums
+        if order != total:
+            k = [i for i in range(0, order, int(order / nums))] + [order, total]
+        else:
+            k = [i for i in range(0, order, int(order / nums))] + [total]
+    else:
+        k = [0, total]
+    lk = len(k)
+    return [(k[i], k[i + 1]) for i in range(lk) if i < (lk - 1)]

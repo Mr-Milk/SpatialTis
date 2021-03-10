@@ -82,23 +82,24 @@ def NNS(points, pval):
     tmin = tree.mins
 
     area = (tmax[0] - tmin[0]) * (tmax[1] - tmin[1])
-    r = [tree.query(c, k=[2])[0][0] for c in points]
+    r = np.array([tree.query(c, k=[2])[0][0] for c in points])
     n = len(points)
-    sum_r = np.sum(r)
-    r_A = sum_r / n
-    rho = n / area
-    r_E = 1 / (2 * np.sqrt(rho))
+    intensity = n / area
+    # sum_r = np.sum(r)
+    # r_A = sum_r / n
+    nnd_mean = r.mean()
+    nnd_expected_mean = 1 / (2 * np.sqrt(intensity))
+    R = nnd_mean / nnd_expected_mean
 
-    # aggregation index R
-    R = r_A / r_E
-    z_score = (r_A - r_E) / (0.26136 / np.sqrt(n * rho))
+    SE = np.sqrt(((4 - np.pi) * area) / (4 * np.pi)) / n
+    Z = (nnd_mean - nnd_expected_mean) / SE
 
-    p_value = norm.sf(abs(z_score)) * 2
+    p_value = norm.sf(abs(Z)) * 2
     accept_null = p_value > pval
 
     if accept_null:
         pattern = 1  # random
-    elif (not accept_null) & (R > 1):
+    elif (not accept_null) & (R < 1):
         pattern = 3  # clustered
     else:
         pattern = 2  # regular
@@ -175,10 +176,7 @@ class spatial_distribution(AnalysisBase):
         df = data.obs[self.exp_obs + [self.centroid_key, self.cell_type_key]]
         groups = df.groupby(self.exp_obs)
 
-        patterns = []
-        name_tags = []
-        type_tags = []
-
+        patterns = {}
         need_eval = self.is_col_str(self.centroid_key)
 
         if self.mp:
@@ -186,20 +184,25 @@ class spatial_distribution(AnalysisBase):
             dist_mp = create_remote(self._dist_func)
 
             jobs = []
+            track_id = []
             for name, group in groups:
                 if isinstance(name, str):
                     name = [name]
-                for t, tg in group.groupby(self.cell_type_key):
+                for t, tg in group.groupby(self.cell_type_key, sort=False):
+                    meta = (*name, t)
                     if len(tg) > 1:
                         if need_eval:
                             cells = [literal_eval(c) for c in tg[self.centroid_key]]
                         else:
                             cells = [c for c in tg[self.centroid_key]]
                         jobs.append(dist_mp.remote(cells, *self._args))
-                        type_tags.append(t)
-                        name_tags.append(name)
-
-            patterns = run_ray(jobs, desc="Finding distribution pattern")
+                        track_id.append(meta)
+                        patterns[meta] = None
+                    else:
+                        patterns[meta] = 0
+            results = run_ray(jobs, desc="Finding distribution pattern")
+            for ids, p in zip(track_id, results):
+                patterns[ids] = results
 
         else:
             for name, group in tqdm(
@@ -207,19 +210,21 @@ class spatial_distribution(AnalysisBase):
             ):
                 if isinstance(name, str):
                     name = [name]
-                for t, tg in group.groupby(self.cell_type_key):
+                for t, tg in group.groupby(self.cell_type_key, sort=False):
+                    meta = (*name, t)
                     if len(tg) > 1:
+
                         if need_eval:
                             cells = [literal_eval(c) for c in tg[self.centroid_key]]
                         else:
                             cells = [c for c in tg[self.centroid_key]]
-                        patterns.append(self._dist_func(cells, *self._args))
-                        type_tags.append(t)
-                        name_tags.append(name)
+                        patterns[meta] = self._dist_func(cells, *self._args)
+                    else:
+                        patterns[meta] = 0
 
         dist_patterns = []
-        for n, t, p in zip(name_tags, type_tags, patterns):
-            dist_patterns.append([*n, t, p])
+        for k, p in patterns.items():
+            dist_patterns.append([*k, p])
 
         self.result = pd.DataFrame(
             data=dist_patterns, columns=self.exp_obs + ["type", "pattern"]

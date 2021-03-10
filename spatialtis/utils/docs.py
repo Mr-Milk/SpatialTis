@@ -22,6 +22,7 @@ PARAMETERS_DOCSTRINGS = dict(
     marker_key="The key to store markers in `AnnData.var` (Default: `spatialtis.CONFIG.MARKER_KEY`)",
     layers_key="The layer in `AnnData` to perform analysis",
     # plot
+    agg="How to aggregate data, eg. sum, mean, median...",
     plot_options="Pass to :class:`spatialtis.plotting.abc.PlotBase`",
     adata_plotting="`AnnData` object for plotting",
     roi="""A Dict use to select which ROI to display, 

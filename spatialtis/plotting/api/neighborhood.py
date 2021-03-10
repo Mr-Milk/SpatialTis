@@ -57,24 +57,33 @@ def neighborhood_analysis(
     unique_types = np.unique(df["type1"])
     if use == "heatmap":
         df = df.pivot(index=exp_obs, columns=["type1", "type2"], values="value")
-        old_cols = df.columns.tolist()
-        new_cols = []
         # resort the data
         if selected_types is None:
             selected_types = unique_types
         if order:
-            for i in product(selected_types, repeat=2):
-                if i in old_cols:
-                    new_cols.append(i)
+            cols = [i for i in product(selected_types, repeat=2)]
         else:
-            for i in combinations_with_replacement(selected_types, 2):
-                if i in old_cols:
-                    new_cols.append(i)
+            cols = [i for i in combinations_with_replacement(selected_types, 2)]
+
+        old_cols = df.columns.tolist()
+        # filp the order in old index
+        new_cols = []
+        for i in old_cols:
+            if i in cols:
+                new_cols.append(i)
+            else:
+                new_cols.append(i[::-1])
+        # replace old with new
+        df.columns = pd.MultiIndex.from_tuples(new_cols, names=["type1", "type2"])
+        sortIndex = dict(zip(cols, range(len(cols))))
+        new_cols = sorted(new_cols, key=lambda x: sortIndex[x])
+        # sort it
         sort_index = pd.MultiIndex.from_tuples(new_cols, names=["type1", "type2"])
         df = df.loc[:, sort_index]
         plot_kwargs = dict(
             categorical_colorbar=["Avoidance", "Association"],
             palette=["#2f71ab", "#f7f7f7", "#ba262b"],
+            clustermap_kwargs=dict(row_cluster=True, col_cluster=False, method="ward"),
         )
         unique_values = np.unique(df.to_numpy())
         if 1 not in unique_values:
@@ -89,7 +98,6 @@ def neighborhood_analysis(
             df,
             row_colors=groupby,
             col_colors=["type1", "type2"],
-            clustermap_kwargs=dict(row_cluster=True, col_cluster=False),
             **plot_kwargs,
             saved_name="neighborhood_analysis",
         )
@@ -104,33 +112,31 @@ def neighborhood_analysis(
             r = r["value"]
             no, association, avoidance = r[0], r[1], r[-1]
             sum_all = no + association + avoidance
-            sign_size = (association + avoidance) / sum_all
+            real_size = association + avoidance
+            sign_size = real_size / sum_all
             sign_dir = (
                 0
                 if sign_size == 0
                 else (association if association > avoidance else -avoidance)
                 / (association + avoidance)
             )
-            plot_data.append([sign_size, sign_dir])
+            plot_data.append([real_size, sign_size, sign_dir])
         plot_df = pd.DataFrame(
-            data=plot_data, columns=["size", "color"], index=ndf.index
+            data=plot_data, columns=["real_size", "size", "color"], index=ndf.index
         ).reset_index()
         if use == "dot_matrix":
             try:
-                cc = get_result(data, ANALYSIS["cell_components"].last_used_key).iloc[
-                    ::, len(exp_obs) : :
-                ]
+                df = get_result(data, ANALYSIS["cell_components"].last_used_key)
+                cc = {}
+                for n, g in df.groupby("type"):
+                    cc[n] = g["value"].tolist()
             except KeyError:
                 raise Exception(
                     "Please run cell_components before plotting the dot matrix plot"
                 )
             corr = {}
-            if order:
-                for i in product(cc.columns, repeat=2):
-                    corr[i] = [pearsonr(cc[i[0]].tolist(), cc[i[1]].tolist())[0]]
-            else:
-                for i in combinations_with_replacement(cc.columns, 2):
-                    corr[i] = [pearsonr(cc[i[0]].tolist(), cc[i[1]].tolist())[0]]
+            for i in product(unique_types, repeat=2):
+                corr[i] = [pearsonr(cc[i[0]], cc[i[1]])[0]]
 
             ccdf = pd.DataFrame(corr).T.reset_index()
             ccdf.columns = ["type1", "type2", "corr"]
@@ -145,7 +151,9 @@ def neighborhood_analysis(
             )
 
             plot_corr = plot_df.pivot(index="type1", columns="type2", values="corr")
-            plot_size = plot_df.pivot(index="type1", columns="type2", values="size")
+            plot_size = plot_df.pivot(
+                index="type1", columns="type2", values="real_size"
+            )
             plot_color = plot_df.pivot(index="type1", columns="type2", values="color")
 
             order = plot_corr.count().sort_values().index.tolist()
@@ -160,6 +168,7 @@ def neighborhood_analysis(
                 matrix_cbar_text=["-1", "1"],
                 dot_cbar_text=["Avoidance", "Association"],
                 dot_cbar_title="●\n% of\ninteraction",
+                xtickslabel_rotation=90,
             )
             for k, v in kwargs.items():
                 plot_kwargs[k] = v

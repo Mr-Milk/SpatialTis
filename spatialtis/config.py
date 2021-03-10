@@ -86,26 +86,31 @@ class _CONFIG(object):
         self.ECCENTRICITY_KEY: str = "eccentricity"
         self.MARKER_KEY: str = "marker"
         self.NEIGHBORS_KEY: str = "cell_neighbors"
+        self.neighbors_ix_key: str = "neighbors_ix"
         self.pbar_format: str = f"{Fore.GREEN}{{desc}} {{bar}} {{percentage:3.0f}}% {{remaining}}|{{elapsed}}{Fore.RESET}"
 
     def __repr__(self):
         table = Table(title="Current configurations of SpatialTis")
-        table.add_column("Option", style="cyan")
+        table.add_column("Options", style="cyan")
         table.add_column("Value", style="magenta")
 
         table.add_row("OS", self.OS)
-        table.add_row("MULTI_PROCESSING", str(self.MP))
+        table.add_row("MP", str(self.MP))
         table.add_row("WORKING_ENV", str(self.WORKING_ENV))
         table.add_row("VERBOSE", str(self.VERBOSE))
         table.add_row("PBAR", str(self.PBAR))
+        table.add_row(
+            "AUTO_SAVE", str(self.SAVE_PATH) if self.AUTO_SAVE else str(self.AUTO_SAVE)
+        )
         table.add_row("EXP_OBS", str(self.EXP_OBS))
         table.add_row("ROI_KEY", str(self.ROI_KEY))
         table.add_row("CELL_TYPE_KEY", str(self.CELL_TYPE_KEY))
+        table.add_row("MARKER_KEY", self.MARKER_KEY)
+        table.add_row("NEIGHBORS_KEY", self.NEIGHBORS_KEY)
         table.add_row("CENTROID_KEY", self.CENTROID_KEY)
         table.add_row("AREA_KEY", self.AREA_KEY)
         table.add_row("SHAPE_KEY", self.SHAPE_KEY)
         table.add_row("ECCENTRICITY_KEY", self.ECCENTRICITY_KEY)
-        table.add_row("MARKER_KEY", self.MARKER_KEY)
 
         console.print(table)
 
@@ -206,7 +211,7 @@ class _CONFIG(object):
             path.mkdir(exist_ok=True)
         elif isinstance(path, bool):
             if path:
-                path = Path().cwd() / "spatialti-result"
+                path = Path().cwd() / "spatialtis-result"
                 path.mkdir(exist_ok=True)
             else:
                 path = None

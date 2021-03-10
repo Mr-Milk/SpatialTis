@@ -1,11 +1,13 @@
 from typing import Dict, List, Optional
 
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 
 from ...utils import doc
 from ..abc import MatplotlibMixin
+from .palette import get_linear_colors
 
 
 @doc
@@ -46,6 +48,11 @@ class violin_static(MatplotlibMixin):
         self.target = target
         self.direction = direction
 
+        if self.palette is None:
+            colors = None
+        else:
+            colors = get_linear_colors(self.palette)
+
         level1 = groupby[0]
         if gl > 1:
             level2 = groupby[1]
@@ -53,7 +60,9 @@ class violin_static(MatplotlibMixin):
             self.fig, self.axes = plt.subplots(1, len(groups), figsize=self.size)
             if direction == "vertical":
                 for ix, ((name, g), ax) in enumerate(zip(groups, self.axes.flatten())):
-                    sg = sns.violinplot(x=level2, y=self.target, data=g, hue=hue, ax=ax)
+                    sg = sns.violinplot(
+                        x=level2, y=self.target, data=g, hue=hue, ax=ax, palette=colors
+                    )
                     ax.get_legend().remove()
                     sg.set_xticklabels(
                         ax.get_xticklabels(),
@@ -70,7 +79,9 @@ class violin_static(MatplotlibMixin):
                         sg.tick_params(left=False)
             else:
                 for ix, ((name, g), ax) in enumerate(zip(groups, self.axes.flatten())):
-                    sg = sns.violinplot(y=level2, x=self.target, data=g, hue=hue, ax=ax)
+                    sg = sns.violinplot(
+                        y=level2, x=self.target, data=g, hue=hue, ax=ax, palette=colors
+                    )
                     sg.set_yticklabels(
                         ax.get_yticklabels(),
                         rotation=self.ytickslabel_rotation,
@@ -84,16 +95,17 @@ class violin_static(MatplotlibMixin):
                     if ix != 0:
                         sg.set(xticklabels=[])
                         sg.tick_params(left=False)
-            plt.legend(
-                bbox_to_anchor=(1.1, 0),
-                borderaxespad=0,
-                loc="lower left",
-                frameon=False,
-            )
         else:
             self.fig, self.ax = plt.subplots(figsize=self.size)
             if direction == "vertical":
-                sb = sns.violinplot(x=level1, y=self.target, data=self.data, ax=self.ax)
+                sb = sns.violinplot(
+                    x=level1,
+                    y=self.target,
+                    data=self.data,
+                    hue=hue,
+                    ax=self.ax,
+                    palette=colors,
+                )
                 sb.set_xticklabels(
                     self.ax.get_xticklabels(),
                     rotation=self.xtickslabel_rotation,
@@ -101,7 +113,14 @@ class violin_static(MatplotlibMixin):
                 )
                 sb.set(ylabel="", xlabel="")
             else:
-                sb = sns.violinplot(y=level1, x=self.target, data=self.data, ax=self.ax)
+                sb = sns.violinplot(
+                    y=level1,
+                    x=self.target,
+                    data=self.data,
+                    hue=hue,
+                    ax=self.ax,
+                    palette=colors,
+                )
                 sb.set_yticklabels(
                     self.ax.get_yticklabels(),
                     rotation=self.ytickslabel_rotation,
@@ -111,4 +130,11 @@ class violin_static(MatplotlibMixin):
         self.fig.text(0.5, -0.05, self.xaxis_title, ha="center")
         self.fig.text(-0.05, 0.5, self.yaxis_title, va="center", rotation="vertical")
         plt.tight_layout()
+        if hue is not None:
+            plt.legend(
+                bbox_to_anchor=(1.1, 0),
+                borderaxespad=0,
+                loc="lower left",
+                frameon=False,
+            )
         self.set_up()

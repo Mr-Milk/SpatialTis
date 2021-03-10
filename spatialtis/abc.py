@@ -1,5 +1,6 @@
 from ast import literal_eval
 from collections import Counter
+from itertools import product
 from time import time
 from typing import Dict, List, Optional
 
@@ -94,6 +95,9 @@ class AnalysisBase(Timer):
     marker_key: str
     neighbors_key: str
 
+    def __repr__(self):
+        return ""
+
     def __init__(
         self,
         data: AnnData,
@@ -164,67 +168,165 @@ class AnalysisBase(Timer):
         else:
             self.mp = mp
 
+        if self.cell_type_key is not None:
+            self.cell_types = pd.unique(self.data.obs[self.cell_type_key])
+
+        self.neighbors_ix_key = CONFIG.neighbors_ix_key
+
         self.start_timer()
 
     def type_counter(self) -> pd.DataFrame:
         df = self.data.obs[self.exp_obs + [self.cell_type_key]]
         groups = df.groupby(self.exp_obs)
-        types = pd.unique(df[self.cell_type_key])
         matrix = list()
         meta = list()
-        for i, (n, g) in enumerate(groups):
+        for n, g in groups:
             c = Counter(g[self.cell_type_key])
-            matrix.append([c.get(t, 0) for t in types])
-            meta.append((*n,))
+            matrix.append([c.get(t, 0) for t in self.cell_types])
+            if isinstance(n, str):
+                meta.append((n,))
+            else:
+                meta.append((*n,))
         result = dict(
             **dict(
                 zip(self.exp_obs, np.asarray(meta).T),
-                **dict(zip(types, np.asarray(matrix).T)),
+                **dict(zip(self.cell_types, np.asarray(matrix).T)),
             )
         )
         result = pd.DataFrame(result)
         return result
 
-    def get_exp_matrix(
-        self, markers: Optional[Array] = None, layers_key: Optional[str] = None
+    def get_exp_matrix_fraction(
+        self,
+        markers: Optional[Array] = None,
+        types: Optional[Array] = None,
+        layers_key: Optional[str] = None,
+        std: Optional[float] = None,
+        neighbors_ix: Optional[Array] = None,
+        neighbors: Optional[tuple] = None,
+        data: Optional[AnnData] = None,
     ) -> (Array, np.ndarray, AnnData):
+        if data is None:
+            data = self.data
+        if types is not None:
+            data = data[data.obs[self.cell_type_key].isin(types)].copy()
+        markers_mask = []
         if markers is not None:
             if len(markers) > 1:
-                dt = self.data.T.copy()
-                cut_data = dt[dt.obs[self.marker_key].isin(markers)].copy().T
-                del dt
+                markers_mask = (
+                    data.var[self.marker_key].isin(markers).to_numpy(dtype=bool)
+                )
             else:
                 raise ValueError("Need more than two markers for `selected_markers`.")
+
+        if std is not None:
+            mask = np.asarray(data.X.std(axis=0) > std, dtype=bool)
+            if len(markers_mask) == 0:
+                markers_mask = mask
+            else:
+                markers_mask = markers_mask & mask
+
+        if len(markers_mask) > 0:
+            cut_data = data[:, markers_mask].copy()
+            cut_markers = cut_data.var[self.marker_key]
         else:
-            cut_data = self.data
-            markers = self.data.var[self.marker_key].tolist()
+            cut_data = data
+            cut_markers = data.var[self.marker_key]
 
         if layers_key is not None:
             exp_matrix = cut_data.layers[layers_key].copy()
         else:
             exp_matrix = cut_data.X.copy()
 
-        return markers, exp_matrix, cut_data
+        if neighbors is not None:
+            meta = (
+                cut_data.obs.reset_index(drop=True)
+                .reset_index()
+                .set_index(self.neighbors_ix_key)
+            )
+            cent_exp_ix = meta.loc[neighbors[0]]["index"].values
+            neigh_exp_ix = meta.loc[neighbors[1]]["index"].values
+            cent_exp = exp_matrix[cent_exp_ix]
+            neigh_exp = exp_matrix[neigh_exp_ix]
+            assert cent_exp.shape == neigh_exp.shape
+            return cut_markers, (cent_exp, neigh_exp), cut_data
+        elif neighbors_ix is not None:
+            meta = (
+                cut_data.obs.reset_index(drop=True)
+                .reset_index()
+                .set_index(self.neighbors_ix_key)
+            )
+            exp_ix = meta.loc[neighbors_ix]["index"].values
+            exp = exp_matrix[exp_ix]
+            return cut_markers, exp, cut_data
+        else:
+            return cut_markers, exp_matrix, cut_data
 
     def get_neighbors_ix(self) -> (List, List):
+        need_eval = self.is_col_str(self.neighbors_key)
+        if need_eval:
+            neighbors = [literal_eval(n) for n in self.data.obs[self.neighbors_key]]
+        else:
+            neighbors = [n for n in self.data.obs[self.neighbors_key]]
+        cent = [nix for nix in self.data.obs[self.neighbors_ix_key]]
+        return cent, neighbors
+
+    def get_neighbors_ix_map(self) -> Dict:
+        """To get the array of index for both center and it's neighbor cells"""
+        neighbors_map = {}
+        cent, neighbors = self.get_neighbors_ix()
+        for ix, nxs in zip(cent, neighbors):
+            neighbors_map[ix] = []
+            for nx in nxs:
+                if ix < nx:
+                    neighbors_map[ix].append(nx)
+
+        return neighbors_map
+
+    def get_neighbors_ix_pair(self) -> (List, List):
         """To get the array of index for both center and it's neighbor cells"""
         cent_cells = []
         neigh_cells = []
-        need_eval = self.is_col_str(self.neighbors_key)
-        for name, g in self.data.obs.reset_index(drop=True).groupby(self.exp_obs):
-            real_ix = g.index
-            neighbors = []
-            for ix, nxs in enumerate(g[self.neighbors_key]):
-                if need_eval:
-                    nxs = literal_eval(nxs)
-                for nx in nxs:
-                    if ix > nx:
-                        neighbors.append([ix, nx])
-            arr = np.array(neighbors).T
-            if len(arr) > 0:
-                cent_cells += [int(real_ix[i]) for i in arr[0]]
-                neigh_cells += [int(real_ix[i]) for i in arr[1]]
+        cent, neighbors = self.get_neighbors_ix()
+        for ix, nxs in zip(cent, neighbors):
+            for nx in nxs:
+                if ix < nx:
+                    cent_cells.append(ix)
+                    neigh_cells.append(nx)
+
         return cent_cells, neigh_cells
+
+    def get_types_neighbors_ix(self, selected_types=None):
+
+        if selected_types is None:
+            types = self.cell_types
+        else:
+            types = []
+            for t in selected_types:
+                if t in self.cell_types:
+                    types.append(t)
+
+        neighbors = {i: {i: ([], []) for i in types} for i in types}
+        # we get pairs that's not repeated from this function
+        cent_cells, neigh_cells = self.get_neighbors_ix_pair()
+        types_map = self.data.obs[
+            [self.neighbors_ix_key, self.cell_type_key]
+        ].set_index(self.neighbors_ix_key)
+        cent_type = types_map.loc[cent_cells][self.cell_type_key]
+        neigh_type = types_map.loc[neigh_cells][self.cell_type_key]
+        for cent, neigh, c_type, n_type in zip(
+            cent_cells, neigh_cells, cent_type, neigh_type
+        ):
+            if (c_type in types) & (n_type in types):
+                # it's a pair, so we need to add it twice
+                container = neighbors[c_type][n_type]
+                container[0].append(cent)
+                container[1].append(neigh)
+
+                container = neighbors[n_type][c_type]
+                container[0].append(neigh)
+                container[1].append(cent)
+        return neighbors
 
     def is_col_str(self, key) -> bool:
         """To determine whether a column need to eval from str
