@@ -1,18 +1,24 @@
 from collections import Counter
+from time import time
 from typing import Dict, Optional
 
 import numpy as np
 import pandas as pd
 from anndata import AnnData
 from lightgbm import LGBMRegressor
-from scipy.stats import spearmanr
+from scipy.stats import mannwhitneyu
 from tqdm import tqdm
 
 from spatialtis import CONFIG
 from spatialtis.abc import AnalysisBase
-from spatialtis.spatial.utils import NeighborsNotFoundError
+from spatialtis.spatial.utils import NeighborsNotFoundError, normalize
 from spatialtis.typing import Array, Number
 from spatialtis.utils import doc
+
+try:
+    import neighborhood_analysis as na
+except ImportError:
+    raise ImportError("Try pip install neighborhood_analysis")
 
 
 @doc
@@ -40,10 +46,9 @@ class NCDMarkers(AnalysisBase):
         self,
         data: AnnData,
         use_cell_type: bool = False,
-        corr_cutoff: Number = 0.5,
-        importance_cutoff: Number = 0.6,
+        importance_cutoff: Number = 0.5,
         exp_std_cutoff: Number = 1.0,
-        pval: float = 0.01,
+        pval: Number = 0.01,
         selected_markers: Optional[Array] = None,
         layers_key: Optional[str] = None,
         tree_kwargs: Optional[Dict] = None,
@@ -67,99 +72,121 @@ class NCDMarkers(AnalysisBase):
 
             neighbors = self.get_neighbors_ix_map()
             cent_cells = list(neighbors.keys())
-            cent_type = self.data.obs[self.cell_type_key][cent_cells]
-            for t, g in tqdm(
-                pd.DataFrame(
-                    {"cent_cell": cent_cells, "cent_type": cent_type,}
-                ).groupby("cent_type"),
-                **CONFIG.pbar(desc="NCD Markers"),
-            ):
-                cents = g["cent_cell"].values
-                markers, exp_matrix, _ = self.get_exp_matrix_fraction(
-                    markers=selected_markers,
-                    layers_key=layers_key,
-                    neighbors_ix=cents,
-                    std=exp_std_cutoff,
-                )
-                if len(markers) > 0:
-                    neigh_types = pd.DataFrame(
-                        [
-                            Counter(self.data.obs[self.cell_type_key][neighbors[i]])
-                            for i in cents
-                        ]
-                    )
-                    cent_exp = exp_matrix.T
-                    for ix, m in enumerate(markers):
-                        y = cent_exp[ix].copy()
-                        max_type, max_weight, corr, pvalue = max_contri_marker(
-                            neigh_types, y, tree_kwargs_
-                        )
-                        if (
-                            (pvalue < pval)
-                            & (abs(corr) > corr_cutoff)
-                            & (max_weight > importance_cutoff)
-                        ):
-                            result_data.append(
-                                [t, m, max_type, max_weight, corr, pvalue]
-                            )
+            df = self.data.obs.set_index(self.neighbors_ix_key)
+            cell_types = df[self.cell_type_key]
+            cent_type = cell_types[cent_cells]
 
-            self.result = pd.DataFrame(
-                data=result_data,
-                columns=[
-                    "cell_type",
-                    "marker",
-                    "neighbor_type",
-                    "dependency",
-                    "corr",
-                    "pvalue",
-                ],
+            ix, col, data = na.neighbor_components(
+                neighbors, dict(zip(df.index, cell_types))
+            )
+            neigh_comp = pd.DataFrame(data=data, index=ix, columns=col)
+
+            markers, exp_matrix, cut_data = self.get_exp_matrix_fraction(
+                markers=selected_markers, layers_key=layers_key,
             )
 
+            if len(markers) > 0:
+                for t, g in tqdm(
+                    pd.DataFrame(
+                        {"cent_cell": cent_cells, "cent_type": cent_type,}
+                    ).groupby("cent_type"),
+                    **CONFIG.pbar(desc="NCD Markers"),
+                ):
+                    cents = g["cent_cell"].values
+                    meta = (
+                        cut_data.obs.reset_index(drop=True)
+                        .reset_index()
+                        .set_index(self.neighbors_ix_key)
+                    )
+                    exp_ix = meta.loc[cents]["index"].values
+                    exp = exp_matrix[exp_ix]
+
+                    neigh_types = neigh_comp.loc[cents]
+                    cent_exp = exp.T
+                    for ix, m in enumerate(markers):
+                        y = cent_exp[ix].copy()
+                        max_type, max_weight, lo2_fc, pvalue = max_contri_marker(
+                            neigh_types,
+                            y,
+                            exp_std_cutoff,
+                            tree_kwargs_,
+                            importance_cutoff,
+                            pval,
+                        )
+                        if (max_type is not None) & (max_type != t):
+                            result_data.append(
+                                [t, m, max_type, max_weight, lo2_fc, pvalue]
+                            )
+
+                self.result = pd.DataFrame(
+                    data=result_data,
+                    columns=[
+                        "cell_type",
+                        "marker",
+                        "neighbor_type",
+                        "dependency",
+                        "log2_FC",
+                        "pvalue",
+                    ],
+                )
+
         else:
+            results_data = []
             neighbors = self.get_neighbors_ix_map()
             cent_cells = list(neighbors.keys())
+            df = self.data.obs.set_index(self.neighbors_ix_key)
             markers, exp_matrix, data = self.get_exp_matrix_fraction(
                 markers=selected_markers,
                 layers_key=layers_key,
                 neighbors_ix=cent_cells,
-                std=exp_std_cutoff,
             )
             if len(markers) > 0:
-                neigh_types = pd.DataFrame(
-                    [
-                        Counter(self.data.obs[self.cell_type_key][neighbors[i]])
-                        for i in cent_cells
-                    ]
+                ix, col, data = na.neighbor_components(
+                    neighbors, dict(zip(df.index, df[self.cell_type_key]))
                 )
+                neigh_comp = pd.DataFrame(data=data, index=ix, columns=col)
+                neigh_types = neigh_comp.loc[cent_cells]
 
-                results_data = []
                 cent_exp = exp_matrix.T
                 for ix, m in enumerate(
                     tqdm(markers, **CONFIG.pbar(desc="NCD Markers"))
                 ):
                     y = cent_exp[ix].copy()
-                    max_type, max_weight, corr, pvalue = max_contri_marker(
-                        neigh_types, y, tree_kwargs_
+                    max_type, max_weight, log2_fc, pvalue = max_contri_marker(
+                        neigh_types,
+                        y,
+                        exp_std_cutoff,
+                        tree_kwargs_,
+                        importance_cutoff,
+                        pval,
                     )
-                    if (
-                        (pvalue < pval)
-                        & (abs(corr) > corr_cutoff)
-                        & (max_weight > importance_cutoff)
-                    ):
-                        results_data.append([m, max_type, max_weight, corr, pvalue])
+                    if max_type is not None:
+                        results_data.append([m, max_type, max_weight, log2_fc, pvalue])
 
             self.result = pd.DataFrame(
                 data=results_data,
-                columns=["marker", "neighbor_type", "dependency", "corr", "pvalue"],
+                columns=["marker", "neighbor_type", "dependency", "log2_FC", "pvalue"],
             )
 
 
-def max_contri_marker(x, y, tree_kw):
-    reg = LGBMRegressor(**tree_kw).fit(x, y)
-    weights = np.asarray(reg.feature_importances_)
-    weights = (weights - weights.min()) / (weights.max() - weights.min())
-    max_ix = np.argmax(weights)
-    max_weight = weights[max_ix]
-    max_type = x.columns[max_ix]
-    corr, pvalue = spearmanr(y, x[max_type])
-    return max_type, max_weight, corr, pvalue
+def max_contri_marker(x, y, exp_std_cutoff, tree_kw, importance_cutoff, pval):
+    if np.std(y) > exp_std_cutoff:
+        reg = LGBMRegressor(**tree_kw).fit(x, y)
+        weights = np.asarray(reg.feature_importances_)
+        weights = normalize(weights)
+        if weights.mean() < 1:
+            max_ix = np.argmax(weights)
+            max_weight = weights[max_ix]
+            max_type = x.columns[max_ix]
+            if max_weight > importance_cutoff:
+                x = x.copy()
+                x["y"] = y
+                at_neighbor = x.iloc[:, max_ix] != 0
+                at_neighbor_exp = normalize(x[at_neighbor]["y"].to_numpy())
+                non_at_neighbor_exp = normalize(x[~at_neighbor]["y"].to_numpy())
+                u, pvalue = mannwhitneyu(at_neighbor_exp, non_at_neighbor_exp)
+                log2_fc = np.log2(at_neighbor_exp.mean() / non_at_neighbor_exp.mean())
+                if pvalue < pval:
+                    return max_type, max_weight, log2_fc, pvalue
+
+    return None, None, None, None

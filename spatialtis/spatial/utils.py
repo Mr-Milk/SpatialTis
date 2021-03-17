@@ -1,5 +1,6 @@
 from collections import OrderedDict
 
+import numpy as np
 from shapely.geometry import MultiPoint
 
 
@@ -59,3 +60,11 @@ def job_cutter(total, nums):
         k = [0, total]
     lk = len(k)
     return [(k[i], k[i + 1]) for i in range(lk) if i < (lk - 1)]
+
+
+def normalize(arr: np.ndarray):
+    min_max = arr.max() - arr.min()
+    if min_max != 0:
+        return (arr - arr.min()) / min_max
+    else:
+        return np.ones(arr.shape)

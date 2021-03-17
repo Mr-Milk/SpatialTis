@@ -4,9 +4,9 @@ from typing import Dict, Optional
 import numpy as np
 import pandas as pd
 from anndata import AnnData
+from lightgbm import LGBMRegressor
 from scipy.stats import spearmanr
 from tqdm import tqdm
-from xgboost import XGBRegressor
 
 from spatialtis import CONFIG
 from spatialtis.abc import AnalysisBase
@@ -35,7 +35,6 @@ class NMDMarkers(AnalysisBase):
     def __init__(
         self,
         data: AnnData,
-        use_cell_type: bool = False,
         exp_std_cutoff: Number = 1.0,
         pval: float = 0.01,
         selected_markers: Optional[Array] = None,
@@ -69,7 +68,7 @@ class NMDMarkers(AnalysisBase):
 
             for ix, m in enumerate(tqdm(markers, **CONFIG.pbar(desc="NMD Markers"))):
                 y = cent_exp[ix].copy()
-                reg = XGBRegressor(**tree_kwargs_).fit(neigh_exp, y)
+                reg = LGBMRegressor(**tree_kwargs_).fit(neigh_exp, y)
                 weights = reg.feature_importances_
                 max_ix = np.argmax(weights)
                 max_weight = weights[max_ix]

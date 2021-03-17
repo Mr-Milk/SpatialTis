@@ -26,7 +26,8 @@ def NCDMarkers(
     df = get_result(adata, key)
     if "cell_type" in df.columns:
         df["marker"] = df["cell_type"] + df["marker"]
-    df = df[["neighbor_type", "marker", "dependency", "corr"]]
+        df["color"] = 1
+    df = df[["neighbor_type", "marker", "dependency", "color"]]
     plot_kwargs = dict(
         width_vmin=0,
         width_vmax=1,

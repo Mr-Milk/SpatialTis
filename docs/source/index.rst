@@ -51,10 +51,6 @@ For a quick view of what it's does, check our following examples:
 
    tutorial/basic_usage
    tutorial/set_config
-   tutorial/plotting
-   tutorial/preprocessing
-   tutorial/example1
-   tutorial/example2
 
 .. toctree::
    :maxdepth: 1

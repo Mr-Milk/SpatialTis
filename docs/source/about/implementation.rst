@@ -102,7 +102,7 @@ To determine the cell distribution patterns in each ROI, spatialtis provided thr
 +--------------------------------------+--------+---------+---------+
 | Morisita’s index of dispersion: I    | I = 1  |  I < 1  |  I > 1  |
 +--------------------------------------+--------+---------+---------+
-| Clark and Evans aggregation index: R | R = 1  |  R < 1  |  R > 1  |
+| Clark and Evans aggregation index: R | R = 1  |  R > 1  |  R < 1  |
 +--------------------------------------+--------+---------+---------+
 
 Index of dispersion
@@ -154,22 +154,23 @@ at the first place.
 Index of aggregation is calculated as follow:
 
 .. math::
-    R = \frac{\overline{r}_A}{\overline{r}_E}
+    \overline{D} = \frac{\sum^n_{i=1} d_i}{n}
 
-:math:`\overline{r}_A` Mean distance to nearest neighbor: :math:`\overline{r}_A = \frac{\sum r_i}{n}`
+.. math::
+    E(D) = \frac{1}{2\sqrt{\rho}}
 
-:math:`r_i` Distance to nearest neighbor for individual :math:`i` (here we use euclidean distance)
+.. math::
+    SE(D) = \frac{4 - \pi}{4\rho\pi}
+
+.. math::
+    R = \frac{\overline{D}}{E(D)}
+
+.. math::
+    Z = \frac{\overline{D} - E(D)}{SE(D)}
+
+:math:`\rho` density of individuals: :math:`\rho = \frac{n}{\text{area}}`
 
 :math:`n` number of individuals
-
-:math:`\overline{r}_E` Expected distance to nearest neighbor: :math:`\overline{r}_E = \frac{1}{2\sqrt{\rho}}`
-
-:math:`\rho` density of individuals: :math:`\rho = \frac{n}{\text{area size}}`
-
-:math:`z = \frac{\overline{r}_A - \overline{r}_E}{S_r}`
-
-:math:`S_r` Standard error of the expected distance to nearest neighbor: :math:`S_r = \frac{0.26136}{\sqrt{n\rho}}`
-
 
 Spatial heterogeneity
 ----------------------

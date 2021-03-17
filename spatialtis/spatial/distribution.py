@@ -130,7 +130,7 @@ class spatial_distribution(AnalysisBase):
     +--------------------------------------+--------+---------+---------+
     | Morisita’s index of dispersion: I    | I = 1  |  I < 1  |  I > 1  |
     +--------------------------------------+--------+---------+---------+
-    | Clark and Evans aggregation index: R | R = 1  |  R < 1  |  R > 1  |
+    | Clark and Evans aggregation index: R | R = 1  |  R > 1  |  R < 1  |
     +--------------------------------------+--------+---------+---------+
 
     Args:
