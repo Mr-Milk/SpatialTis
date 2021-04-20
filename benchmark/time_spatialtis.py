@@ -1,9 +1,17 @@
+# Since we run in docker, there is not way to detect the actual cpus used by docker
+# Had to manually set it
+import sys
 from time import time
 
 import anndata as ad
 import pandas as pd
+from memory_profiler import memory_usage
 
 import spatialtis as st
+
+CPUs = int(sys.argv[1])
+
+
 
 st.CONFIG.CELL_TYPE_KEY = 'cell_type'
 st.CONFIG.CENTROID_KEY = 'centroid'
@@ -11,53 +19,63 @@ st.CONFIG.EXP_OBS = ['roi']
 st.CONFIG.MARKER_KEY = 'gene'
 st.CONFIG.VERBOSE = False
 
-cell_num = [1000, 5000, 10000]#, 50000, 100000]
+cell_num = [1000, 2000, 5000, 10000, 50000]
 
 nns_time = dict(software=[],
                 cell_num=[],
-                exec_time=[])
+                exec_time=[],
+                exec_mem=[],
+                cpu_count=[],
+                )
 
 cci_time = dict(software=[],
                 cell_num=[],
-                exec_time=[])
+                exec_time=[],
+                exec_mem=[],
+                cpu_count=[],
+                )
 
 
-def time_neighbors(n):
+def time_neighbors(data):
     s1 = time()
-    n.find_neighbors(expand=3)
+    st.find_neighbors(data, expand=3)
     s2 = time()
     return s2 - s1
 
 
-def time_na(n):
+def time_na(data):
     s1 = time()
-    st.neighborhood_analysis(n, order=False)
+    st.neighborhood_analysis(data, order=False, resample=500)
     s2 = time()
     return s2 - s1
 
 
 heat = False
+mem_prof = dict(max_usage=True, multiprocess=True, retval=True)
 
 for c in cell_num:
-    data = ad.read_h5ad(f"data_{c}/data.h5ad")
-    n = st.Neighbors(data, 'point')
+    data = ad.read_h5ad(f"fake_data/data_{c}/data.h5ad")
 
     if not heat:
-        time_neighbors(n)
-        time_na(n)
+        time_neighbors(data)
+        time_na(data)
         heat = True
 
     for _ in range(3):
-        nns_exec_time = time_neighbors(n)
-        cci_exec_time = time_na(n)
+        nns_exec_mem, nns_exec_time = memory_usage((time_neighbors, (data,)), **mem_prof)
+        cci_exec_mem, cci_exec_time = memory_usage((time_na, (data,)), **mem_prof)
 
         nns_time['software'].append('spatialtis')
         nns_time['cell_num'].append(c)
         nns_time['exec_time'].append(nns_exec_time)
+        nns_time['exec_mem'].append(nns_exec_mem)
+        nns_time['cpu_count'].append(CPUs)
 
         cci_time['software'].append('spatialtis')
         cci_time['cell_num'].append(c)
         cci_time['exec_time'].append(cci_exec_time)
+        cci_time['exec_mem'].append(cci_exec_mem)
+        cci_time['cpu_count'].append(CPUs)
 
-pd.DataFrame(nns_time).to_csv("spatialtis_nns_time.csv", index=False)
-pd.DataFrame(cci_time).to_csv("spatialtis_cci_time.csv", index=False)
+pd.DataFrame(nns_time).to_csv(f"result/spatialtis_nns_time_{CPUs}core.csv", index=False)
+pd.DataFrame(cci_time).to_csv(f"result/spatialtis_cci_time_{CPUs}core.csv", index=False)

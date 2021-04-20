@@ -1,3 +1,4 @@
 FROM rayproject/ray
 WORKDIR /usr/src/app
-RUN pip install spatialtis==0.2.0
+COPY ./SpatialTis/ .
+RUN pip install -e . && pip install memory_profiler

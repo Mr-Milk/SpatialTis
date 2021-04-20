@@ -62,11 +62,16 @@ class FakeSpatialData:
         data.write(self.p / "data.h5ad")
 
 
-cell_num = [1000, 5000, 10000, 50000, 100000]
+cell_num = [1000, 2000, 5000, 10000, 50000]
 gene_num = 100
 type_num = 30
 
 for c in cell_num:
-    data = FakeSpatialData(c, 100, 20, f'data_{c}')
+    try:
+        os.mkdir("fake_data")
+        os.mkdir("result")
+    except Exception:
+        pass
+    data = FakeSpatialData(c, 100, 20, f'fake_data/data_{c}')
     data.to_file()
     data.to_anndata()
