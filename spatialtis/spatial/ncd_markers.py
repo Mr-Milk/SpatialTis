@@ -173,7 +173,7 @@ def max_contri_marker(x, y, exp_std_cutoff, tree_kw, importance_cutoff, pval):
     if np.std(y) > exp_std_cutoff:
         reg = LGBMRegressor(**tree_kw).fit(x, y)
         weights = np.asarray(reg.feature_importances_)
-        weights = normalize(weights)
+        weights = weights / weights.sum()
         if weights.mean() < 1:
             max_ix = np.argmax(weights)
             max_weight = weights[max_ix]

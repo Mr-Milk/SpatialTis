@@ -1,3 +1,4 @@
+from ast import literal_eval
 from collections import OrderedDict
 
 import numpy as np
@@ -10,20 +11,22 @@ class NeighborsNotFoundError(Exception):
 
 # modify from PySAL pointpats
 class QuadStats:
-    def __init__(self, points, nx=None, ny=None, grid_size=None):
+    def __init__(self, points, bbox, nx=None, ny=None, grid_size=None):
 
         self.points = points
-        self.bbox = MultiPoint(points).bounds
-        self.width = self.bbox[2] - self.bbox[0]
-        self.height = self.bbox[3] - self.bbox[1]
+        self.bbox = bbox
+        minx, miny, maxx, maxy = self.bbox
+        self.width = maxx - minx
+        self.height = maxy - miny
 
         if (nx is None) & (ny is None):
             self.nx = int(self.width // grid_size)
             self.ny = int(self.height // grid_size)
+            self.nx = self.nx if self.nx != 0 else 1
+            self.ny = self.ny if self.ny != 0 else 1
         else:
             self.nx = nx
             self.ny = ny
-
         if (self.nx != 0) & (self.ny != 0):
             self.w_x = self.width / self.nx
             self.h_y = self.height / self.ny
@@ -68,3 +71,10 @@ def normalize(arr: np.ndarray):
         return (arr - arr.min()) / min_max
     else:
         return np.ones(arr.shape)
+
+
+def get_eval(df, key, need_eval):
+    if need_eval:
+        return [literal_eval(c) for c in df[key]]
+    else:
+        return [c for c in df[key]]

@@ -46,6 +46,10 @@ def spatial_co_expression(
             & (df["marker2"].isin(selected_markers))
         ]
 
+    if "cell1" in df.columns:
+        df["marker1"] = [f"{a}\n{b}" for a, b in zip(df["cell1"], df["marker1"])]
+        df["marker2"] = [f"{a}\n{b}" for a, b in zip(df["cell2"], df["marker2"])]
+
     if use == "heatmap":
         ndf = df.copy()
         ndf.columns = ["marker2", "marker1", "corr", "pvalue"]

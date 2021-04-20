@@ -1,110 +1,126 @@
 from ast import literal_eval
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
 from anndata import AnnData
 from scipy.spatial import cKDTree
 from scipy.stats import chi2, norm
+from shapely.geometry import MultiPoint
 from tqdm import tqdm
 
 from spatialtis.abc import AnalysisBase
 from spatialtis.config import CONFIG
-from spatialtis.spatial.utils import QuadStats
+from spatialtis.spatial.utils import QuadStats, get_eval
 from spatialtis.typing import Number, Tuple
 from spatialtis.utils import create_remote, doc, run_ray
 
 
-def VMR(points, resample, r, pval):
-    tree = cKDTree(points)
-    tmax = tree.maxes
-    tmin = tree.mins
+def get_pattern(ID, pvalue, pval):
+    reject_null = pvalue < pval
 
-    counts = []
-    for i in range(0, resample):
-        # select a random point
-        x = np.random.randint(tmin[0], tmax[0] + 1, 1)
-        y = np.random.randint(tmin[1], tmax[1] + 1, 1)
-        # query the point
-        query_point = [x[0], y[0]]
-        neighbor_points = tree.query_ball_point(query_point, r)
-        counts.append(len(neighbor_points))
-
-    # index of dispersion
-    counts = np.array(counts)
-    # since this is a sampling method, there is still a very small probability
-    # that we sample nothing
-    if np.mean(counts) != 0:
-        ID = np.var(counts) / np.mean(counts)
-
-        n = len(points)
-        chi2_value = (n - 1) * ID
-        p_value = 1 - chi2.cdf(chi2_value, n - 1)
-        accept_null = p_value > pval
-
-        if accept_null:
-            pattern = 1  # random
-        elif (not accept_null) & (ID > 1):
-            pattern = 3  # clustered
-        else:
+    if reject_null:
+        if ID > 1:
+            pattern = 3  # cluster
+        elif ID == 1:
             pattern = 2  # regular
-
-        return pattern
+        else:
+            pattern = 1  # random
     else:
+        pattern = 1  # random
+    return pattern
+
+
+def VMR(points, bbox, min_cells, pval, resample, r):
+    n = len(points)
+    if n < min_cells:
         return 0
-
-
-def QUAD(points, quad, pval):
-    counts = QuadStats(points, nx=quad[0], ny=quad[1]).grid_counts()
-    quad_count = list(counts.keys())
-    # index of dispersion
-    n = len(points)
-    sum_x = np.sum(quad_count)
-    sum_x_sqr = np.sum(np.square(quad_count))
-    ID = n * (sum_x_sqr - sum_x) / (sum_x ** 2 - sum_x)
-    chi2_value = ID * (sum_x - 1) + n - sum_x
-    p_value = 1 - chi2.cdf(chi2_value, n - 1)
-    accept_null = p_value > pval
-
-    if accept_null:
-        pattern = 1  # random
-    elif (not accept_null) & (ID > 1):
-        pattern = 3  # clustered
     else:
-        pattern = 2  # regular
+        minx, miny, maxx, maxy = bbox
+        tree = cKDTree(points)
 
-    return pattern
+        counts = []
+        for i in range(0, resample):
+            # select a random point
+            x = np.random.randint(minx, maxx + 1, 1)
+            y = np.random.randint(miny, maxy + 1, 1)
+            # query the point
+            query_point = [x[0], y[0]]
+            neighbor_points = tree.query_ball_point(query_point, r)
+            counts.append(len(neighbor_points))
+
+        # index of dispersion
+        counts = np.array(counts)
+        # since this is a sampling method, there is still a very small probability
+        # that we sample nothing
+        if np.mean(counts) != 0:
+            ID = np.var(counts) / np.mean(counts)
+            chi2_value = (n - 1) * ID
+            p_value = 1 - chi2.cdf(chi2_value, n - 1)
+            pattern = get_pattern(ID, p_value, pval)
+            return pattern
+        else:
+            return 0
 
 
-def NNS(points, pval):
-    tree = cKDTree(points)
-    tmax = tree.maxes
-    tmin = tree.mins
-
-    area = (tmax[0] - tmin[0]) * (tmax[1] - tmin[1])
-    r = np.array([tree.query(c, k=[2])[0][0] for c in points])
+def QUAD(points, bbox, min_cells, pval, quad=None, grid_size=None):
     n = len(points)
-    intensity = n / area
-    # sum_r = np.sum(r)
-    # r_A = sum_r / n
-    nnd_mean = r.mean()
-    nnd_expected_mean = 1 / (2 * np.sqrt(intensity))
-    R = nnd_mean / nnd_expected_mean
-
-    SE = np.sqrt(((4 - np.pi) * area) / (4 * np.pi)) / n
-    Z = (nnd_mean - nnd_expected_mean) / SE
-
-    p_value = norm.sf(abs(Z)) * 2
-    accept_null = p_value > pval
-
-    if accept_null:
-        pattern = 1  # random
-    elif (not accept_null) & (R < 1):
-        pattern = 3  # clustered
+    if n < min_cells:
+        return 0
     else:
-        pattern = 2  # regular
+        if quad is not None:
+            counts = QuadStats(points, bbox, nx=quad[0], ny=quad[1]).grid_counts()
+        else:
+            counts = QuadStats(points, bbox, grid_size=grid_size).grid_counts()
+        quad_count = np.asarray(list(counts.keys()))
+        # index of dispersion
+        sum_x = np.sum(quad_count)
+        sum_x_sqr = np.sum(np.square(quad_count))
+        if sum_x > 1:
+            ID = n * (sum_x_sqr - sum_x) / (sum_x ** 2 - sum_x)
+            chi2_value = ID * (sum_x - 1) + n - sum_x
+            p_value = 1 - chi2.cdf(chi2_value, n - 1)
+            pattern = get_pattern(ID, p_value, pval)
+        else:
+            # when there is only one cell or no cells in the grid
+            # it will cause ZeroDivision error
+            pattern = 0
+        return pattern
 
-    return pattern
+
+def NNS(points, bbox, min_cells, pval):
+    n = len(points)
+    if n < min_cells:
+        return 0
+    else:
+        minx, miny, maxx, maxy = bbox
+        tree = cKDTree(points)
+
+        area = (maxx - minx) * (maxy - miny)
+        r = np.array([tree.query(c, k=[2])[0][0] for c in points])
+        intensity = n / area
+        # sum_r = np.sum(r)
+        # r_A = sum_r / n
+        nnd_mean = r.mean()
+        nnd_expected_mean = 1 / (2 * np.sqrt(intensity))
+        R = nnd_mean / nnd_expected_mean
+
+        SE = np.sqrt(((4 - np.pi) * area) / (4 * np.pi)) / n
+        Z = (nnd_mean - nnd_expected_mean) / SE
+
+        p_value = norm.sf(abs(Z)) * 2
+        reject_null = p_value < pval
+
+        if reject_null:
+            if R < 1:
+                pattern = 3
+            elif R == 1:
+                pattern = 2
+            else:
+                pattern = 1
+        else:
+            pattern = 1  # random
+        return pattern
 
 
 @doc
@@ -136,10 +152,14 @@ class spatial_distribution(AnalysisBase):
     Args:
         data: {adata}
         method: "vmr", "quad", and "nns" (Default: "nns")
+        min_cells: The minimum number of the specific type of cells in a ROI to perform analysis
         pval: {pval}
-        r: Only use when method="vmr", diameter of sample window
+        r: Only use when method="vmr", determine diameter of sample window, should be in [0, 1], default is 0.1
+            this take 1/10 of the shortest side of the ROI as the diameter.
         resample: Only use when method="vmr", the number of random permutations to perform
-        quad: Only use when method="quad", how to perform rectangle tessellation
+        quad: Only use when method="quad", how to perform rectangle tessellation. Default is (10, 10), this will use a
+            10*10 grid to perform tessellation.
+        grid_size: Only use when method="quad", the side of grid when perform rectangle tessellation.
         **kwargs: {analysis_kwargs}
 
 
@@ -151,58 +171,70 @@ class spatial_distribution(AnalysisBase):
         self,
         data: AnnData,
         method: str = "nns",
+        min_cells: int = 5,
         pval: float = 0.01,
-        r: Optional[Number] = 10,
+        r: Number = 0.1,
         resample: int = 500,
-        quad: Tuple[int, int] = (10, 10),
+        quad: Optional[Tuple[int, int]] = None,
+        grid_size: Optional[Number] = None,
         **kwargs,
     ):
 
         if method == "vmr":
             self.method = "Variance-to-mean ratio"
             self._dist_func = VMR
-            self._args = [resample, r, pval]
         elif method == "quad":
             self.method = "Quadratic statistic"
             self._dist_func = QUAD
-            self._args = [quad, pval]
+            if quad is not None:
+                self._args = [quad]
+            else:
+                if grid_size is not None:
+                    self._args = [None, grid_size]
+                else:
+                    self._args = [(10, 10)]
         else:
             self.method = "Nearest neighbors search"
             self._dist_func = NNS
-            self._args = [pval]
+            self._args = []
 
         super().__init__(data, task_name="spatial_distribution", **kwargs)
 
         df = data.obs[self.exp_obs + [self.centroid_key, self.cell_type_key]]
         groups = df.groupby(self.exp_obs)
-
-        patterns = {}
         need_eval = self.is_col_str(self.centroid_key)
+
+        patterns = []
+        name_tags = []
+        type_tags = []
 
         if self.mp:
 
             dist_mp = create_remote(self._dist_func)
 
             jobs = []
-            track_id = []
             for name, group in groups:
                 if isinstance(name, str):
                     name = [name]
+                ROI = get_eval(group, self.centroid_key, need_eval)
+                bbox = MultiPoint(ROI).bounds
+
+                if method == "vmr":
+                    # auto generate a r parameters for every ROI
+                    # 1/10 of the shortest side
+                    minx, miny, maxx, maxy = bbox
+                    roi_r = min([maxx - minx, maxy - miny]) * r
+                    self._args = [resample, roi_r]
+
                 for t, tg in group.groupby(self.cell_type_key, sort=False):
-                    meta = (*name, t)
-                    if len(tg) > 1:
-                        if need_eval:
-                            cells = [literal_eval(c) for c in tg[self.centroid_key]]
-                        else:
-                            cells = [c for c in tg[self.centroid_key]]
-                        jobs.append(dist_mp.remote(cells, *self._args))
-                        track_id.append(meta)
-                        patterns[meta] = None
-                    else:
-                        patterns[meta] = 0
-            results = run_ray(jobs, desc="Finding distribution pattern")
-            for ids, p in zip(track_id, results):
-                patterns[ids] = results
+                    cells = get_eval(tg, self.centroid_key, need_eval)
+                    jobs.append(
+                        dist_mp.remote(cells, bbox, min_cells, pval, *self._args)
+                    )
+                    name_tags.append(name)
+                    type_tags.append(t)
+
+            patterns = run_ray(jobs, desc="Finding distribution pattern")
 
         else:
             for name, group in tqdm(
@@ -210,22 +242,25 @@ class spatial_distribution(AnalysisBase):
             ):
                 if isinstance(name, str):
                     name = [name]
-                for t, tg in group.groupby(self.cell_type_key, sort=False):
-                    meta = (*name, t)
-                    if len(tg) > 1:
+                ROI = get_eval(group, self.centroid_key, need_eval)
+                bbox = MultiPoint(ROI).bounds
 
-                        if need_eval:
-                            cells = [literal_eval(c) for c in tg[self.centroid_key]]
-                        else:
-                            cells = [c for c in tg[self.centroid_key]]
-                        patterns[meta] = self._dist_func(cells, *self._args)
-                    else:
-                        patterns[meta] = 0
+                if method == "vmr":
+                    minx, miny, maxx, maxy = bbox
+                    roi_r = min([maxx - minx, maxy - miny]) * r
+                    self._args = [resample, roi_r]
+
+                for t, tg in group.groupby(self.cell_type_key, sort=False):
+                    cells = get_eval(tg, self.centroid_key, need_eval)
+                    patterns.append(
+                        self._dist_func(cells, bbox, min_cells, pval, *self._args)
+                    )
+                    name_tags.append(name)
+                    type_tags.append(t)
 
         dist_patterns = []
-        for k, p in patterns.items():
-            dist_patterns.append([*k, p])
-
+        for n, t, p in zip(name_tags, type_tags, patterns):
+            dist_patterns.append([*n, t, p])
         self.result = pd.DataFrame(
             data=dist_patterns, columns=self.exp_obs + ["type", "pattern"]
         )

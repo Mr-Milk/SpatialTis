@@ -1,6 +1,7 @@
 from ast import literal_eval
 from typing import Any, Dict, Optional
 
+import numpy as np
 import pandas as pd
 from anndata import AnnData
 from scipy.spatial.distance import euclidean
@@ -71,17 +72,19 @@ class cell_community(AnalysisBase):
                 neighbors = [literal_eval(n) for n in g[self.neighbors_key]]
             else:
                 neighbors = [n for n in g[self.neighbors_key]]
-            vertices = [
-                {"name": i, "x": x, "y": y}
-                for i, (x, y) in zip(g[CONFIG.neighbors_ix_key], centroids)
-            ]
-            edges = neighbors
+
+            vertices = []
+            edge_mapper = {}
+            for i, (x, y) in zip(g[CONFIG.neighbors_ix_key], centroids):
+                vertices.append({"name": i, "x": x, "y": y})
+                edge_mapper[i] = (x, y)
+
             graph_edges = []
-            for k, vs in enumerate(edges):
+            for k, vs in zip(g[CONFIG.neighbors_ix_key], neighbors):
                 if len(vs) > 0:
                     for v in vs:
                         if k != v:
-                            distance = euclidean(centroids[k], centroids[v])
+                            distance = euclidean(edge_mapper[k], edge_mapper[v])
                             graph_edges.append(
                                 {"source": k, "target": v, "weight": distance}
                             )

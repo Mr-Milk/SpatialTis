@@ -128,7 +128,12 @@ class graph_layout_interactive(PyechartsMixin):
             )
         )
         self.plot.add(
-            "", plot_nodes, plot_edges, layout=layout, gravity=0.1,
+            "",
+            plot_nodes,
+            plot_edges,
+            layout=layout,
+            gravity=0.1,
+            label_opts=opts.LabelOpts(color="black"),
         ).set_global_opts(
             visualmap_opts=opts.VisualMapOpts(
                 range_color=color_pool, is_calculable=False, range_text=cbar_text,

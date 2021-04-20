@@ -47,9 +47,6 @@ class NMDMarkers(AnalysisBase):
         if not self.neighbors_exists:
             raise NeighborsNotFoundError("Run `find_neighbors` first before continue.")
 
-        if self.cell_type_key not in self.data.obs.keys():
-            use_cell_type = False
-
         tree_kwargs_ = {"n_jobs": -1, "random_state": 0, "importance_type": "gain"}
         if tree_kwargs is not None:
             for k, v in tree_kwargs.items():
@@ -61,21 +58,22 @@ class NMDMarkers(AnalysisBase):
             markers=selected_markers,
             layers_key=layers_key,
             neighbors=(cent_cells, neigh_cells),
-            std=exp_std_cutoff,
         )
         if len(markers) > 0:
             cent_exp = cent_exp.T
 
             for ix, m in enumerate(tqdm(markers, **CONFIG.pbar(desc="NMD Markers"))):
                 y = cent_exp[ix].copy()
-                reg = LGBMRegressor(**tree_kwargs_).fit(neigh_exp, y)
-                weights = reg.feature_importances_
-                max_ix = np.argmax(weights)
-                max_weight = weights[max_ix]
-                max_marker = markers[max_ix]
-                corr, pvalue = spearmanr(y, neigh_exp.T[max_ix])
-                if pvalue < pval:
-                    results_data.append([m, max_marker, max_weight, corr, pvalue])
+                if np.std(y) > exp_std_cutoff:
+                    reg = LGBMRegressor(**tree_kwargs_).fit(neigh_exp, y)
+                    weights = np.asarray(reg.feature_importances_)
+                    weights = weights / weights.sum()
+                    max_ix = np.argmax(weights)
+                    max_weight = weights[max_ix]
+                    max_marker = markers[max_ix]
+                    corr, pvalue = spearmanr(y, neigh_exp.T[max_ix])
+                    if pvalue < pval:
+                        results_data.append([m, max_marker, max_weight, corr, pvalue])
         else:
             warnings.warn("No markers left after filtering.")
         self.result = pd.DataFrame(

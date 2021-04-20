@@ -214,7 +214,7 @@ class cell_map_static(MatplotlibMixin):
                         )
                     )
             self.ax.scatter(
-                x=x, y=y, c=points_colors, s=self.cell_size, alpha=0.8,
+                x=x, y=y, c=points_colors, s=self.cell_size, alpha=0.9,
             )
             plt.tight_layout()
         else:

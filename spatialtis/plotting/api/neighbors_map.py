@@ -1,6 +1,7 @@
 from ast import literal_eval
 from typing import Dict, Optional
 
+import numpy as np
 from anndata import AnnData
 
 from spatialtis.config import CONFIG
@@ -55,8 +56,12 @@ def neighbors_map(
     else:
         neighs = [n for n in df[neighbors_key]]
 
+    # here we need to move the neighbors from its real ix to starting point 0
+    neighbors_min = np.asarray([i for n in neighs for i in n], dtype=int).min()
+    neighs = [(np.asarray(n) - neighbors_min).tolist() for n in neighs]
+
     edges = []
-    for i, n in zip(df[CONFIG.neighbors_ix_key], neighs):
+    for i, n in zip((df[CONFIG.neighbors_ix_key] - neighbors_min), neighs):
         for x in n:
             edges.append((i, x))
 

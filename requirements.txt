@@ -23,7 +23,6 @@ spatialentropy
 tqdm
 tifffile
 rich[jupyter]
-xgboost
 themepy
 
 # dev
@@ -42,5 +41,4 @@ setuptools
 nbsphinx
 nbsphinx_link
 ipython
-spatialtis
 lightgbm

@@ -6,17 +6,18 @@ import pandas as pd
 from anndata import AnnData
 from scipy.spatial import cKDTree
 from scipy.stats import norm
+from shapely.geometry import MultiPoint
 from tqdm import tqdm
 
 from spatialtis.abc import AnalysisBase
 from spatialtis.config import CONFIG
-from spatialtis.spatial.utils import QuadStats
+from spatialtis.spatial.utils import QuadStats, get_eval
 from spatialtis.typing import Array
 from spatialtis.utils import col2adata_obs, create_remote, doc, run_ray
 
 
-def _hotspot(cells, grid_size, level, pval):
-    q = QuadStats(cells, grid_size=grid_size)
+def _hotspot(cells, bbox, grid_size, level, pval):
+    q = QuadStats(cells, bbox, grid_size=grid_size)
 
     nx = q.nx
     ny = q.ny
@@ -107,6 +108,7 @@ class hotspot(AnalysisBase):
         if selected_types is not None:
             df = df[df[self.cell_type_key].isin(selected_types)]
         groups = df.groupby(self.exp_obs)
+        need_eval = self.is_col_str(self.centroid_key)
 
         hotcells = []
         if self.mp:
@@ -118,9 +120,12 @@ class hotspot(AnalysisBase):
             for name, group in groups:
                 for t, tg in group.groupby(self.cell_type_key):
                     if len(tg) > 1:
-                        cells = [literal_eval(c) for c in tg[self.centroid_key]]
+                        cells = get_eval(tg, self.centroid_key, need_eval)
+                        bbox = MultiPoint(cells).bounds
                         jobs.append(
-                            hotspot_mp.remote(cells, grid_size, search_level, pval)
+                            hotspot_mp.remote(
+                                cells, bbox, grid_size, search_level, pval
+                            )
                         )
                         indexs.append(tg.index)
                     elif len(tg) == 1:
@@ -135,8 +140,9 @@ class hotspot(AnalysisBase):
             for name, group in tqdm(groups, **CONFIG.pbar(desc="Hotspot analysis")):
                 for t, tg in group.groupby(self.cell_type_key):
                     if len(tg) > 1:
-                        cells = [literal_eval(c) for c in tg[self.centroid_key]]
-                        hots = _hotspot(cells, grid_size, search_level, pval)
+                        cells = get_eval(tg, self.centroid_key, need_eval)
+                        bbox = MultiPoint(cells).bounds
+                        hots = _hotspot(cells, bbox, grid_size, search_level, pval)
                         hotcells.append(pd.Series(hots, index=tg.index))
                     elif len(tg) == 1:
                         hotcells.append(pd.Series(["cold"], index=tg.index))

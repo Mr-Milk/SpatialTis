@@ -1,6 +1,4 @@
-import multiprocessing
-import warnings
-from itertools import combinations_with_replacement, product
+from itertools import combinations_with_replacement
 from typing import Optional
 
 import numpy as np
@@ -16,7 +14,17 @@ from spatialtis.typing import Array, Number
 from spatialtis.utils import create_remote, doc, run_ray
 
 
-def corr_types(markers, cent_exp, neigh_exp, cent, neigh, corr_func, pval, corr_cutoff):
+def corr_types(
+    markers,
+    cent_exp,
+    neigh_exp,
+    cent,
+    neigh,
+    corr_func,
+    pval,
+    corr_cutoff,
+    exp_std_cutoff,
+):
     result_data = []
     markers_num = len(markers)
     marker_ix = np.asarray(
@@ -25,8 +33,10 @@ def corr_types(markers, cent_exp, neigh_exp, cent, neigh, corr_func, pval, corr_
     for p1, p2 in marker_ix:
         v1 = cent_exp[p1]
         v2 = neigh_exp[p2]
+        guard1 = v1.std() > exp_std_cutoff
+        guard2 = v2.std() > exp_std_cutoff
         # add a guard that make sure not ZeroDivision warning occur
-        if (v1.sum() != 0) & (v2.sum() != 0):
+        if guard1 & guard2:
             corr_value, pvalue = corr_func(v1, v2)
             if (pvalue < pval) & (abs(corr_value) > corr_cutoff):
                 result_data.append(
@@ -35,15 +45,27 @@ def corr_types(markers, cent_exp, neigh_exp, cent, neigh, corr_func, pval, corr_
     return result_data
 
 
-def corr(marker_ix, markers, cent_exp, neigh_exp, corr_func, pval, corr_cutoff):
+def corr(
+    marker_ix,
+    markers,
+    cent_exp,
+    neigh_exp,
+    corr_func,
+    pval,
+    corr_cutoff,
+    exp_std_cutoff,
+):
     result_data = []
     for p1, p2 in marker_ix:
         v1 = cent_exp[p1]
         v2 = neigh_exp[p2]
-        if (v1.sum() != 0) & (v2.sum() != 0):
+        guard1 = v1.std() > exp_std_cutoff
+        guard2 = v2.std() > exp_std_cutoff
+        # add a guard that make sure not ZeroDivision warning occur
+        if guard1 & guard2:
             corr_value, pvalue = corr_func(v1, v2)
-        if (pvalue < pval) & (abs(corr_value) > corr_cutoff):
-            result_data.append([markers[p1], markers[p2], corr_value, pvalue])
+            if (pvalue < pval) & (abs(corr_value) > corr_cutoff):
+                result_data.append([markers[p1], markers[p2], corr_value, pvalue])
     return result_data
 
 
@@ -96,21 +118,26 @@ class spatial_co_expression(AnalysisBase):
             result_data = []
             neighbors = self.get_types_neighbors_ix(selected_types)
 
+            markers, exp_matrix, cut_data = self.get_exp_matrix_fraction(
+                markers=selected_markers, layers_key=layers_key,
+            )
+
             if self.mp:
                 corr_mp = create_remote(corr_types)
                 jobs = []
                 for cent, neighbrs_map in neighbors.items():
                     for neigh, (cent_cells, neigh_cells) in neighbrs_map.items():
-                        (
-                            markers,
-                            (cent_exp, neigh_exp),
-                            _,
-                        ) = self.get_exp_matrix_fraction(
-                            markers=selected_markers,
-                            neighbors=(cent_cells, neigh_cells),
-                            layers_key=layers_key,
-                            std=exp_std_cutoff,
+                        # to get the exp matrix of neighors and center cells
+                        meta = (
+                            cut_data.obs.reset_index(drop=True)
+                            .reset_index()
+                            .set_index(self.neighbors_ix_key)
                         )
+                        cent_exp_ix = meta.loc[cent_cells]["index"].values
+                        neigh_exp_ix = meta.loc[neigh_cells]["index"].values
+                        cent_exp = exp_matrix[cent_exp_ix]
+                        neigh_exp = exp_matrix[neigh_exp_ix]
+
                         jobs.append(
                             corr_mp.remote(
                                 markers,
@@ -121,6 +148,7 @@ class spatial_co_expression(AnalysisBase):
                                 corr_func,
                                 pval,
                                 corr_cutoff,
+                                exp_std_cutoff,
                             )
                         )
                 results = run_ray(jobs, desc="co-expression")
@@ -132,16 +160,15 @@ class spatial_co_expression(AnalysisBase):
                     neighbors.items(), **CONFIG.pbar(desc="co-expression")
                 ):
                     for neigh, (cent_cells, neigh_cells) in neighbrs_map.items():
-                        (
-                            markers,
-                            (cent_exp, neigh_exp),
-                            _,
-                        ) = self.get_exp_matrix_fraction(
-                            markers=selected_markers,
-                            neighbors=(cent_cells, neigh_cells),
-                            layers_key=layers_key,
-                            std=exp_std_cutoff,
+                        meta = (
+                            cut_data.obs.reset_index(drop=True)
+                            .reset_index()
+                            .set_index(self.neighbors_ix_key)
                         )
+                        cent_exp_ix = meta.loc[cent_cells]["index"].values
+                        neigh_exp_ix = meta.loc[neigh_cells]["index"].values
+                        cent_exp = exp_matrix[cent_exp_ix]
+                        neigh_exp = exp_matrix[neigh_exp_ix]
                         result_data += corr_types(
                             markers,
                             cent_exp.T,
@@ -151,6 +178,7 @@ class spatial_co_expression(AnalysisBase):
                             corr_func,
                             pval,
                             corr_cutoff,
+                            exp_std_cutoff,
                         )
 
             self.result = pd.DataFrame(
@@ -161,12 +189,20 @@ class spatial_co_expression(AnalysisBase):
         else:
             result_data = []
 
-            markers, exp_matrix, _ = self.get_exp_matrix_fraction(
-                selected_markers, layers_key, std=exp_std_cutoff
+            markers, exp_matrix, cut_data = self.get_exp_matrix_fraction(
+                markers=selected_markers, layers_key=layers_key
+            )
+            meta = (
+                cut_data.obs.reset_index(drop=True)
+                .reset_index()
+                .set_index(self.neighbors_ix_key)
             )
             cent_cells, neigh_cells = self.get_neighbors_ix_pair()
-            cent_exp = exp_matrix[cent_cells].T
-            neigh_exp = exp_matrix[neigh_cells].T
+            cent_exp_ix = meta.loc[cent_cells]["index"].values
+            neigh_exp_ix = meta.loc[neigh_cells]["index"].values
+
+            cent_exp = exp_matrix[cent_exp_ix].T
+            neigh_exp = exp_matrix[neigh_exp_ix].T
             marker_ix = np.asarray(
                 [i for i in combinations_with_replacement(range(len(markers)), 2)]
             )
@@ -188,6 +224,7 @@ class spatial_co_expression(AnalysisBase):
                             corr_func,
                             pval,
                             corr_cutoff,
+                            exp_std_cutoff,
                         )
                     )
                 results = run_ray(jobs, desc="co-expression")

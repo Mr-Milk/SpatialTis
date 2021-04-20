@@ -47,7 +47,7 @@ def spatial_distribution(
 
         plot_data = []
         plot_index = []
-        for t, g in df.groupby("type", sort=False):
+        for t, g in df.groupby("type"):
             plot_index.append(t)
             plot_data.append({0: 0, 1: 0, 2: 0, 3: 0, **Counter(g["pattern"])})
 

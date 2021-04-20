@@ -63,6 +63,9 @@ ANALYSIS = {
         "NMDMarkers", "Neighbor marker dependent markers", "nmd_markers"
     ),
     "prepare_svca": Analysis("prepare_scva", "Prepare files for running svca", "svca"),
+    "spatial_cluster": Analysis(
+        "spatial_cluster", "Spatial Distribution pattern", "cluster"
+    ),
 }
 
 

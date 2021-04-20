@@ -111,7 +111,8 @@ class heatmap(MatplotlibMixin):
             cbar_legends = [mpatches.Patch(label=l, color=c) for l, c in cbar_mapper]
 
         # return a ax_heatmap instance
-        self.fig = sns.clustermap(heat_data, **plot_kwargs)
+        self.map = sns.clustermap(heat_data, **plot_kwargs)
+        self.fig = self.map.fig
 
         # add legends for color annotations
         if row_colors is not None:
@@ -119,7 +120,7 @@ class heatmap(MatplotlibMixin):
                 mpatches.Patch(label=l, color=row_colors_mapper[l])
                 for l in row_colors_mapper
             ]
-            self.fig.ax_row_dendrogram.legend(
+            self.map.ax_row_dendrogram.legend(
                 loc="lower left",
                 borderaxespad=0,
                 bbox_to_anchor=(-3, 0.5),
@@ -133,7 +134,7 @@ class heatmap(MatplotlibMixin):
                 mpatches.Patch(label=l, color=col_colors_mapper[l])
                 for l in col_colors_labels
             ]
-            self.fig.ax_col_dendrogram.legend(
+            self.map.ax_col_dendrogram.legend(
                 loc="lower center",
                 borderaxespad=0,
                 bbox_to_anchor=(0.5, 1.05),
@@ -144,7 +145,7 @@ class heatmap(MatplotlibMixin):
             )
 
         if categorical_colorbar is not None:
-            self.fig.ax_heatmap.legend(
+            self.map.ax_heatmap.legend(
                 loc="lower left",
                 borderaxespad=0,
                 bbox_to_anchor=(1.1, 0.05),
@@ -154,13 +155,13 @@ class heatmap(MatplotlibMixin):
             )
 
         if row_label is None:
-            self.fig.ax_heatmap.set_yticklabels("")
-            self.fig.ax_heatmap.set_ylabel("")
-            self.fig.ax_heatmap.set_yticks([])
+            self.map.ax_heatmap.set_yticklabels("")
+            self.map.ax_heatmap.set_ylabel("")
+            self.map.ax_heatmap.set_yticks([])
 
         if col_label is None:
-            self.fig.ax_heatmap.set_xticklabels("")
-            self.fig.ax_heatmap.set_xlabel("")
-            self.fig.ax_heatmap.set_xticks([])
+            self.map.ax_heatmap.set_xticklabels("")
+            self.map.ax_heatmap.set_xlabel("")
+            self.map.ax_heatmap.set_xticks([])
 
         self.set_up()

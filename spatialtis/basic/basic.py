@@ -50,12 +50,14 @@ class cell_density(AnalysisBase):
         df = counter.iloc[:, len(self.exp_obs) : :]
 
         groups = data.obs[self.exp_obs + [self.centroid_key]].groupby(self.exp_obs)
-        area = [
-            MultiPoint(
-                [literal_eval(c) for c in g[self.centroid_key].tolist()]
-            ).convex_hull.area
-            for _, g in groups
-        ]
+        need_eval = self.is_col_str(self.centroid_key)
+        area = []
+        for _, g in groups:
+            if need_eval:
+                cells = [literal_eval(c) for c in g[self.centroid_key].tolist()]
+            else:
+                cells = [c for c in g[self.centroid_key].tolist()]
+            area.append(MultiPoint(cells).convex_hull.area)
         area = np.asarray(area) * ratio * ratio
         results = df.div(area, axis=0)
         results = pd.concat([counter.loc[:, self.exp_obs], results], axis=1)
