@@ -74,7 +74,8 @@ class graph_layout_interactive(PyechartsMixin):
         if self.palette is None:
             self.palette = ["RdBu"]
         color_pool = get_linear_colors(self.palette)
-
+        if len(edges_width) == 0:
+            raise ValueError("Empty input or your relationships are all self-loop.")
         if width_vmin is None:
             width_vmin = min(edges_width)
         if width_vmax is None:

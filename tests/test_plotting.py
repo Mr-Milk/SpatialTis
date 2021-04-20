@@ -133,6 +133,9 @@ def test_spatial_enrichment_order(data):
 
 
 def test_co_expression(data):
+    test_df = pd.DataFrame(data=[['CD20', 'CD20', 0.5, 0.0001],
+                                 ['CD57', 'CD57', 0.5, 0.0001]])
+    st.utils.df2adata_uns(test_df, data, 'co_expression')
     sp.spatial_co_expression(data, selected_markers=MARKERS, use="heatmap")
     sp.spatial_co_expression(data, use="graph_static")
     sp.spatial_co_expression(data, use="graph_interactive")

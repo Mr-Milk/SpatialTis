@@ -49,8 +49,13 @@ For a quick view of what it's does, check our following examples:
    :maxdepth: 1
    :caption: Tutorial
 
-   tutorial/basic_usage
-   tutorial/set_config
+   tutorial/preprocessing
+   tutorial/1-basic_usage
+   tutorial/2-basic_analysis
+   tutorial/3-spatial_analysis_cell_type
+   tutorial/4-spatial_analysis_marker
+   tutorial/5-roi_viz
+   tutorial/6-set_config
 
 .. toctree::
    :maxdepth: 1

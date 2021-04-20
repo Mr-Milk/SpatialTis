@@ -44,6 +44,8 @@ class heatmap(MatplotlibMixin):
         if clustermap_kwargs is None:
             clustermap_kwargs = {}
         raw = df.to_numpy()
+        if len(raw) == 0:
+            raise ValueError("Input has no data")
         raw_min = raw.min()
         raw_max = raw.max()
         plot_kwargs = {

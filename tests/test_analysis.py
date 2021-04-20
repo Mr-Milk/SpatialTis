@@ -78,10 +78,10 @@ def test_spatial_enrichment(data):
 
 
 def test_spatial_coexpression(data):
+    st.spatial_co_expression(data, method="pearson")
     st.spatial_co_expression(
         data, selected_markers=data.var[CONFIG.MARKER_KEY].tolist()
     )
-    st.spatial_co_expression(data, method="pearson")
 
 
 def test_community(data):
