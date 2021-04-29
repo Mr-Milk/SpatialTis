@@ -14,11 +14,7 @@ SpatialTis is a high-performance spatial analysis toolkit for single-cell multip
 
 **Documentation**: [![rtd](img/view_on_rtd.svg)](https://spatialtis.readthedocs.io/en/latest/)
 
-**Tutorial**: 
-- MIBI Data (Breast cancer, 180K cells) [![nbviewer](img/view_on_nbviewer.svg)](https://nbviewer.jupyter.org/github/Mr-Milk/SpatialTis-Tutorial/blob/master/Tutorial-1%20%28MIBI-dataset%29.ipynb) | [Download data](https://uofmacau-my.sharepoint.com/:u:/g/personal/yb97643_umac_mo/ET7-chqWIc9EqSEtY-foQ7IBURusGw9hlTSBC3xD_bNdgw?download=1)
-- IMC Data (Diabetes, 1.7M cells) [![nbviewer](img/view_on_nbviewer.svg)](https://nbviewer.jupyter.org/github/Mr-Milk/SpatialTis-Tutorial/blob/master/Tutorial-2%20%28IMC-dataset%29.ipynb) | [Download data](https://uofmacau-my.sharepoint.com/:u:/g/personal/yb97643_umac_mo/EXJFp1Nn_k5NphOp986lGvABmDNC_fNPGjrw5xN4NUPnRA?download=1)
-
-[Download](https://github.com/Mr-Milk/SpatialTis-Tutorial) the examples and try it on your own, see how fast SpatialTis is.
+[Quick Start](https://spatialtis.readthedocs.io/en/latest/tutorial/1-basic_usage.html)
 
 ## Installation
 

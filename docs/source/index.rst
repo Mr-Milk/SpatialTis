@@ -23,17 +23,7 @@ SpatialTis is a high-performance spatial analysis toolkit for single-cell multip
 - Parallel processing support
 - Rich visualizations options
 
-For a quick view of what it's does, check our following examples:
-
-- MIBI breast cancer 180K cells: |MIBI-tutorial|_
-- IMC diabetes 1.7M cells: |IMC-tutorial|_
-
-.. |MIBI-tutorial| image:: ../../img/view_on_nbviewer.svg
-.. _MIBI-tutorial: https://nbviewer.jupyter.org/github/Mr-Milk/SpatialTis-Tutorial/blob/master/Tutorial-1%20%28MIBI-dataset%29.ipynb
-
-.. |IMC-tutorial| image:: ../../img/view_on_nbviewer.svg
-.. _IMC-tutorial: https://nbviewer.jupyter.org/github/Mr-Milk/SpatialTis-Tutorial/blob/master/Tutorial-2%20%28IMC-dataset%29.ipynb
-
+For a quick view of what it's does, check our the tutorial part.
 
 .. toctree::
    :maxdepth: 1
