@@ -1,18 +1,3 @@
-# from .base import (
-#     DotMatrix,
-#     TriDotMatrix,
-#     colorcycle,
-#     dotplot,
-#     get_colors,
-#     get_linear_colors,
-#     graph_plot,
-#     graph_plot_interactive,
-#     heatmap,
-#     sankey,
-#     stacked_bar,
-#     tri_dotplot,
-#     violin_plot,
-# )
 import matplotlib as mpl
 
 from .api import (
@@ -34,22 +19,50 @@ from .api import (
 )
 from .base import get_colors, get_linear_colors
 
-try:
-    import themepy
+SPATIALTIS_STYLE = {
+    "lines.linewidth": 2,
+    "lines.markeredgecolor": "white",
+    "lines.markeredgewidth": 1,
+    "lines.markersize": 7,
+    "patch.linewidth": 1,
+    "patch.facecolor": "C0",
+    "patch.edgecolor": "black",
+    "text.color": "#707074",
+    "axes.edgecolor": "#D0D0E0",
+    "axes.grid": True,
+    "axes.grid.axis": "both",
+    "axes.titlesize": 10,
+    "axes.labelsize": 10,
+    "axes.labelcolor": "#707074",
+    "axes.spines.left": False,
+    "axes.spines.bottom": False,
+    "axes.spines.top": False,
+    "axes.spines.right": False,
+    "cycler-prop-cycles": [
+        "#00BEFF",
+        "#D4CA3A",
+        "#FF6DAE",
+        "#67E1B5",
+        "#EBACFA",
+        "#9E9E9E",
+        "#F1988E",
+        "#5DB15A",
+        "#E28544",
+        "#52B8AA",
+    ],
+    "xtick.color": "#707074",
+    "xtick.labelsize": 8,
+    "ytick.color": "#707074",
+    "ytick.labelsize": 8,
+    "grid.color": "#93939c",
+    "grid.linestyle": "--",
+    "grid.alpha": 0.2,
+    "figure.titlesize": 10,
+    "figure.titleweight": "bold",
+    "font.size": 8,
+}
 
-    theme = themepy.Theme()
-    theme.set_theme("gadfly")
-    theme.set_ticklabel_size()
-except ImportError:
-    pass
-
-mpl.rcParams["figure.titlesize"] = 10
-mpl.rcParams["figure.titleweight"] = "bold"
-mpl.rcParams["axes.titlesize"] = 10
-mpl.rcParams["axes.labelsize"] = 10
-mpl.rcParams["xtick.labelsize"] = 8
-mpl.rcParams["ytick.labelsize"] = 8
-mpl.rcParams["font.size"] = 8
+mpl.rcParams.update(SPATIALTIS_STYLE)
 
 # enable retina mode for all devices
 try:

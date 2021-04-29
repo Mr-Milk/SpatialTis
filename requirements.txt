@@ -23,7 +23,7 @@ spatialentropy
 tqdm
 tifffile
 rich[jupyter]
-themepy
+lightgbm
 
 # dev
 watchdog
@@ -41,4 +41,3 @@ setuptools
 nbsphinx
 nbsphinx_link
 ipython
-lightgbm
