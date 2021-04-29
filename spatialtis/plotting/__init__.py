@@ -1,4 +1,5 @@
 import matplotlib as mpl
+from matplotlib import cycler
 
 from .api import (
     NCDMarkers,
@@ -38,18 +39,21 @@ SPATIALTIS_STYLE = {
     "axes.spines.bottom": False,
     "axes.spines.top": False,
     "axes.spines.right": False,
-    "cycler-prop-cycles": [
-        "#00BEFF",
-        "#D4CA3A",
-        "#FF6DAE",
-        "#67E1B5",
-        "#EBACFA",
-        "#9E9E9E",
-        "#F1988E",
-        "#5DB15A",
-        "#E28544",
-        "#52B8AA",
-    ],
+    "axes.prop_cycle": cycler(
+        "color",
+        [
+            "#00BEFF",
+            "#D4CA3A",
+            "#FF6DAE",
+            "#67E1B5",
+            "#EBACFA",
+            "#9E9E9E",
+            "#F1988E",
+            "#5DB15A",
+            "#E28544",
+            "#52B8AA",
+        ],
+    ),
     "xtick.color": "#707074",
     "xtick.labelsize": 8,
     "ytick.color": "#707074",

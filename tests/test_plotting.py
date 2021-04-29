@@ -96,7 +96,7 @@ def test_cell_co_occurrence(data):
 
 
 def test_spatial_distribution(data):
-    sp.spatial_distribution(data, selected_types=TYPES)
+    # sp.spatial_distribution(data, selected_types=TYPES)
     sp.spatial_distribution(data, use='heatmap')
 
 
@@ -134,7 +134,9 @@ def test_spatial_enrichment_order(data):
 
 def test_co_expression(data):
     test_df = pd.DataFrame(data=[['CD20', 'CD20', 0.5, 0.0001],
-                                 ['CD57', 'CD57', 0.5, 0.0001]])
+                                 ['CD57', 'CD57', 0.5, 0.0001],
+                                 ['CD20', 'CD57', 0.5, 0.0001]],
+                           columns=['marker1', 'marker2', 'corr', 'pvalue'])
     st.utils.df2adata_uns(test_df, data, 'co_expression')
     sp.spatial_co_expression(data, selected_markers=MARKERS, use="heatmap")
     sp.spatial_co_expression(data, use="graph_static")
@@ -150,6 +152,10 @@ def test_NCDMarkers(data):
 
 
 def test_NMDMarkers(data):
+    test_df = pd.DataFrame(data=[['CD20', 'B', 0.5, 0.4],
+                                 ['CD23', 'C', 0.9, -0.4]],
+                           columns=["neighbor_marker", "marker", "dependency", "corr"])
+    st.utils.df2adata_uns(test_df, data, 'nmd_markers')
     sp.NMDMarkers(data)
 
 

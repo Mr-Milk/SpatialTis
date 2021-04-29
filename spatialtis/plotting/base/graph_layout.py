@@ -195,7 +195,8 @@ class graph_layout_static(MatplotlibMixin):
                 edges_data.append((e[0], e[1]))
                 edges_width.append(e[2])
                 edges_colors.append(e[3])
-
+        if len(edges_width) == 0:
+            raise ValueError("Empty input or your relationships are all self-loop.")
         if width_vmin is None:
             width_vmin = min(edges_width)
         if width_vmax is None:
