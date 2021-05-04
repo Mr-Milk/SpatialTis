@@ -1,0 +1,40 @@
+alphashape
+h5py==2.10.0 # This has to be fixed before the anndata solve the issue
+anndata
+bokeh
+colour
+colorama
+leidenalg
+matplotlib
+neighborhood_analysis>=0.2.1
+numpy
+pandas
+pyecharts
+python-igraph
+ray
+scikit-image
+selenium
+scikit-learn
+scipy
+seaborn
+Shapely
+snapshot_phantomjs
+spatialentropy
+tqdm
+tifffile
+rich[jupyter]
+lightgbm
+
+# test suite
+pytest
+pytest-cov
+pytest-datadir
+
+# doc
+sphinx
+sphinx-book-theme
+sphinx-autodoc-typehints
+setuptools
+nbsphinx
+nbsphinx_link
+ipython
