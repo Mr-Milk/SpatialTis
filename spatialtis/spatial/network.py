@@ -5,12 +5,12 @@ import numpy as np
 import pandas as pd
 from anndata import AnnData
 from scipy.spatial.distance import euclidean
-from tqdm import tqdm
 
 from spatialtis.abc import AnalysisBase
 from spatialtis.config import CONFIG
 from spatialtis.spatial.utils import NeighborsNotFoundError
 from spatialtis.utils import col2adata_obs, doc
+from spatialtis.utils.log import pbar_iter
 
 
 @doc
@@ -93,8 +93,8 @@ class cell_community(AnalysisBase):
 
         neighbors_graphs = dict(zip(names, graphs))
         sub_comm = []
-        for _, graph in tqdm(
-            neighbors_graphs.items(), **CONFIG.pbar(desc="Communities detection")
+        for _, graph in pbar_iter(
+            neighbors_graphs.items(), desc="Communities detection",
         ):
             part = leidenalg.find_partition(graph, partition_type, **partition_kwargs)
             sub_comm += part.membership

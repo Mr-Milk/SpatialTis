@@ -1,3 +1,7 @@
+from typing import Iterable
+
+from rich.progress import track
+
 from spatialtis.config import CONFIG
 from spatialtis.console import console
 
@@ -28,3 +32,8 @@ def log_print(text, custom=False, color="green", verbose=None):
             console.print(text, style=color)
         else:
             console.print(text)
+
+
+def pbar_iter(obj: Iterable, desc: str = None, **kwargs):
+    for i in track(obj, disable=CONFIG.VERBOSE, console=console, description=desc, **kwargs):
+        yield i

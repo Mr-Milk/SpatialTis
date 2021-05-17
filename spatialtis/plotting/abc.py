@@ -245,7 +245,7 @@ class PyechartsMixin(PlotBase):
 
     def render(self):
         """To render a pyecharts plot"""
-        self.plot.load_javascript()
+        # self.plot.load_javascript()
         return self.plot.render_notebook()
 
     def set_up(self):

@@ -7,13 +7,13 @@ import pandas as pd
 from anndata import AnnData
 from lightgbm import LGBMRegressor
 from scipy.stats import mannwhitneyu
-from tqdm import tqdm
 
 from spatialtis import CONFIG
 from spatialtis.abc import AnalysisBase
 from spatialtis.spatial.utils import NeighborsNotFoundError, normalize
 from spatialtis.typing import Array, Number
 from spatialtis.utils import doc
+from spatialtis.utils.log import pbar_iter
 
 try:
     import neighborhood_analysis as na
@@ -86,11 +86,11 @@ class NCDMarkers(AnalysisBase):
             )
 
             if len(markers) > 0:
-                for t, g in tqdm(
+                for t, g in pbar_iter(
                     pd.DataFrame(
                         {"cent_cell": cent_cells, "cent_type": cent_type,}
                     ).groupby("cent_type"),
-                    **CONFIG.pbar(desc="NCD Markers"),
+                    desc="NCD Markers",
                 ):
                     cents = g["cent_cell"].values
                     meta = (
@@ -149,7 +149,7 @@ class NCDMarkers(AnalysisBase):
 
                 cent_exp = exp_matrix.T
                 for ix, m in enumerate(
-                    tqdm(markers, **CONFIG.pbar(desc="NCD Markers"))
+                    pbar_iter(markers, desc="NCD Markers",)
                 ):
                     y = cent_exp[ix].copy()
                     max_type, max_weight, log2_fc, pvalue = max_contri_marker(

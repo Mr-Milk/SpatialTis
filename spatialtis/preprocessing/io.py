@@ -5,11 +5,11 @@ from typing import Optional, Sequence, Union
 import anndata as ad
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
 
 from spatialtis.config import CONFIG
 from spatialtis.preprocessing.geom import get_cell_exp_stack, mask2cells
 from spatialtis.utils import create_remote, doc, run_ray
+from spatialtis.utils.log import pbar_iter
 
 
 def get_roi(
@@ -203,9 +203,8 @@ class read_ROIs:
                 eccentricities += cells[3]
 
         else:
-            for exp_img, mask_img, obs in tqdm(
-                zip(self._exp_img, self._mask_img, self.obs),
-                **CONFIG.pbar(total=len(self._tree), desc="Process images",),
+            for exp_img, mask_img, obs in pbar_iter(
+                zip(self._exp_img, self._mask_img, self.obs), desc="Process images", total=len(self._exp_img)
             ):
                 [exp, cells] = get_roi(
                     exp_img,
@@ -230,8 +229,8 @@ class read_ROIs:
             index=[str(i) for i in range(0, len(ann_obs))],
         )
         ann_obs[CONFIG.AREA_KEY] = areas
-        ann_obs[CONFIG.SHAPE_KEY] = shapes
-        ann_obs[CONFIG.CENTROID_KEY] = centroids
+        ann_obs[CONFIG.SHAPE_KEY] = [str(s) for s in shapes]
+        ann_obs[CONFIG.CENTROID_KEY] = [str(c) for c in centroids]
         ann_obs[CONFIG.ECCENTRICITY_KEY] = eccentricities
 
         X = np.asarray(X, dtype=float)

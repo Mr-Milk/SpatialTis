@@ -5,13 +5,13 @@ import numpy as np
 import pandas as pd
 from anndata import AnnData
 from scipy.stats import pearsonr, spearmanr
-from tqdm import tqdm
 
 from spatialtis import CONFIG
 from spatialtis.abc import AnalysisBase
 from spatialtis.spatial.utils import NeighborsNotFoundError, job_cutter
 from spatialtis.typing import Array, Number
 from spatialtis.utils import create_remote, doc, run_ray
+from spatialtis.utils.log import pbar_iter
 
 
 def corr_types(
@@ -156,8 +156,8 @@ class spatial_co_expression(AnalysisBase):
                     result_data += r
 
             else:
-                for cent, neighbrs_map in tqdm(
-                    neighbors.items(), **CONFIG.pbar(desc="co-expression")
+                for cent, neighbrs_map in pbar_iter(
+                    neighbors.items(), desc="co-expression",
                 ):
                     for neigh, (cent_cells, neigh_cells) in neighbrs_map.items():
                         meta = (
@@ -231,7 +231,7 @@ class spatial_co_expression(AnalysisBase):
                 for r in results:
                     result_data += r
             else:
-                for p1, p2 in tqdm(marker_ix, **CONFIG.pbar(desc="co-expression")):
+                for p1, p2 in pbar_iter(marker_ix, desc="co-expression"):
                     v1 = cent_exp[p1]
                     v2 = neigh_exp[p2]
                     if (v1.sum() != 0) & (v2.sum() != 0):

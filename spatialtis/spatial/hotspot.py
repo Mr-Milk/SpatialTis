@@ -7,13 +7,13 @@ from anndata import AnnData
 from scipy.spatial import cKDTree
 from scipy.stats import norm
 from shapely.geometry import MultiPoint
-from tqdm import tqdm
 
 from spatialtis.abc import AnalysisBase
 from spatialtis.config import CONFIG
 from spatialtis.spatial.utils import QuadStats, get_eval
 from spatialtis.typing import Array
 from spatialtis.utils import col2adata_obs, create_remote, doc, run_ray
+from spatialtis.utils.log import pbar_iter
 
 
 def _hotspot(cells, bbox, grid_size, level, pval):
@@ -137,7 +137,7 @@ class hotspot(AnalysisBase):
                 hotcells.append(pd.Series(hots, index=i))
 
         else:
-            for name, group in tqdm(groups, **CONFIG.pbar(desc="Hotspot analysis")):
+            for name, group in pbar_iter(groups, desc="Hotspot analysis",):
                 for t, tg in group.groupby(self.cell_type_key):
                     if len(tg) > 1:
                         cells = get_eval(tg, self.centroid_key, need_eval)

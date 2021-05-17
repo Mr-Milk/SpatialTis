@@ -6,12 +6,12 @@ import pandas as pd
 from anndata import AnnData
 from scipy.stats import entropy
 from spatialentropy import altieri_entropy, leibovici_entropy
-from tqdm import tqdm
 
 from spatialtis.abc import AnalysisBase
 from spatialtis.config import CONFIG
 from spatialtis.typing import Array, Number
 from spatialtis.utils import create_remote, doc, run_ray
+from spatialtis.utils.log import pbar_iter
 
 
 @doc
@@ -138,8 +138,8 @@ class spatial_heterogeneity(AnalysisBase):
                     ent.append(e)
 
             else:
-                for n, g in tqdm(
-                    groups, **CONFIG.pbar(desc="Calculating heterogeneity")
+                for n, g in pbar_iter(
+                    groups, desc="Calculating heterogeneity",
                 ):
                     names.append(n)
                     types = list(g[self.cell_type_key])

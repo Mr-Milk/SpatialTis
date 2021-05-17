@@ -4,12 +4,12 @@ import numpy as np
 import pandas as pd
 from anndata import AnnData
 from scipy.stats import norm
-from tqdm import tqdm
 
 from spatialtis.abc import AnalysisBase
 from spatialtis.config import CONFIG
 from spatialtis.spatial.utils import NeighborsNotFoundError
 from spatialtis.utils import doc
+from spatialtis.utils.log import pbar_iter
 
 
 @doc
@@ -67,8 +67,8 @@ class neighborhood_analysis(AnalysisBase):
         cc = na.CellCombs(self.cell_types, order)
 
         results_data = []
-        for name, g in tqdm(
-            data.obs.groupby(self.exp_obs), **CONFIG.pbar(desc="Neighborhood analysis")
+        for name, g in pbar_iter(
+            data.obs.groupby(self.exp_obs), desc="Neighborhood analysis"
         ):
             if isinstance(name, str):
                 name = [name]

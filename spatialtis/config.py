@@ -8,8 +8,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional, Sequence
 
-from colorama import Fore
-from pyecharts.globals import WarningType
+from pyecharts.globals import WarningType, CurrentConfig, NotebookType
 from rich.table import Table
 
 from spatialtis.console import console
@@ -76,7 +75,7 @@ class _CONFIG(object):
         self._WORKING_ENV: Optional[str] = None
         self._VERBOSE: bool = True
         self.SAVE_PATH: Optional[Path] = None
-        self.PBAR: bool = True
+        # self.PBAR: bool = True
 
         self._ROI_KEY: Optional[str] = None
         self.OS: Optional[str] = None
@@ -90,7 +89,7 @@ class _CONFIG(object):
         self.MARKER_KEY: str = "marker"
         self.NEIGHBORS_KEY: str = "cell_neighbors"
         self.neighbors_ix_key: str = "neighbors_ix"
-        self.pbar_format: str = f"{Fore.GREEN}{{desc}} {{bar}} {{percentage:3.0f}}% {{remaining}}|{{elapsed}}{Fore.RESET}"
+        # self.pbar_format: str = f"{Fore.GREEN}{{desc}} {{bar}} {{percentage:3.0f}}% {{remaining}}|{{elapsed}}{Fore.RESET}"
 
     def __repr__(self):
         table = Table(title="Current configurations of SpatialTis")
@@ -181,8 +180,14 @@ class _CONFIG(object):
 
         if env is None:
             pass
-        elif env == "jupyter":
-            pass
+        elif (env == "jupyter") | (env == "jupyter_lab"):
+            CurrentConfig.NOTEBOOK_TYPE = NotebookType.JUPYTER_LAB
+        elif env == "jupyter_notebook":
+            CurrentConfig.NOTEBOOK_TYPE = NotebookType.JUPYTER_NOTEBOOK
+        elif env == "nteract":
+            CurrentConfig.NOTEBOOK_TYPE = NotebookType.NTERACT
+        elif env == "zeppelin":
+            CurrentConfig.NOTEBOOK_TYPE = NotebookType.ZEPPELIN
         elif env == "terminal":
             pass
         else:
@@ -222,15 +227,15 @@ class _CONFIG(object):
             raise TypeError("You can set a directory or set it True/False.")
         self.SAVE_PATH = path
 
-    def pbar(self, **kwargs):
-        pbar_config = dict(
-            **kwargs,
-            file=sys.stdout,
-            disable=not self.PBAR,
-            bar_format=self.pbar_format,
-        )
-
-        return pbar_config
+    # def pbar(self, **kwargs):
+    #     pbar_config = dict(
+    #         **kwargs,
+    #         # file=sys.stdout,
+    #         disable=not self.PBAR,
+    #         # bar_format=self.pbar_format,
+    #     )
+    #
+    #     return pbar_config
 
 
 CONFIG = _CONFIG()
@@ -240,13 +245,13 @@ CONFIG.OS = system_os
 
 if console.is_dumb_terminal:
     CONFIG.WORKING_ENV = None
-    CONFIG.pbar_format = (
-        f"{{desc}} {{bar}} {{percentage:3.0f}}% {{remaining}}|{{elapsed}}"
-    )
+    # CONFIG.pbar_format = (
+    #     f"{{desc}} {{bar}} {{percentage:3.0f}}% {{remaining}}|{{elapsed}}"
+    # )
 elif console.is_jupyter:
-    CONFIG.WORKING_ENV = "jupyter"
+    CONFIG.WORKING_ENV = "jupyter_lab"
 elif console.is_terminal:
     CONFIG.WORKING_ENV = "terminal"
 else:
     CONFIG.WORKING_ENV = None
-    CONFIG.PBAR = False
+    # CONFIG.PBAR = False

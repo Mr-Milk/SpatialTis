@@ -121,6 +121,8 @@ class AnalysisBase(Timer):
             self.method = method
         if exp_obs is None:
             self.exp_obs = CONFIG.EXP_OBS
+            if self.exp_obs is None:
+                raise ValueError("Please set CONFIG.EXP_OBS or pass `exp_obs=`")
         elif isinstance(exp_obs, (str, int, float)):
             self.exp_obs = [exp_obs]
         else:

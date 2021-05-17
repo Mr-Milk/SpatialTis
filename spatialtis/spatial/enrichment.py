@@ -6,13 +6,13 @@ import numpy as np
 import pandas as pd
 from anndata import AnnData
 from scipy.stats import norm
-from tqdm import tqdm
 
 from spatialtis.abc import AnalysisBase
 from spatialtis.config import CONFIG
 from spatialtis.spatial.utils import NeighborsNotFoundError
 from spatialtis.typing import Array
 from spatialtis.utils import doc
+from spatialtis.utils.log import pbar_iter
 
 
 @doc
@@ -79,9 +79,9 @@ class spatial_enrichment_analysis(AnalysisBase):
         need_eval = self.is_col_str(self.neighbors_key)
         results_data = []
 
-        for name, roi in tqdm(
+        for name, roi in pbar_iter(
             data.obs.groupby(self.exp_obs),
-            **CONFIG.pbar(desc="Spatial enrichment analysis"),
+            desc="Spatial enrichment analysis",
         ):
             if isinstance(name, str):
                 name = [name]

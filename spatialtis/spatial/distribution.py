@@ -7,13 +7,13 @@ from anndata import AnnData
 from scipy.spatial import cKDTree
 from scipy.stats import chi2, norm
 from shapely.geometry import MultiPoint
-from tqdm import tqdm
 
 from spatialtis.abc import AnalysisBase
 from spatialtis.config import CONFIG
 from spatialtis.spatial.utils import QuadStats, get_eval
 from spatialtis.typing import Number, Tuple
 from spatialtis.utils import create_remote, doc, run_ray
+from spatialtis.utils.log import pbar_iter
 
 
 def get_pattern(ID, pvalue, pval):
@@ -237,8 +237,8 @@ class spatial_distribution(AnalysisBase):
             patterns = run_ray(jobs, desc="Finding distribution pattern")
 
         else:
-            for name, group in tqdm(
-                groups, **CONFIG.pbar(desc="Finding distribution pattern"),
+            for name, group in pbar_iter(
+                groups, desc="Finding distribution pattern",
             ):
                 if isinstance(name, str):
                     name = [name]

@@ -1,9 +1,7 @@
 import logging
 from typing import Callable
 
-from tqdm import tqdm
-
-from spatialtis.config import CONFIG
+from spatialtis.utils.log import pbar_iter
 
 
 def create_remote(funcs: Callable):
@@ -33,7 +31,7 @@ def run_ray(jobs, desc=""):
             done, obj_ids = ray.wait(obj_ids)
             yield ray.get(done[0])
 
-    for _ in tqdm(exec_iterator(jobs), **CONFIG.pbar(total=len(jobs), desc=desc)):
+    for _ in pbar_iter(exec_iterator(jobs), desc=desc, total=len(jobs)):
         pass
 
     return ray.get(jobs)

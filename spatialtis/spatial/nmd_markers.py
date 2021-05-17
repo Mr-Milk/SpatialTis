@@ -6,13 +6,13 @@ import pandas as pd
 from anndata import AnnData
 from lightgbm import LGBMRegressor
 from scipy.stats import spearmanr
-from tqdm import tqdm
 
 from spatialtis import CONFIG
 from spatialtis.abc import AnalysisBase
 from spatialtis.spatial.utils import NeighborsNotFoundError
 from spatialtis.typing import Array, Number
 from spatialtis.utils import doc
+from spatialtis.utils.log import pbar_iter
 
 
 @doc
@@ -62,7 +62,7 @@ class NMDMarkers(AnalysisBase):
         if len(markers) > 0:
             cent_exp = cent_exp.T
 
-            for ix, m in enumerate(tqdm(markers, **CONFIG.pbar(desc="NMD Markers"))):
+            for ix, m in enumerate(pbar_iter(markers, desc="NMD Markers",)):
                 y = cent_exp[ix].copy()
                 if np.std(y) > exp_std_cutoff:
                     reg = LGBMRegressor(**tree_kwargs_).fit(neigh_exp, y)

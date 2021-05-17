@@ -4,12 +4,12 @@ from typing import Optional
 
 import pandas as pd
 from anndata import AnnData
-from tqdm import tqdm
 
 from spatialtis.abc import AnalysisBase
 from spatialtis.config import CONFIG
 from spatialtis.typing import Number
 from spatialtis.utils import col2adata_obs, doc
+from spatialtis.utils.log import pbar_iter
 
 
 @doc
@@ -84,9 +84,9 @@ class find_neighbors(AnalysisBase):
             need_eval = self.is_col_str(self.shape_key)
             bboxs = []
             labels = []
-            for n, g in tqdm(
+            for n, g in pbar_iter(
                 data.obs.groupby(self.exp_obs, sort=False),
-                **CONFIG.pbar(desc="Get cell bbox"),
+                desc="Get cell bbox",
             ):
                 shapes = g[self.shape_key]
                 if need_eval:
@@ -98,8 +98,8 @@ class find_neighbors(AnalysisBase):
                 labels.append(list(g[self.neighbors_ix_key]))
                 track_ix += list(g.index)
 
-            for bbox, label in tqdm(
-                zip(bboxs, labels), **CONFIG.pbar(desc="Find neighbors")
+            for bbox, label in pbar_iter(
+                zip(bboxs, labels), desc="Find neighbors", total=len(bbox),
             ):
                 if expand is not None:
                     neighbors += na.get_bbox_neighbors(
@@ -108,9 +108,11 @@ class find_neighbors(AnalysisBase):
                 else:
                     neighbors += na.get_bbox_neighbors(bbox, scale=scale, labels=label)
         else:
-            for n, g in tqdm(
-                data.obs.groupby(self.exp_obs, sort=False),
-                **CONFIG.pbar(desc="Find neighbors"),
+            groups = data.obs.groupby(self.exp_obs, sort=False)
+            for n, g in pbar_iter(
+                groups,
+                desc="Find neighbors",
+                total=len(groups),
             ):
                 cells = [literal_eval(c) for c in g[self.centroid_key]]
                 neighbors += na.get_point_neighbors(
