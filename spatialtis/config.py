@@ -83,6 +83,8 @@ class _CONFIG(object):
 
         # used key name to store info in anndata
         self.CENTROID_KEY: str = "centroid"
+        self.CENTROID_X_KEY: str = "x"
+        self.CENTROID_Y_KEY: str = "y"
         self.AREA_KEY: str = "area"
         self.SHAPE_KEY: str = "cell_shape"
         self.ECCENTRICITY_KEY: str = "eccentricity"
