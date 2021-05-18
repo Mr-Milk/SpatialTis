@@ -18,12 +18,12 @@ from spatialtis.utils import doc, get_result
 
 @doc
 def spatial_enrichment_analysis(
-    data: AnnData,
-    groupby: Optional[Sequence[str]] = None,
-    selected_markers: Optional[Sequence] = None,
-    key: Optional[str] = None,
-    use: str = "dot",  # heatmap, graph
-    **kwargs,
+        data: AnnData,
+        groupby: Optional[Sequence[str]] = None,
+        selected_markers: Optional[Sequence] = None,
+        key: Optional[str] = None,
+        use: str = "dot",  # heatmap, graph
+        **kwargs,
 ):
     """Visualization for spatial enrichment analysis
 
@@ -54,7 +54,7 @@ def spatial_enrichment_analysis(
     if selected_markers is not None:
         df = df[
             df["marker1"].isin(selected_markers) & df["marker2"].isin(selected_markers)
-        ]
+            ]
     unique_types = np.unique(df["marker1"])
     if use == "heatmap":
         df = df.pivot(index=exp_obs, columns=["marker1", "marker2"], values="value")
@@ -121,7 +121,7 @@ def spatial_enrichment_analysis(
                 0
                 if sign_size == 0
                 else (association if association > avoidance else -avoidance)
-                / (association + avoidance)
+                     / (association + avoidance)
             )
             plot_data.append([real_size, sign_size, sign_dir])
         plot_df = pd.DataFrame(

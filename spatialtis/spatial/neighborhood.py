@@ -6,7 +6,6 @@ from anndata import AnnData
 from scipy.stats import norm
 
 from spatialtis.abc import AnalysisBase
-from spatialtis.config import CONFIG
 from spatialtis.spatial.utils import NeighborsNotFoundError
 from spatialtis.utils import doc
 from spatialtis.utils.log import pbar_iter
@@ -38,13 +37,13 @@ class neighborhood_analysis(AnalysisBase):
     """
 
     def __init__(
-        self,
-        data: AnnData,
-        method: str = "pval",
-        resample: int = 1000,
-        pval: float = 0.01,
-        order: bool = False,
-        **kwargs,
+            self,
+            data: AnnData,
+            method: str = "pval",
+            resample: int = 1000,
+            pval: float = 0.01,
+            order: bool = False,
+            **kwargs,
     ):
         if method == "pval":
             self.method = "pseudo p-value"
@@ -68,7 +67,7 @@ class neighborhood_analysis(AnalysisBase):
 
         results_data = []
         for name, g in pbar_iter(
-            data.obs.groupby(self.exp_obs), desc="Neighborhood analysis"
+                data.obs.groupby(self.exp_obs), desc="Neighborhood analysis"
         ):
             if isinstance(name, str):
                 name = [name]

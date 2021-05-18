@@ -36,19 +36,19 @@ class graph_layout_interactive(PyechartsMixin):
     """
 
     def __init__(
-        self,
-        edges: List[Tuple[str, str, Number, Number]],
-        max_width: int = 5,
-        min_width: int = 0,
-        curve: float = 0.2,
-        width_vmin: Optional[int] = None,
-        width_vmax: Optional[int] = None,
-        color_vmin: Optional[int] = None,
-        color_vmax: Optional[int] = None,
-        cbar_text: Optional[List] = None,
-        layout: str = "force",
-        directed: bool = False,
-        **plot_options,
+            self,
+            edges: List[Tuple[str, str, Number, Number]],
+            max_width: int = 5,
+            min_width: int = 0,
+            curve: float = 0.2,
+            width_vmin: Optional[int] = None,
+            width_vmax: Optional[int] = None,
+            color_vmin: Optional[int] = None,
+            color_vmax: Optional[int] = None,
+            cbar_text: Optional[List] = None,
+            layout: str = "force",
+            directed: bool = False,
+            **plot_options,
     ):
         super().__init__(**plot_options)
         plot_nodes = []
@@ -141,7 +141,7 @@ class graph_layout_interactive(PyechartsMixin):
             ),
             toolbox_opts=opts.ToolboxOpts(
                 feature={
-                    "saveAsImage": {"title": "Save", "pixelRatio": 5,},
+                    "saveAsImage": {"title": "Save", "pixelRatio": 5, },
                     "restore": {"title": "Restore"},
                 },
             ),
@@ -171,19 +171,19 @@ class graph_layout_static(MatplotlibMixin):
     """
 
     def __init__(
-        self,
-        edges: List[Tuple[str, str, Number, Number]],
-        max_width: int = 5,
-        min_width: int = 0,
-        curve: float = 0.2,
-        width_vmin: Optional[int] = None,
-        width_vmax: Optional[int] = None,
-        color_vmin: Optional[int] = None,
-        color_vmax: Optional[int] = None,
-        cbar_text: Optional[List] = None,
-        layout: str = "spring_layout",
-        directed: bool = False,
-        **plot_options,
+            self,
+            edges: List[Tuple[str, str, Number, Number]],
+            max_width: int = 5,
+            min_width: int = 0,
+            curve: float = 0.2,
+            width_vmin: Optional[int] = None,
+            width_vmax: Optional[int] = None,
+            color_vmin: Optional[int] = None,
+            color_vmax: Optional[int] = None,
+            cbar_text: Optional[List] = None,
+            layout: str = "spring_layout",
+            directed: bool = False,
+            **plot_options,
     ):
         super().__init__(**plot_options)
         edges_data = []

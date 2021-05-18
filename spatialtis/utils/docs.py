@@ -15,7 +15,7 @@ PARAMETERS_DOCSTRINGS = dict(
     centroid_key="The key to store cell centroid in `AnnData.obs` (Default: `spatialtis.CONFIG.CENTROID_KEY`)",
     area_key="The key to store cell area in `AnnData.obs` (Default: `spatialtis.CONFIG.AREA_KEY`)",
     eccentricity_key="The key to store cell eccentricity in `AnnData.obs` "
-    "(Default: `spatialtis.CONFIG.ECCENTRICITY_KEY`)",
+                     "(Default: `spatialtis.CONFIG.ECCENTRICITY_KEY`)",
     shape_key="The key to store cell shape in `AnnData.obs` (Default: `spatialtis.CONFIG.SHAPE_KEY`)",
     community_key="The key to store cell communities in `AnnData.obs`",
     neighbors_key="The key to store cell neighbors in `AnnData.obs`",

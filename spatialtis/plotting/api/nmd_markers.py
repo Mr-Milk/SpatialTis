@@ -9,7 +9,7 @@ from spatialtis.utils import doc, get_result
 
 @doc
 def NMDMarkers(
-    adata: AnnData, key: Optional[str] = None, use: str = "static", **kwargs,
+        adata: AnnData, key: Optional[str] = None, use: str = "static", **kwargs,
 ):
     """(pyecharts) plotting function for expression influenced by neighbor cells
 

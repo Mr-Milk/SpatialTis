@@ -21,13 +21,13 @@ class bar_static(MatplotlibMixin):
     """
 
     def __init__(
-        self,
-        data: pd.DataFrame,
-        x: str,
-        y: str,
-        sort: bool = True,
-        direction: str = "vertical",
-        **plot_options,
+            self,
+            data: pd.DataFrame,
+            x: str,
+            y: str,
+            sort: bool = True,
+            direction: str = "vertical",
+            **plot_options,
     ):
         super().__init__(**plot_options)
         if sort:

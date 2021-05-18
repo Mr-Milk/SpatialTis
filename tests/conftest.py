@@ -15,7 +15,9 @@ TEST_DIR = Path(os.path.dirname(os.path.abspath(__file__)))
 def create_data():
     test_data_dir = TEST_DIR / "data"
     tmp_dir = TEST_DIR / "tmp"
-    shutil.copytree(test_data_dir, tmp_dir, dirs_exist_ok=True)
+    if tmp_dir.exists():
+        shutil.rmtree(tmp_dir)
+    shutil.copytree(test_data_dir, tmp_dir)
     yield
     shutil.rmtree(tmp_dir)
 

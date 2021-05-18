@@ -17,11 +17,11 @@ def writer_verbose(key, part: str = "uns", verbose: Optional[bool] = None):
 
 
 def df2adata_uns(
-    df: pd.DataFrame,
-    adata: AnnData,
-    key: str,
-    params: Optional[Dict] = None,
-    verbose: Optional[bool] = None,
+        df: pd.DataFrame,
+        adata: AnnData,
+        key: str,
+        params: Optional[Dict] = None,
+        verbose: Optional[bool] = None,
 ):
     """Write pandas.DataFrame with parameters to `AnnData.uns`
 
@@ -55,7 +55,7 @@ def df2adata_uns(
 
 
 def col2adata_obs(
-    col: Sequence, adata: AnnData, key: str, verbose: Optional[bool] = None
+        col: Sequence, adata: AnnData, key: str, verbose: Optional[bool] = None
 ):
     """Write an array to `AnnData.obs`
 
@@ -71,7 +71,7 @@ def col2adata_obs(
 
 
 def get_result(
-    adata: AnnData, key: str, params: bool = False,
+        adata: AnnData, key: str, params: bool = False,
 ) -> Union[pd.DataFrame, Tuple[pd.DataFrame, Dict]]:
     """Read spatialtis result from `AnnData.uns` as `pandas.DataFrame` object
 

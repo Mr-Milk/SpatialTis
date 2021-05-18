@@ -7,9 +7,8 @@ from matplotlib.lines import Line2D
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 from spatialtis.utils import doc
-
-from ..abc import MatplotlibMixin
 from .palette import get_linear_colors
+from ..abc import MatplotlibMixin
 
 
 @doc
@@ -35,21 +34,21 @@ class dot_matrix(MatplotlibMixin):
     """
 
     def __init__(
-        self,
-        matrix: Optional[Sequence] = None,
-        dot_color: Optional[Sequence] = None,
-        dot_size: Optional[Sequence] = None,
-        xlabels: Optional[Sequence] = None,
-        ylabels: Optional[Sequence] = None,
-        show_ticks: bool = True,
-        matrix_cbar_text: Optional[Mapping] = None,
-        dot_cbar_text: Optional[Mapping] = None,
-        matrix_cbar_title: Optional[str] = None,
-        dot_cbar_title: Optional[str] = None,
-        size_legend_title: Optional[str] = None,
-        matrix_palette: Optional[Sequence] = None,
-        dot_palette: Optional[Sequence] = None,
-        **plot_options,
+            self,
+            matrix: Optional[Sequence] = None,
+            dot_color: Optional[Sequence] = None,
+            dot_size: Optional[Sequence] = None,
+            xlabels: Optional[Sequence] = None,
+            ylabels: Optional[Sequence] = None,
+            show_ticks: bool = True,
+            matrix_cbar_text: Optional[Mapping] = None,
+            dot_cbar_text: Optional[Mapping] = None,
+            matrix_cbar_title: Optional[str] = None,
+            dot_cbar_title: Optional[str] = None,
+            size_legend_title: Optional[str] = None,
+            matrix_palette: Optional[Sequence] = None,
+            dot_palette: Optional[Sequence] = None,
+            **plot_options,
     ):
         super().__init__(**plot_options)
 
@@ -143,7 +142,7 @@ class dot_matrix(MatplotlibMixin):
     def _draw_rect(self):
 
         rects = [
-            plt.Rectangle((j - 0.5, i - 0.5), 1, 1,)
+            plt.Rectangle((j - 0.5, i - 0.5), 1, 1, )
             for j, i in zip(self.x.flat, self.y.flat)
         ]
         color_array = self.matrix.flatten()
@@ -166,7 +165,7 @@ class dot_matrix(MatplotlibMixin):
 
         R = self.dot_size / self.size_max / 2 * 0.9
         circles = [
-            plt.Circle((j, i), radius=r,)
+            plt.Circle((j, i), radius=r, )
             for r, j, i in zip(R.flat, self.x.flat, self.y.flat)
         ]
         color_array = self.dot_color.flatten()

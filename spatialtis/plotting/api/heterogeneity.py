@@ -10,11 +10,11 @@ from spatialtis.utils import doc, get_result
 
 @doc
 def spatial_heterogeneity(
-    data: AnnData,
-    groupby: Optional[List[str]] = None,
-    key: Optional[str] = None,
-    metric: str = "heterogeneity",
-    **kwargs,
+        data: AnnData,
+        groupby: Optional[List[str]] = None,
+        key: Optional[str] = None,
+        metric: str = "heterogeneity",
+        **kwargs,
 ):
     """Visualization for cell morphology
 

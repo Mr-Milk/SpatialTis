@@ -6,10 +6,10 @@ from shapely.geometry import MultiPoint
 
 
 def mask2cells(
-    mask_img: Union[Path, str],
-    bg: Optional[int] = None,
-    polygonize: str = "convex",
-    alpha: Optional[float] = None,
+        mask_img: Union[Path, str],
+        bg: Optional[int] = None,
+        polygonize: str = "convex",
+        alpha: Optional[float] = None,
 ):
     try:
         from skimage.io import imread
@@ -72,7 +72,7 @@ def cell_border(cell, polygonize="convex", alpha=None):
 
 
 def get_cell_exp_stack(
-    stack: Sequence, cells: Sequence, method: str = "mean"
+        stack: Sequence, cells: Sequence, method: str = "mean"
 ) -> Sequence:
     """
     Parameters

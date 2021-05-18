@@ -13,12 +13,12 @@ from spatialtis.utils.log import pbar_iter
 
 
 def get_roi(
-    exp_img,
-    mask_img,
-    bg: Optional[int] = 0,
-    method: str = "mean",
-    polygonize: str = "convex",
-    alpha: Optional[float] = None,
+        exp_img,
+        mask_img,
+        bg: Optional[int] = 0,
+        method: str = "mean",
+        polygonize: str = "convex",
+        alpha: Optional[float] = None,
 ):
     # From skimage doc: The different color bands/channels are stored in the third dimension
     # so we need to transpose it
@@ -68,12 +68,12 @@ class read_ROIs:
     """
 
     def __init__(
-        self,
-        entry: Union[Path, str],
-        obs_names: Sequence,
-        var: pd.DataFrame,
-        mask_pattern: Optional[str] = None,
-        img_pattern: Optional[str] = None,
+            self,
+            entry: Union[Path, str],
+            obs_names: Sequence,
+            var: pd.DataFrame,
+            mask_pattern: Optional[str] = None,
+            img_pattern: Optional[str] = None,
     ):
         self._obs_names = obs_names
         self._tree = []
@@ -122,7 +122,7 @@ class read_ROIs:
 
     # walk through the directory, until there is no directory
     def _exhaust_dir(
-        self, path: Union[Path, str],
+            self, path: Union[Path, str],
     ):
         d = [f for f in Path(path).iterdir() if f.is_dir()]
         for f in d:
@@ -133,12 +133,12 @@ class read_ROIs:
 
     @doc
     def to_anndata(
-        self,
-        bg: Optional[int] = 0,
-        method: str = "mean",
-        polygonize: str = "convex",
-        alpha: Optional[float] = None,
-        mp: Optional[bool] = None,
+            self,
+            bg: Optional[int] = 0,
+            method: str = "mean",
+            polygonize: str = "convex",
+            alpha: Optional[float] = None,
+            mp: Optional[bool] = None,
     ):
         """Get anndata object
 
@@ -204,7 +204,7 @@ class read_ROIs:
 
         else:
             for exp_img, mask_img, obs in pbar_iter(
-                zip(self._exp_img, self._mask_img, self.obs), desc="Process images", total=len(self._exp_img)
+                    zip(self._exp_img, self._mask_img, self.obs), desc="Process images", total=len(self._exp_img)
             ):
                 [exp, cells] = get_roi(
                     exp_img,

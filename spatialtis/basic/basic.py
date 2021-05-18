@@ -47,7 +47,7 @@ class cell_density(AnalysisBase):
     def __init__(self, data: AnnData, ratio: Number = 1.0, **kwargs):
         super().__init__(data, task_name="cell_density", **kwargs)
         counter = self.type_counter()
-        df = counter.iloc[:, len(self.exp_obs) : :]
+        df = counter.iloc[:, len(self.exp_obs)::]
 
         groups = data.obs[self.exp_obs + [self.centroid_key]].groupby(self.exp_obs)
         need_eval = self.is_col_str(self.centroid_key)
@@ -99,7 +99,7 @@ class cell_co_occurrence(AnalysisBase):
     def __init__(self, data: AnnData, **kwargs):
         super().__init__(data, task_name="cell_co_occurrence", **kwargs)
         counter = self.type_counter()
-        df = counter.iloc[:, len(self.exp_obs) : :]
+        df = counter.iloc[:, len(self.exp_obs)::]
         # normalize it using mean, greater than mean suggest it's occurrence
         df = ((df - df.mean()) / (df.max() - df.min()) > 0).astype(int)
         # generate combination of cell types
@@ -114,4 +114,4 @@ class cell_co_occurrence(AnalysisBase):
             chunks.append(co)
         self.result = pd.concat(chunks)[
             self.exp_obs + ["type1", "type2", "co_occur"]
-        ].reset_index(drop=True)
+            ].reset_index(drop=True)

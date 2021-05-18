@@ -1,6 +1,14 @@
+import os
 from pathlib import Path
 
 from setuptools import find_packages, setup
+
+
+def get_version():
+    root = Path(os.path.dirname(os.path.abspath(__file__)))
+    f = open(root / "spatialtis" / "__init__.py", "r").readline()
+    return f.split("'")[1]
+
 
 README = Path("README.md").read_text()
 
@@ -9,7 +17,7 @@ setup(name="spatialtis",
       description="spatial analysis toolkit for single-cell multiplexed tissue data",
       long_description=README,
       long_description_content_type="text/markdown",
-      version="0.3.2",
+      version=get_version(),
       author="Mr-Milk",
       url="https://github.com/Mr-Milk/SpatialTis",
       author_email="yb97643@um.edu.mo",
@@ -25,9 +33,8 @@ setup(name="spatialtis",
           "Topic :: Scientific/Engineering :: Bio-Informatics",
       ],
       python_requires='>=3.6',
-      install_requires=['anndata', 'numpy', 'pandas',
-                        'scipy', 'shapely', 'bokeh', 'rich[jupyter]',
-                        'seaborn', 'matplotlib', 'pyecharts', 'ray; python_version < "3.9"', 'lightgbm', 'scikit-learn',
+      install_requires=['anndata', 'numpy', 'pandas', 'scipy', 'shapely', 'bokeh', 'rich[jupyter]', 'seaborn',
+                        'matplotlib', 'pyecharts', 'ray; python_version < "3.9"', 'lightgbm', 'scikit-learn',
                         'spatialentropy', 'snapshot_phantomjs', 'neighborhood_analysis', 'leidenalg', 'python-igraph'],
       extras_require={'all': ['scikit-image', 'alphashape', 'tifffile', ]}
       )

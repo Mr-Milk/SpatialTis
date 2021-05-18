@@ -32,13 +32,13 @@ class find_neighbors(AnalysisBase):
     """
 
     def __init__(
-        self,
-        data: AnnData,
-        expand: Optional[Number] = None,
-        scale: Optional[Number] = None,
-        count: Optional[bool] = True,
-        use_shape: Optional[bool] = False,
-        **kwargs,
+            self,
+            data: AnnData,
+            expand: Optional[Number] = None,
+            scale: Optional[Number] = None,
+            count: Optional[bool] = True,
+            use_shape: Optional[bool] = False,
+            **kwargs,
     ):
         if use_shape:
             self.method = "R-tree"
@@ -85,8 +85,8 @@ class find_neighbors(AnalysisBase):
             bboxs = []
             labels = []
             for n, g in pbar_iter(
-                data.obs.groupby(self.exp_obs, sort=False),
-                desc="Get cell bbox",
+                    data.obs.groupby(self.exp_obs, sort=False),
+                    desc="Get cell bbox",
             ):
                 shapes = g[self.shape_key]
                 if need_eval:
@@ -99,7 +99,7 @@ class find_neighbors(AnalysisBase):
                 track_ix += list(g.index)
 
             for bbox, label in pbar_iter(
-                zip(bboxs, labels), desc="Find neighbors", total=len(bbox),
+                    zip(bboxs, labels), desc="Find neighbors", total=len(bbox),
             ):
                 if expand is not None:
                     neighbors += na.get_bbox_neighbors(
@@ -110,9 +110,9 @@ class find_neighbors(AnalysisBase):
         else:
             groups = data.obs.groupby(self.exp_obs, sort=False)
             for n, g in pbar_iter(
-                groups,
-                desc="Find neighbors",
-                total=len(groups),
+                    groups,
+                    desc="Find neighbors",
+                    total=len(groups),
             ):
                 cells = [literal_eval(c) for c in g[self.centroid_key]]
                 neighbors += na.get_point_neighbors(

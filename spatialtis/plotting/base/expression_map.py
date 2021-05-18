@@ -1,4 +1,4 @@
-from typing import List, Sequence, Tuple
+from typing import List, Tuple
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -26,11 +26,11 @@ class expression_map_3d(PyechartsMixin):
     """
 
     def __init__(
-        self,
-        points: List[Tuple[Number, Number]],
-        expressions: List[Number],
-        axis_size: tuple = (100, 100, 80),
-        **plot_options,
+            self,
+            points: List[Tuple[Number, Number]],
+            expressions: List[Number],
+            axis_size: tuple = (100, 100, 80),
+            **plot_options,
     ):
         super().__init__(**plot_options)
 
@@ -67,7 +67,7 @@ class expression_map_3d(PyechartsMixin):
             ),
             toolbox_opts=opts.ToolboxOpts(
                 feature={
-                    "saveAsImage": {"title": "Save", "pixelRatio": 5,},
+                    "saveAsImage": {"title": "Save", "pixelRatio": 5, },
                     "restore": {"title": "Restore"},
                 },
             ),
@@ -88,11 +88,11 @@ class expression_map_static(MatplotlibMixin):
     """
 
     def __init__(
-        self,
-        points: List[Tuple[Number, Number]],
-        expressions: List[Number],
-        cell_size: int = 5,
-        **plot_options,
+            self,
+            points: List[Tuple[Number, Number]],
+            expressions: List[Number],
+            cell_size: int = 5,
+            **plot_options,
     ):
         super().__init__(**plot_options)
 

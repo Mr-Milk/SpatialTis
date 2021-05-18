@@ -12,13 +12,13 @@ from spatialtis.utils import doc
 
 @doc
 def neighbors_map(
-    data: AnnData,
-    roi: Dict,
-    use: str = "static",
-    cell_type_key: Optional[str] = None,
-    centroid_key: Optional[str] = None,
-    neighbors_key: Optional[str] = None,
-    **plot_options,
+        data: AnnData,
+        roi: Dict,
+        use: str = "static",
+        cell_type_key: Optional[str] = None,
+        centroid_key: Optional[str] = None,
+        neighbors_key: Optional[str] = None,
+        **plot_options,
 ):
     """Visualize cell neighbors in ROI
 

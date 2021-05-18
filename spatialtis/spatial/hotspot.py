@@ -1,4 +1,3 @@
-from ast import literal_eval
 from typing import Optional
 
 import numpy as np
@@ -9,7 +8,6 @@ from scipy.stats import norm
 from shapely.geometry import MultiPoint
 
 from spatialtis.abc import AnalysisBase
-from spatialtis.config import CONFIG
 from spatialtis.spatial.utils import QuadStats, get_eval
 from spatialtis.typing import Array
 from spatialtis.utils import col2adata_obs, create_remote, doc, run_ray
@@ -49,7 +47,7 @@ def _hotspot(cells, bbox, grid_size, level, pval):
                 ix = np.asarray([p[0] for p in pp])
                 iy = np.asarray([p[1] for p in pp])
                 sum_wc = np.sum(
-                    quad_count[ix.min() : ix.max(), iy.min() : iy.max()].ravel()
+                    quad_count[ix.min(): ix.max(), iy.min(): iy.max()].ravel()
                 )
 
                 sum_w = len(neighbors)
@@ -94,13 +92,13 @@ class hotspot(AnalysisBase):
     """
 
     def __init__(
-        self,
-        data: AnnData,
-        selected_types: Optional[Array] = None,
-        search_level: int = 1,
-        grid_size: int = 50,
-        pval: float = 0.01,
-        **kwargs
+            self,
+            data: AnnData,
+            selected_types: Optional[Array] = None,
+            search_level: int = 1,
+            grid_size: int = 50,
+            pval: float = 0.01,
+            **kwargs
     ):
         super().__init__(data, task_name="hotspot", **kwargs)
 
@@ -137,7 +135,7 @@ class hotspot(AnalysisBase):
                 hotcells.append(pd.Series(hots, index=i))
 
         else:
-            for name, group in pbar_iter(groups, desc="Hotspot analysis",):
+            for name, group in pbar_iter(groups, desc="Hotspot analysis", ):
                 for t, tg in group.groupby(self.cell_type_key):
                     if len(tg) > 1:
                         cells = get_eval(tg, self.centroid_key, need_eval)

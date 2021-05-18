@@ -11,13 +11,13 @@ from spatialtis.utils import doc
 
 @doc
 def expression_map(
-    data: AnnData,
-    roi: Dict,
-    marker: str,
-    use: str = "static",
-    marker_key: Optional[str] = None,
-    centroid_key: Optional[str] = None,
-    **plot_options,
+        data: AnnData,
+        roi: Dict,
+        marker: str,
+        use: str = "static",
+        marker_key: Optional[str] = None,
+        centroid_key: Optional[str] = None,
+        **plot_options,
 ):
     """Visualize cell expression in ROI
 

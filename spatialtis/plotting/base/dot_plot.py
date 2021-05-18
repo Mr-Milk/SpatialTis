@@ -25,12 +25,12 @@ class dot_plot(MatplotlibMixin):
     """
 
     def __init__(
-        self,
-        data: pd.DataFrame,
-        colors: Union[str, Array] = "#376B6D",
-        annotated: bool = False,
-        alpha: float = 0.5,
-        **plot_options,
+            self,
+            data: pd.DataFrame,
+            colors: Union[str, Array] = "#376B6D",
+            annotated: bool = False,
+            alpha: float = 0.5,
+            **plot_options,
     ):
         super().__init__(**plot_options)
         self.data = data
@@ -47,7 +47,7 @@ class dot_plot(MatplotlibMixin):
         self.ax.set_aspect("equal")
 
         circles = [
-            plt.Circle((j + 0.5, i + 0.5), radius=r,)
+            plt.Circle((j + 0.5, i + 0.5), radius=r, )
             for r, j, i in zip(R.to_numpy().flat, X.flat, Y.flat)
         ]
         if annotated:

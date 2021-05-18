@@ -6,7 +6,6 @@ import pandas as pd
 from anndata import AnnData
 from scipy.stats import pearsonr, spearmanr
 
-from spatialtis import CONFIG
 from spatialtis.abc import AnalysisBase
 from spatialtis.spatial.utils import NeighborsNotFoundError, job_cutter
 from spatialtis.typing import Array, Number
@@ -15,15 +14,15 @@ from spatialtis.utils.log import pbar_iter
 
 
 def corr_types(
-    markers,
-    cent_exp,
-    neigh_exp,
-    cent,
-    neigh,
-    corr_func,
-    pval,
-    corr_cutoff,
-    exp_std_cutoff,
+        markers,
+        cent_exp,
+        neigh_exp,
+        cent,
+        neigh,
+        corr_func,
+        pval,
+        corr_cutoff,
+        exp_std_cutoff,
 ):
     result_data = []
     markers_num = len(markers)
@@ -46,14 +45,14 @@ def corr_types(
 
 
 def corr(
-    marker_ix,
-    markers,
-    cent_exp,
-    neigh_exp,
-    corr_func,
-    pval,
-    corr_cutoff,
-    exp_std_cutoff,
+        marker_ix,
+        markers,
+        cent_exp,
+        neigh_exp,
+        corr_func,
+        pval,
+        corr_cutoff,
+        exp_std_cutoff,
 ):
     result_data = []
     for p1, p2 in marker_ix:
@@ -85,17 +84,17 @@ class spatial_co_expression(AnalysisBase):
     """
 
     def __init__(
-        self,
-        data: AnnData,
-        method: str = "spearman",
-        use_cell_type: bool = False,
-        selected_types: Optional[Array] = None,
-        selected_markers: Optional[Array] = None,
-        layers_key: Optional[str] = None,
-        exp_std_cutoff: float = 1.0,
-        pval: Number = 0.01,
-        corr_cutoff: Number = 0.5,
-        **kwargs,
+            self,
+            data: AnnData,
+            method: str = "spearman",
+            use_cell_type: bool = False,
+            selected_types: Optional[Array] = None,
+            selected_markers: Optional[Array] = None,
+            layers_key: Optional[str] = None,
+            exp_std_cutoff: float = 1.0,
+            pval: Number = 0.01,
+            corr_cutoff: Number = 0.5,
+            **kwargs,
     ):
         if method == "spearman":
             self.method = "spearman correlation"
@@ -130,8 +129,8 @@ class spatial_co_expression(AnalysisBase):
                         # to get the exp matrix of neighors and center cells
                         meta = (
                             cut_data.obs.reset_index(drop=True)
-                            .reset_index()
-                            .set_index(self.neighbors_ix_key)
+                                .reset_index()
+                                .set_index(self.neighbors_ix_key)
                         )
                         cent_exp_ix = meta.loc[cent_cells]["index"].values
                         neigh_exp_ix = meta.loc[neigh_cells]["index"].values
@@ -157,13 +156,13 @@ class spatial_co_expression(AnalysisBase):
 
             else:
                 for cent, neighbrs_map in pbar_iter(
-                    neighbors.items(), desc="co-expression",
+                        neighbors.items(), desc="co-expression",
                 ):
                     for neigh, (cent_cells, neigh_cells) in neighbrs_map.items():
                         meta = (
                             cut_data.obs.reset_index(drop=True)
-                            .reset_index()
-                            .set_index(self.neighbors_ix_key)
+                                .reset_index()
+                                .set_index(self.neighbors_ix_key)
                         )
                         cent_exp_ix = meta.loc[cent_cells]["index"].values
                         neigh_exp_ix = meta.loc[neigh_cells]["index"].values
@@ -194,8 +193,8 @@ class spatial_co_expression(AnalysisBase):
             )
             meta = (
                 cut_data.obs.reset_index(drop=True)
-                .reset_index()
-                .set_index(self.neighbors_ix_key)
+                    .reset_index()
+                    .set_index(self.neighbors_ix_key)
             )
             cent_cells, neigh_cells = self.get_neighbors_ix_pair()
             cent_exp_ix = meta.loc[cent_cells]["index"].values

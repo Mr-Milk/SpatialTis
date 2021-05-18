@@ -1,6 +1,5 @@
 from ast import literal_eval
 from collections import Counter
-from itertools import product
 from time import time
 from typing import Dict, List, Optional
 
@@ -99,21 +98,21 @@ class AnalysisBase(Timer):
         return ""
 
     def __init__(
-        self,
-        data: AnnData,
-        task_name: Optional[str] = None,
-        method: Optional[str] = None,
-        exp_obs: Optional[List[str]] = None,
-        export: Optional[bool] = None,
-        export_key: Optional[str] = None,
-        mp: Optional[bool] = None,
-        cell_type_key: Optional[str] = None,
-        centroid_key: Optional[str] = None,
-        area_key: Optional[str] = None,
-        shape_key: Optional[str] = None,
-        eccentricity_key: Optional[str] = None,
-        marker_key: Optional[str] = None,
-        neighbors_key: Optional[str] = None,
+            self,
+            data: AnnData,
+            task_name: Optional[str] = None,
+            method: Optional[str] = None,
+            exp_obs: Optional[List[str]] = None,
+            export: Optional[bool] = None,
+            export_key: Optional[str] = None,
+            mp: Optional[bool] = None,
+            cell_type_key: Optional[str] = None,
+            centroid_key: Optional[str] = None,
+            area_key: Optional[str] = None,
+            shape_key: Optional[str] = None,
+            eccentricity_key: Optional[str] = None,
+            marker_key: Optional[str] = None,
+            neighbors_key: Optional[str] = None,
     ):
         self.data = data
         self.task_name = task_name
@@ -199,14 +198,14 @@ class AnalysisBase(Timer):
         return result
 
     def get_exp_matrix_fraction(
-        self,
-        markers: Optional[Array] = None,
-        types: Optional[Array] = None,
-        layers_key: Optional[str] = None,
-        std: Optional[float] = None,
-        neighbors_ix: Optional[Array] = None,
-        neighbors: Optional[tuple] = None,
-        data: Optional[AnnData] = None,
+            self,
+            markers: Optional[Array] = None,
+            types: Optional[Array] = None,
+            layers_key: Optional[str] = None,
+            std: Optional[float] = None,
+            neighbors_ix: Optional[Array] = None,
+            neighbors: Optional[tuple] = None,
+            data: Optional[AnnData] = None,
     ) -> (Array, np.ndarray, AnnData):
         if data is None:
             data = self.data
@@ -243,8 +242,8 @@ class AnalysisBase(Timer):
         if neighbors is not None:
             meta = (
                 cut_data.obs.reset_index(drop=True)
-                .reset_index()
-                .set_index(self.neighbors_ix_key)
+                    .reset_index()
+                    .set_index(self.neighbors_ix_key)
             )
             cent_exp_ix = meta.loc[neighbors[0]]["index"].values
             neigh_exp_ix = meta.loc[neighbors[1]]["index"].values
@@ -255,8 +254,8 @@ class AnalysisBase(Timer):
         elif neighbors_ix is not None:
             meta = (
                 cut_data.obs.reset_index(drop=True)
-                .reset_index()
-                .set_index(self.neighbors_ix_key)
+                    .reset_index()
+                    .set_index(self.neighbors_ix_key)
             )
             exp_ix = meta.loc[neighbors_ix]["index"].values
             exp = exp_matrix[exp_ix]
@@ -317,7 +316,7 @@ class AnalysisBase(Timer):
         cent_type = types_map.loc[cent_cells][self.cell_type_key]
         neigh_type = types_map.loc[neigh_cells][self.cell_type_key]
         for cent, neigh, c_type, n_type in zip(
-            cent_cells, neigh_cells, cent_type, neigh_type
+                cent_cells, neigh_cells, cent_type, neigh_type
         ):
             if (c_type in types) & (n_type in types):
                 # it's a pair, so we need to add it twice

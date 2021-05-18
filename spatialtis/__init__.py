@@ -1,3 +1,6 @@
+__version__ = '0.3.2'
+__author__ = 'Mr-Milk'
+
 from .basic import cell_co_occurrence, cell_components, cell_density, cell_morphology
 from .config import CONFIG
 from .ext import prepare_svca

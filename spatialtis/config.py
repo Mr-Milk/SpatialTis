@@ -2,7 +2,6 @@
 Setting Global config for whole processing level
 """
 import platform
-import sys
 import warnings
 from dataclasses import dataclass, field
 from pathlib import Path

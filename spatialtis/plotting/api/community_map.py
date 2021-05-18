@@ -5,22 +5,21 @@ from typing import Dict, Optional
 from anndata import AnnData
 
 from spatialtis.config import ANALYSIS, CONFIG
-
-from ...utils import doc
-from ..base import graph_position_interactive, graph_position_static
 from .utils import query_df
+from ..base import graph_position_interactive, graph_position_static
+from ...utils import doc
 
 
 @doc
 def community_map(
-    data: AnnData,
-    roi: Dict,
-    min_cells: int = 10,
-    use: str = "static",
-    community_key: Optional[str] = None,
-    centroid_key: Optional[str] = None,
-    neighbors_key: Optional[str] = None,
-    **plot_options,
+        data: AnnData,
+        roi: Dict,
+        min_cells: int = 10,
+        use: str = "static",
+        community_key: Optional[str] = None,
+        centroid_key: Optional[str] = None,
+        neighbors_key: Optional[str] = None,
+        **plot_options,
 ):
     """Visualize cell communities in ROI
 

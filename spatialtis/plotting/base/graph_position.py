@@ -7,10 +7,10 @@ from matplotlib.lines import Line2D
 from pyecharts import options as opts
 from pyecharts.charts import Graph
 
+from .palette import get_colors
+from ..abc import MatplotlibMixin, PyechartsMixin
 from ...typing import Array, Number
 from ...utils import doc
-from ..abc import MatplotlibMixin, PyechartsMixin
-from .palette import get_colors
 
 
 @doc
@@ -29,14 +29,14 @@ class graph_position_interactive(PyechartsMixin):
     """
 
     def __init__(
-        self,
-        nodes: Array,
-        edges: Array,
-        nodes_types: Optional[Array] = None,
-        edges_types: Optional[Array] = None,
-        node_size: Number = 1,
-        edge_size: Number = 0.5,
-        **plot_options,
+            self,
+            nodes: Array,
+            edges: Array,
+            nodes_types: Optional[Array] = None,
+            edges_types: Optional[Array] = None,
+            node_size: Number = 1,
+            edge_size: Number = 0.5,
+            **plot_options,
     ):
         super().__init__(**plot_options)
         nodes_data = []
@@ -73,14 +73,14 @@ class graph_position_interactive(PyechartsMixin):
 
         for i, (source, target) in enumerate(edges):
 
-            edge_config = dict(source=str(source), target=str(target),)
+            edge_config = dict(source=str(source), target=str(target), )
 
             if edges_types is not None:
                 edge_config["linestyle_opts"] = opts.LineStyleOpts(
                     width=edge_size, color=edges_colormap[edges_types[i]],
                 )
             else:
-                edge_config["linestyle_opts"] = opts.LineStyleOpts(width=edge_size,)
+                edge_config["linestyle_opts"] = opts.LineStyleOpts(width=edge_size, )
 
             edges_data.append(opts.GraphLink(**edge_config))
 
@@ -115,7 +115,7 @@ class graph_position_interactive(PyechartsMixin):
             ),
             toolbox_opts=opts.ToolboxOpts(
                 feature={
-                    "saveAsImage": {"title": "Save", "pixelRatio": 5,},
+                    "saveAsImage": {"title": "Save", "pixelRatio": 5, },
                     "restore": {"title": "Restore"},
                 },
             ),
@@ -139,14 +139,14 @@ class graph_position_static(MatplotlibMixin):
     """
 
     def __init__(
-        self,
-        nodes: Array,
-        edges: Array,
-        nodes_types: Optional[Array] = None,
-        edges_types: Optional[Array] = None,
-        node_size: Number = 1,
-        edge_size: Number = 0.5,
-        **plot_options,
+            self,
+            nodes: Array,
+            edges: Array,
+            nodes_types: Optional[Array] = None,
+            edges_types: Optional[Array] = None,
+            node_size: Number = 1,
+            edge_size: Number = 0.5,
+            **plot_options,
     ):
         super().__init__(**plot_options)
         if nodes_types is not None:

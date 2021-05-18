@@ -7,7 +7,6 @@ from anndata import AnnData
 from lightgbm import LGBMRegressor
 from scipy.stats import spearmanr
 
-from spatialtis import CONFIG
 from spatialtis.abc import AnalysisBase
 from spatialtis.spatial.utils import NeighborsNotFoundError
 from spatialtis.typing import Array, Number
@@ -33,14 +32,14 @@ class NMDMarkers(AnalysisBase):
     """
 
     def __init__(
-        self,
-        data: AnnData,
-        exp_std_cutoff: Number = 1.0,
-        pval: float = 0.01,
-        selected_markers: Optional[Array] = None,
-        layers_key: Optional[str] = None,
-        tree_kwargs: Optional[Dict] = None,
-        **kwargs,
+            self,
+            data: AnnData,
+            exp_std_cutoff: Number = 1.0,
+            pval: float = 0.01,
+            selected_markers: Optional[Array] = None,
+            layers_key: Optional[str] = None,
+            tree_kwargs: Optional[Dict] = None,
+            **kwargs,
     ):
         super().__init__(data, task_name="NMDMarkers", **kwargs)
 
@@ -62,7 +61,7 @@ class NMDMarkers(AnalysisBase):
         if len(markers) > 0:
             cent_exp = cent_exp.T
 
-            for ix, m in enumerate(pbar_iter(markers, desc="NMD Markers",)):
+            for ix, m in enumerate(pbar_iter(markers, desc="NMD Markers", )):
                 y = cent_exp[ix].copy()
                 if np.std(y) > exp_std_cutoff:
                     reg = LGBMRegressor(**tree_kwargs_).fit(neigh_exp, y)

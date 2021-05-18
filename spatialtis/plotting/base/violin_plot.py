@@ -1,13 +1,12 @@
 from typing import Dict, List, Optional
 
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 
-from ...utils import doc
-from ..abc import MatplotlibMixin
 from .palette import get_linear_colors
+from ..abc import MatplotlibMixin
+from ...utils import doc
 
 
 @doc
@@ -26,14 +25,14 @@ class violin_static(MatplotlibMixin):
     """
 
     def __init__(
-        self,
-        data: pd.DataFrame,
-        groupby: List,
-        target: str,
-        hue: Optional[str] = None,
-        group_order: Optional[Dict[str, List]] = None,
-        direction: Optional[str] = "vertical",
-        **plot_options,
+            self,
+            data: pd.DataFrame,
+            groupby: List,
+            target: str,
+            hue: Optional[str] = None,
+            group_order: Optional[Dict[str, List]] = None,
+            direction: Optional[str] = "vertical",
+            **plot_options,
     ):
         super().__init__(**plot_options)
         gl = len(groupby)

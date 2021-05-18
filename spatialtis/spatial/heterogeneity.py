@@ -8,7 +8,6 @@ from scipy.stats import entropy
 from spatialentropy import altieri_entropy, leibovici_entropy
 
 from spatialtis.abc import AnalysisBase
-from spatialtis.config import CONFIG
 from spatialtis.typing import Array, Number
 from spatialtis.utils import create_remote, doc, run_ray
 from spatialtis.utils.log import pbar_iter
@@ -41,14 +40,14 @@ class spatial_heterogeneity(AnalysisBase):
     """
 
     def __init__(
-        self,
-        data: AnnData,
-        method: str = "leibovici",
-        base: Optional[Number] = None,
-        d: Optional[int] = None,
-        cut: Union[int, Array, None] = None,
-        compare: Optional[str] = None,
-        **kwargs,
+            self,
+            data: AnnData,
+            method: str = "leibovici",
+            base: Optional[Number] = None,
+            d: Optional[int] = None,
+            cut: Union[int, Array, None] = None,
+            compare: Optional[str] = None,
+            **kwargs,
     ):
 
         if method not in ["shannon", "altieri", "leibovici"]:
@@ -66,7 +65,7 @@ class spatial_heterogeneity(AnalysisBase):
         if method == "shannon":
             df = self.type_counter()
             meta = df[self.exp_obs]
-            df = df.iloc[:, len(self.exp_obs) : :]
+            df = df.iloc[:, len(self.exp_obs)::]
             if len(df.columns) == 1:
                 warnings.warn(
                     "No heterogeneity, you only have one type of cell.", UserWarning
@@ -139,7 +138,7 @@ class spatial_heterogeneity(AnalysisBase):
 
             else:
                 for n, g in pbar_iter(
-                    groups, desc="Calculating heterogeneity",
+                        groups, desc="Calculating heterogeneity",
                 ):
                     names.append(n)
                     types = list(g[self.cell_type_key])

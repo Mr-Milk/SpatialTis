@@ -13,15 +13,15 @@ from spatialtis.utils import doc
 
 @doc
 def cell_map(
-    data: AnnData,
-    roi: Dict,
-    use_shape: bool = False,
-    selected_types: Optional[Array] = None,
-    use: str = "static",
-    cell_type_key: Optional[str] = None,
-    shape_key: Optional[str] = None,
-    centroid_key: Optional[str] = None,
-    **plot_options,
+        data: AnnData,
+        roi: Dict,
+        use_shape: bool = False,
+        selected_types: Optional[Array] = None,
+        use: str = "static",
+        cell_type_key: Optional[str] = None,
+        shape_key: Optional[str] = None,
+        centroid_key: Optional[str] = None,
+        **plot_options,
 ):
     """Visualize cells in ROI
 

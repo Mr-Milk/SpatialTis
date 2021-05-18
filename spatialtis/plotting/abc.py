@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from itertools import product
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -251,7 +250,7 @@ class PyechartsMixin(PlotBase):
     def set_up(self):
         """Handle title, display and save"""
         if self.title is not None:
-            self.plot.set_global_opts(title_opts=opts.TitleOpts(self.title),)
+            self.plot.set_global_opts(title_opts=opts.TitleOpts(self.title), )
         if self.display:
             self.plot.load_javascript()
 

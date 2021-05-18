@@ -1,8 +1,6 @@
 from typing import Dict, List, Optional, Sequence
 
 import matplotlib.pyplot as plt
-import pandas as pd
-import seaborn as sns
 from bokeh.models import Legend, LegendItem
 from bokeh.plotting import figure
 from matplotlib.collections import PatchCollection
@@ -29,12 +27,12 @@ class cell_map_interactive(BokehMixin):
     """
 
     def __init__(
-        self,
-        points: Optional[Dict[str, List]] = None,
-        shapes: Optional[Dict[str, List]] = None,
-        selected_types: Optional[Sequence] = None,
-        cell_size: int = 5,
-        **plot_options,
+            self,
+            points: Optional[Dict[str, List]] = None,
+            shapes: Optional[Dict[str, List]] = None,
+            selected_types: Optional[Sequence] = None,
+            cell_size: int = 5,
+            **plot_options,
     ):
         super().__init__(**plot_options)
         self.cell_size = cell_size
@@ -161,12 +159,12 @@ class cell_map_static(MatplotlibMixin):
         """
 
     def __init__(
-        self,
-        points: Optional[Dict[str, List]] = None,
-        shapes: Optional[Dict[str, List]] = None,
-        selected_types: Optional[Sequence] = None,
-        cell_size: int = 5,
-        **plot_options,
+            self,
+            points: Optional[Dict[str, List]] = None,
+            shapes: Optional[Dict[str, List]] = None,
+            selected_types: Optional[Sequence] = None,
+            cell_size: int = 5,
+            **plot_options,
     ):
         super().__init__(**plot_options)
         self.cell_size = cell_size

@@ -15,11 +15,11 @@ from spatialtis.utils import doc
 
 @doc
 def spatial_co_expression(
-    data: AnnData,
-    selected_markers: Optional[Sequence] = None,
-    key: Optional[str] = None,
-    use: str = "graph_static",  # heatmap
-    **kwargs,
+        data: AnnData,
+        selected_markers: Optional[Sequence] = None,
+        key: Optional[str] = None,
+        use: str = "graph_static",  # heatmap
+        **kwargs,
 ):
     """Visualization for spatial enrichment analysis
 
@@ -44,7 +44,7 @@ def spatial_co_expression(
         df = df[
             (df["marker1"].isin(selected_markers))
             & (df["marker2"].isin(selected_markers))
-        ]
+            ]
 
     if "cell1" in df.columns:
         df["marker1"] = [f"{a}\n{b}" for a, b in zip(df["cell1"], df["marker1"])]
@@ -55,9 +55,9 @@ def spatial_co_expression(
         ndf.columns = ["marker2", "marker1", "corr", "pvalue"]
         plot_df = (
             pd.concat([df, ndf])
-            .drop_duplicates()
-            .pivot(columns="marker1", index="marker2", values="corr")
-            .fillna(0)
+                .drop_duplicates()
+                .pivot(columns="marker1", index="marker2", values="corr")
+                .fillna(0)
         )
         return heatmap(plot_df, row_label="marker2", col_label="marker1", **kwargs)
     else:

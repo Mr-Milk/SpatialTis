@@ -7,9 +7,8 @@ from bokeh.models import ColumnDataSource, FactorRange, Legend
 from bokeh.plotting import figure
 
 from spatialtis.plotting.abc import BokehMixin, MatplotlibMixin
-
-from ...utils import doc
 from .palette import get_colors
+from ...utils import doc
 
 
 @doc
@@ -30,16 +29,16 @@ class stacked_bar_interactive(BokehMixin):
     """
 
     def __init__(
-        self,
-        data: pd.DataFrame,
-        groupby: List,
-        stacked_types: List[str],
-        percentage: bool = True,
-        sort_by: Union[List[str], str, None] = None,
-        ascending: bool = True,
-        group_order: Optional[Dict[str, List]] = None,
-        direction: Union[str] = "vertical",
-        **plot_options,
+            self,
+            data: pd.DataFrame,
+            groupby: List,
+            stacked_types: List[str],
+            percentage: bool = True,
+            sort_by: Union[List[str], str, None] = None,
+            ascending: bool = True,
+            group_order: Optional[Dict[str, List]] = None,
+            direction: Union[str] = "vertical",
+            **plot_options,
     ):
         super().__init__(**plot_options)
         self.data = data
@@ -161,16 +160,16 @@ class stacked_bar_static(MatplotlibMixin):
     """
 
     def __init__(
-        self,
-        data: pd.DataFrame,
-        groupby: List,
-        stacked_types: List[str],
-        percentage: bool = True,
-        sort_by: Union[List[str], str, None] = None,
-        ascending: bool = True,
-        group_order: Optional[Dict[str, List]] = None,
-        direction: str = "vertical",
-        **plot_options,
+            self,
+            data: pd.DataFrame,
+            groupby: List,
+            stacked_types: List[str],
+            percentage: bool = True,
+            sort_by: Union[List[str], str, None] = None,
+            ascending: bool = True,
+            group_order: Optional[Dict[str, List]] = None,
+            direction: str = "vertical",
+            **plot_options,
     ):
         super().__init__(**plot_options)
 

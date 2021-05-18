@@ -17,13 +17,13 @@ from spatialtis.utils import doc, get_result
 
 @doc
 def cell_components(
-    data: AnnData,
-    groupby: List[str],
-    agg: str = "sum",
-    selected_types: Optional[Sequence] = None,
-    key: Optional[str] = None,
-    use: str = "static",
-    **kwargs,
+        data: AnnData,
+        groupby: List[str],
+        agg: str = "sum",
+        selected_types: Optional[Sequence] = None,
+        key: Optional[str] = None,
+        use: str = "static",
+        **kwargs,
 ):
     """Visualization for cell components
 
@@ -66,11 +66,11 @@ def cell_components(
 
 @doc
 def cell_density(
-    data: AnnData,
-    groupby: List[str],
-    selected_types: Optional[List] = None,
-    key: Optional[str] = None,
-    **kwargs,
+        data: AnnData,
+        groupby: List[str],
+        selected_types: Optional[List] = None,
+        key: Optional[str] = None,
+        **kwargs,
 ):
     """Visualization for cell density
 
@@ -99,13 +99,13 @@ def cell_density(
 
 @doc
 def cell_co_occurrence(
-    data: AnnData,
-    groupby: Optional[Array] = None,
-    agg: str = "sum",
-    selected_types: Optional[Sequence] = None,
-    use: str = "dot",  # dot, heatmap
-    key: Optional[str] = None,
-    **kwargs,
+        data: AnnData,
+        groupby: Optional[Array] = None,
+        agg: str = "sum",
+        selected_types: Optional[Sequence] = None,
+        use: str = "dot",  # dot, heatmap
+        key: Optional[str] = None,
+        **kwargs,
 ):
     """Visualization for cell co-occurrence
 
@@ -154,7 +154,7 @@ def cell_co_occurrence(
             row_colors=groupby,
             col_colors=["type1", "type2"],
             categorical_colorbar=["Absent", "Presence"],
-            clustermap_kwargs=dict(row_cluster=None, col_cluster=True,),
+            clustermap_kwargs=dict(row_cluster=None, col_cluster=True, ),
         )
         # allow user to overwrite the default plot config
         for k, v in kwargs.items():
@@ -167,11 +167,11 @@ def cell_co_occurrence(
 
 @doc
 def cell_morphology(
-    data: AnnData,
-    groupby: List[str],
-    selected_types: Optional[Sequence] = None,
-    key: Optional[str] = None,
-    **kwargs,
+        data: AnnData,
+        groupby: List[str],
+        selected_types: Optional[Sequence] = None,
+        key: Optional[str] = None,
+        **kwargs,
 ):
     """Visualization for cell morphology
 

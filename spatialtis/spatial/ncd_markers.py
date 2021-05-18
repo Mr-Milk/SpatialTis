@@ -1,5 +1,3 @@
-from collections import Counter
-from time import time
 from typing import Dict, Optional
 
 import numpy as np
@@ -8,7 +6,6 @@ from anndata import AnnData
 from lightgbm import LGBMRegressor
 from scipy.stats import mannwhitneyu
 
-from spatialtis import CONFIG
 from spatialtis.abc import AnalysisBase
 from spatialtis.spatial.utils import NeighborsNotFoundError, normalize
 from spatialtis.typing import Array, Number
@@ -43,16 +40,16 @@ class NCDMarkers(AnalysisBase):
     """
 
     def __init__(
-        self,
-        data: AnnData,
-        use_cell_type: bool = False,
-        importance_cutoff: Number = 0.5,
-        exp_std_cutoff: Number = 1.0,
-        pval: Number = 0.01,
-        selected_markers: Optional[Array] = None,
-        layers_key: Optional[str] = None,
-        tree_kwargs: Optional[Dict] = None,
-        **kwargs,
+            self,
+            data: AnnData,
+            use_cell_type: bool = False,
+            importance_cutoff: Number = 0.5,
+            exp_std_cutoff: Number = 1.0,
+            pval: Number = 0.01,
+            selected_markers: Optional[Array] = None,
+            layers_key: Optional[str] = None,
+            tree_kwargs: Optional[Dict] = None,
+            **kwargs,
     ):
         super().__init__(data, task_name="NCDMarkers", **kwargs)
 
@@ -87,16 +84,16 @@ class NCDMarkers(AnalysisBase):
 
             if len(markers) > 0:
                 for t, g in pbar_iter(
-                    pd.DataFrame(
-                        {"cent_cell": cent_cells, "cent_type": cent_type,}
-                    ).groupby("cent_type"),
-                    desc="NCD Markers",
+                        pd.DataFrame(
+                            {"cent_cell": cent_cells, "cent_type": cent_type, }
+                        ).groupby("cent_type"),
+                        desc="NCD Markers",
                 ):
                     cents = g["cent_cell"].values
                     meta = (
                         cut_data.obs.reset_index(drop=True)
-                        .reset_index()
-                        .set_index(self.neighbors_ix_key)
+                            .reset_index()
+                            .set_index(self.neighbors_ix_key)
                     )
                     exp_ix = meta.loc[cents]["index"].values
                     exp = exp_matrix[exp_ix]
@@ -149,7 +146,7 @@ class NCDMarkers(AnalysisBase):
 
                 cent_exp = exp_matrix.T
                 for ix, m in enumerate(
-                    pbar_iter(markers, desc="NCD Markers",)
+                        pbar_iter(markers, desc="NCD Markers", )
                 ):
                     y = cent_exp[ix].copy()
                     max_type, max_weight, log2_fc, pvalue = max_contri_marker(

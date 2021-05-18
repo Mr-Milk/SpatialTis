@@ -8,7 +8,6 @@ from anndata import AnnData
 from scipy.stats import norm
 
 from spatialtis.abc import AnalysisBase
-from spatialtis.config import CONFIG
 from spatialtis.spatial.utils import NeighborsNotFoundError
 from spatialtis.typing import Array
 from spatialtis.utils import doc
@@ -40,15 +39,15 @@ class spatial_enrichment_analysis(AnalysisBase):
     """
 
     def __init__(
-        self,
-        data: AnnData,
-        threshold: Optional[float] = None,
-        layers_key: Optional[str] = None,
-        selected_markers: Optional[Array] = None,
-        resample: int = 500,
-        pval: float = 0.01,
-        order: bool = False,
-        **kwargs,
+            self,
+            data: AnnData,
+            threshold: Optional[float] = None,
+            layers_key: Optional[str] = None,
+            selected_markers: Optional[Array] = None,
+            resample: int = 500,
+            pval: float = 0.01,
+            order: bool = False,
+            **kwargs,
     ):
         super().__init__(data, task_name="spatial_enrichment_analysis", **kwargs)
         self.params = {"order": order}
@@ -80,8 +79,8 @@ class spatial_enrichment_analysis(AnalysisBase):
         results_data = []
 
         for name, roi in pbar_iter(
-            data.obs.groupby(self.exp_obs),
-            desc="Spatial enrichment analysis",
+                data.obs.groupby(self.exp_obs),
+                desc="Spatial enrichment analysis",
         ):
             if isinstance(name, str):
                 name = [name]

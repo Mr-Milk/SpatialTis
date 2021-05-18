@@ -1,7 +1,6 @@
 from ast import literal_eval
 from typing import Any, Dict, Optional
 
-import numpy as np
 import pandas as pd
 from anndata import AnnData
 from scipy.spatial.distance import euclidean
@@ -28,11 +27,11 @@ class cell_community(AnalysisBase):
     """
 
     def __init__(
-        self,
-        data: AnnData,
-        partition_type: Optional[Any] = None,
-        partition_kwargs: Optional[Dict] = None,
-        **kwargs,
+            self,
+            data: AnnData,
+            partition_type: Optional[Any] = None,
+            partition_kwargs: Optional[Dict] = None,
+            **kwargs,
     ):
         super().__init__(data, task_name="cell_community", **kwargs)
 
@@ -94,7 +93,7 @@ class cell_community(AnalysisBase):
         neighbors_graphs = dict(zip(names, graphs))
         sub_comm = []
         for _, graph in pbar_iter(
-            neighbors_graphs.items(), desc="Communities detection",
+                neighbors_graphs.items(), desc="Communities detection",
         ):
             part = leidenalg.find_partition(graph, partition_type, **partition_kwargs)
             sub_comm += part.membership

@@ -24,6 +24,7 @@ tqdm
 tifffile
 rich[jupyter]
 lightgbm
+ipython
 
 # test suite
 pytest
@@ -37,4 +38,3 @@ sphinx-autodoc-typehints
 setuptools
 nbsphinx
 nbsphinx_link
-ipython

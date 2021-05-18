@@ -6,9 +6,8 @@ import pandas as pd
 import seaborn as sns
 
 from spatialtis.utils import doc
-
-from ..abc import MatplotlibMixin
 from .palette import get_colors, get_linear_colors
+from ..abc import MatplotlibMixin
 
 
 @doc
@@ -30,15 +29,15 @@ class heatmap(MatplotlibMixin):
     """
 
     def __init__(
-        self,
-        df: pd.DataFrame,
-        row_label: Optional[str] = None,
-        col_label: Optional[str] = None,
-        row_colors: Union[Sequence[str], str, None] = None,
-        col_colors: Union[Sequence[str], str, None] = None,
-        categorical_colorbar: Optional[Sequence[str]] = None,
-        clustermap_kwargs: Optional[Dict] = None,
-        **plot_options,
+            self,
+            df: pd.DataFrame,
+            row_label: Optional[str] = None,
+            col_label: Optional[str] = None,
+            row_colors: Union[Sequence[str], str, None] = None,
+            col_colors: Union[Sequence[str], str, None] = None,
+            categorical_colorbar: Optional[Sequence[str]] = None,
+            clustermap_kwargs: Optional[Dict] = None,
+            **plot_options,
     ):
         super().__init__(**plot_options)
         if clustermap_kwargs is None:
@@ -71,9 +70,9 @@ class heatmap(MatplotlibMixin):
                 self.row_index[row_colors].to_numpy().T.flatten()
             )
             row_colors_mapper = dict(
-                zip(row_colors_labels, colors_pool[0 : len(row_colors_labels)])
+                zip(row_colors_labels, colors_pool[0: len(row_colors_labels)])
             )
-            colors_pool = colors_pool[len(row_colors_labels) : :]
+            colors_pool = colors_pool[len(row_colors_labels)::]
             row_annos = self.row_index[row_colors].replace(row_colors_mapper)
             plot_kwargs["row_colors"] = row_annos
 
@@ -82,7 +81,7 @@ class heatmap(MatplotlibMixin):
                 self.col_index[col_colors].to_numpy().T.flatten()
             )
             col_colors_mapper = dict(
-                zip(col_colors_labels, colors_pool[0 : len(col_colors_labels)])
+                zip(col_colors_labels, colors_pool[0: len(col_colors_labels)])
             )
             col_annos = self.col_index[col_colors].replace(col_colors_mapper)
             plot_kwargs["col_colors"] = col_annos

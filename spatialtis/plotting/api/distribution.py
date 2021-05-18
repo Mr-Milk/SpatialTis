@@ -12,12 +12,12 @@ from spatialtis.utils import doc, get_result
 
 @doc
 def spatial_distribution(
-    data: AnnData,
-    groupby: Optional[Sequence[str]] = None,
-    selected_types: Optional[Sequence] = None,
-    key: Optional[str] = None,
-    use: str = "dot",  # heatmap
-    **kwargs,
+        data: AnnData,
+        groupby: Optional[Sequence[str]] = None,
+        selected_types: Optional[Sequence] = None,
+        key: Optional[str] = None,
+        use: str = "dot",  # heatmap
+        **kwargs,
 ):
     """Visualization for spatial distribution
 
@@ -75,10 +75,10 @@ def spatial_distribution(
             col_colors="type",
             palette=["#fffec6", "#c54a52", "#4a89b9", "#5a539d"],
             categorical_colorbar=["No Cell", "Random", "Regular", "Cluster"],
-            clustermap_kwargs=dict(row_cluster=None, col_cluster=True,),
+            clustermap_kwargs=dict(row_cluster=None, col_cluster=True, ),
         )
         # allow user to overwrite the default plot config
         for k, v in kwargs.items():
             plot_kwargs[k] = v
 
-        return heatmap(plot_df, **plot_kwargs, saved_name="spatial_distribution",)
+        return heatmap(plot_df, **plot_kwargs, saved_name="spatial_distribution", )

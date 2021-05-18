@@ -19,12 +19,12 @@ from spatialtis.utils import doc, get_result
 
 @doc
 def neighborhood_analysis(
-    data: AnnData,
-    groupby: Optional[Sequence[str]] = None,
-    selected_types: Optional[Sequence] = None,
-    key: Optional[str] = None,
-    use: str = "dot_matrix",  # heatmap, dot_matrix
-    **kwargs,
+        data: AnnData,
+        groupby: Optional[Sequence[str]] = None,
+        selected_types: Optional[Sequence] = None,
+        key: Optional[str] = None,
+        use: str = "dot_matrix",  # heatmap, dot_matrix
+        **kwargs,
 ):
     """Visualization for neighborhood analysis
 
@@ -118,7 +118,7 @@ def neighborhood_analysis(
                 0
                 if sign_size == 0
                 else (association if association > avoidance else -avoidance)
-                / (association + avoidance)
+                     / (association + avoidance)
             )
             plot_data.append([real_size, sign_size, sign_dir])
         plot_df = pd.DataFrame(
@@ -142,12 +142,12 @@ def neighborhood_analysis(
             ccdf.columns = ["type1", "type2", "corr"]
             plot_df = (
                 plot_df.set_index(["type1", "type2"])
-                .join(
+                    .join(
                     ccdf.set_index(["type1", "type2"]),
                     on=["type1", "type2"],
                     how="left",
                 )
-                .reset_index()
+                    .reset_index()
             )
 
             plot_corr = plot_df.pivot(index="type1", columns="type2", values="corr")

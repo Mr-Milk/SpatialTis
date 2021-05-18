@@ -2,7 +2,6 @@ from ast import literal_eval
 from collections import OrderedDict
 
 import numpy as np
-from shapely.geometry import MultiPoint
 
 
 class NeighborsNotFoundError(Exception):
