@@ -37,4 +37,4 @@ sphinx-autodoc-typehints
 setuptools
 nbsphinx
 nbsphinx_link
-jinja2==2.11
+jinja2==2.11.3
