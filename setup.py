@@ -33,7 +33,7 @@ setup(name="spatialtis",
           "Topic :: Scientific/Engineering :: Bio-Informatics",
       ],
       python_requires='>=3.6',
-      install_requires=['anndata', 'numpy', 'pandas', 'scipy', 'shapely', 'bokeh', 'rich[jupyter]', 'seaborn',
+      install_requires=['anndata', 'numpy', 'pandas', 'scipy', 'shapely', 'bokeh', 'rich[jupyter]', 'seaborn', 'colour',
                         'matplotlib', 'pyecharts', 'ray; python_version < "3.9"', 'lightgbm', 'scikit-learn',
                         'spatialentropy', 'snapshot_phantomjs', 'neighborhood_analysis', 'leidenalg', 'python-igraph'],
       extras_require={'all': ['scikit-image', 'alphashape', 'tifffile', ]}
