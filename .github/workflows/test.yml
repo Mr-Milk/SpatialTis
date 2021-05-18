@@ -19,9 +19,15 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Install lightGBM
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew install lightgbm
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          pip install wheel
           pip install -r requirements.ci.txt
           # install spatialtis
           pip install -e .
