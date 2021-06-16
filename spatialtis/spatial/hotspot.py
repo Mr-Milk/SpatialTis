@@ -95,7 +95,7 @@ class hotspot(AnalysisBase):
             self,
             data: AnnData,
             selected_types: Optional[Array] = None,
-            search_level: int = 1,
+            search_level: int = 3,
             grid_size: int = 50,
             pval: float = 0.01,
             **kwargs

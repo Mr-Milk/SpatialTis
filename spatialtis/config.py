@@ -74,7 +74,7 @@ class _CONFIG(object):
         self._WORKING_ENV: Optional[str] = None
         self._VERBOSE: bool = True
         self.SAVE_PATH: Optional[Path] = None
-        # self.PBAR: bool = True
+        self.PBAR: bool = True
 
         self._ROI_KEY: Optional[str] = None
         self.OS: Optional[str] = None

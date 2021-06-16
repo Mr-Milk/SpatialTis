@@ -169,7 +169,7 @@ class spatial_distribution(AnalysisBase):
             self,
             data: AnnData,
             method: str = "nns",
-            min_cells: int = 5,
+            min_cells: int = 20,
             pval: float = 0.01,
             r: Number = 0.1,
             resample: int = 500,
