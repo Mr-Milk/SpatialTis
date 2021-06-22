@@ -1,5 +1,5 @@
 alphashape
-h5py==2.10.0 # This has to be fixed before the anndata solve the issue
+h5py==3.3.0 # This has to be fixed before the anndata solve the issue
 anndata
 bokeh
 colour
