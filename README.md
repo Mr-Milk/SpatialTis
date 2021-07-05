@@ -10,6 +10,19 @@
 ![pypi](https://flat.badgen.net/pypi/v/spatialtis?color=blue)
 ![licence](https://flat.badgen.net/github/license/Mr-Milk/SpatialTis)
 
+> Currently, I'm moving some of the implementation to [spatialtis_core](https://github.com/Mr-Milk/SpatialTis-core). 
+> 
+> This will be available in the next release, long with lots of new features and performance improvement.
+> 
+> Planning features includes (No gurantee): 
+> - Support for visium data, identify spatial domain, spatial variable genes
+> - Spatial autocorrelation: Moran's I, Geary's C
+> - cell-cell communications pathways
+> - Quadratic stats supports hexagon: Used in Morisita index and Getis-ord analysis
+> - Serializable geometry info on disk
+> - Neighbors search support radius/knn/raidus+knn
+> - Super fast concave hull algorithms to parse points into shape.
+
 SpatialTis is a high-performance spatial analysis toolkit for single-cell multiplexed tissue data using [`AnnData`](https://icb-anndata.readthedocs-hosted.com/en/stable/#) object as input with **parallel processing** support.
 
 **Documentation**: [![rtd](img/view_on_rtd.svg)](https://spatialtis.readthedocs.io/en/latest/)
