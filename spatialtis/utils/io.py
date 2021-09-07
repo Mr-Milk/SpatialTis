@@ -1,16 +1,18 @@
 from ast import literal_eval
-from typing import Dict, Optional, Sequence, Tuple, Union
+from typing import Dict, Optional, Sequence, Tuple, Union, List
 
+import numpy as np
 import pandas as pd
 from anndata import AnnData
+from scipy.sparse import issparse
+from spatialtis_core import dumps_wkt_points, dumps_wkt_polygons, reads_wkt_points, reads_wkt_polygons
 
-from spatialtis.config import CONFIG
-from spatialtis.console import console
+from spatialtis.config import Config, console
 
 
-def writer_verbose(key, part: str = "uns", verbose: Optional[bool] = None):
+def writer_verbose(key, part: str, verbose: Optional[bool] = None):
     if verbose is None:
-        verbose = CONFIG.VERBOSE
+        verbose = Config.verbose
 
     if verbose:
         console.print(f":package: [green]Added to AnnData, {part}: [bold cyan]'{key}'")
@@ -44,14 +46,14 @@ def df2adata_uns(
 
     """
     container = dict(
-        df=str(df.to_dict()), iname=df.index.names, colname=list(df.columns.names),
+        df=str(df.to_dict()), iname=str(list(df.index.names)), colname=str(list(df.columns.names)),
     )
 
     if params is not None:
         container["params"] = params
 
     adata.uns[key] = container
-    writer_verbose(key, verbose=verbose)
+    writer_verbose(key, "uns", verbose=verbose)
 
 
 def col2adata_obs(
@@ -85,11 +87,75 @@ def get_result(
     """
 
     container = adata.uns[key]
-    df = pd.DataFrame(literal_eval(container["df"]))
-    df.index.set_names(container["iname"], inplace=True)
-    df.columns.set_names(container["colname"], inplace=True)
+    try:
+        df = pd.DataFrame(literal_eval(container["df"]))
+        df.index.set_names(literal_eval(container["iname"]), inplace=True)
+        df.columns.set_names(literal_eval(container["colname"]), inplace=True)
 
-    if params:
-        return df, container["params"]
+        if params:
+            return df, container["params"]
+        else:
+            return df
+    except KeyError:
+        raise ValueError(f"Info stored in {key} is not a spatialtis result")
+
+
+# def points2wkt(points: List[tuple]) -> List[str]:
+#     return [wkt.dumps(Point(*coord), trim=True) for coord in points]
+#
+#
+# def polygons2wkt(polygons: List[List[tuple]]) -> List[str]:
+#     return [MultiPoint(polygon).convex_hull.wkt for polygon in polygons]
+
+
+# def load_wkt(geom: List) -> List:
+#     return [list(wkt.loads(data).coords) for data in geom]
+
+
+def transform_points(data: AnnData,
+                     centroid_keys: Union[str, Tuple[str, str]],
+                     export_key: str = "centroid"):
+    if isinstance(centroid_keys, str):
+        points = data.obs[centroid_keys].tolist()
+    elif isinstance(centroid_keys, Tuple):
+        points = [(x, y) for x, y in zip(data.obs[centroid_keys[0]], data.obs[centroid_keys[1]])]
     else:
-        return df
+        raise TypeError("centroid_keys can either be str or (str, str)")
+
+    data.obs[export_key] = dumps_wkt_points(points)
+    Config.centroid_key = export_key
+
+
+def transform_shapes(data: AnnData,
+                     shape_key: str,
+                     export_key: str = "cell_shape"):
+    shapes = data.obs[shape_key].tolist()
+    data.obs[export_key] = dumps_wkt_polygons(shapes)
+
+
+def read_points(data: pd.DataFrame, centroid_key: str) -> List[Tuple[float, float]]:
+    wkt_strings = data[centroid_key].tolist()
+    return reads_wkt_points(wkt_strings)
+    # return [list(wkt.loads(point).coords)[0] for point in data[centroid_key]]
+
+
+def read_shapes(data: pd.DataFrame, shape_key: str) -> List[List[Tuple[float, float]]]:
+    wkt_strings = data[shape_key].tolist()
+    return reads_wkt_polygons(wkt_strings)
+    # return [list(wkt.loads(shape).coords) for shape in data[shape_key]]
+
+
+def read_neighbors(data: pd.DataFrame, neighbors_key: str) -> List[List[int]]:
+    return [literal_eval(n) for n in data[neighbors_key]]
+
+
+def read_exp(adata: AnnData, layers_key=None) -> np.ndarray:
+    if layers_key is None:
+        exp = adata.X
+    else:
+        exp = adata.layers[layers_key]
+
+    if issparse(exp):
+        exp = exp.toarray()
+
+    return exp.T  # transpose it, so every line match to a marker

@@ -1,7 +1,7 @@
 import logging
 from typing import Callable
 
-from spatialtis.utils.log import pbar_iter
+from .iters import pbar_iter
 
 
 def create_remote(funcs: Callable):

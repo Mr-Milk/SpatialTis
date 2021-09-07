@@ -135,8 +135,8 @@ class stacked_bar_interactive(BokehMixin):
         )
         p.add_layout(legend, "right")
         p.hover.point_policy = "follow_mouse"
-        p.xaxis.axis_label = self.xaxis_title
-        p.yaxis.axis_label = self.yaxis_title
+        p.xaxis.axis_label = self.xlabel
+        p.yaxis.axis_label = self.ylabel
 
         self.plot = p
         self.set_up()
@@ -224,8 +224,8 @@ class stacked_bar_static(MatplotlibMixin):
                         )
                     sg.set_xticklabels(
                         ax.get_xticklabels(),
-                        rotation=self.xtickslabel_rotation,
-                        ha=self.xtickslabel_loc,
+                        rotation=self.xticklabels_rotation,
+                        ha=self.xticklabels_loc,
                     )
                     if level2 == level1:
                         title_name = None
@@ -249,8 +249,8 @@ class stacked_bar_static(MatplotlibMixin):
                         )
                     sg.set_yticklabels(
                         ax.get_yticklabels(),
-                        rotation=self.ytickslabel_rotation,
-                        ha=self.ytickslabel_loc,
+                        rotation=self.yticklabels_rotation,
+                        ha=self.yticklabels_loc,
                     )
                     if level2 == level1:
                         title_name = None
@@ -275,8 +275,8 @@ class stacked_bar_static(MatplotlibMixin):
                     )
                 sb.set_xticklabels(
                     self.ax.get_xticklabels(),
-                    rotation=self.xtickslabel_rotation,
-                    ha=self.xtickslabel_loc,
+                    rotation=self.xticklabels_rotation,
+                    ha=self.xticklabels_loc,
                 )
                 sb.set(ylabel="", xlabel="")
             else:
@@ -292,13 +292,13 @@ class stacked_bar_static(MatplotlibMixin):
                     )
                 sb.set_yticklabels(
                     self.ax.get_yticklabels(),
-                    rotation=self.ytickslabel_rotation,
-                    ha=self.xtickslabel_loc,
+                    rotation=self.yticklabels_rotation,
+                    ha=self.xticklabels_loc,
                 )
                 sb.set(ylabel="", xlabel="")
 
-        self.fig.text(0.5, -0.05, self.xaxis_title, ha="center")
-        self.fig.text(-0.05, 0.5, self.yaxis_title, va="center", rotation="vertical")
+        self.fig.text(0.5, -0.05, self.xlabel, ha="center")
+        self.fig.text(-0.05, 0.5, self.ylabel, va="center", rotation="vertical")
         plt.tight_layout()
         plt.legend(
             bbox_to_anchor=(1.1, 0), borderaxespad=0, loc="lower left", frameon=False

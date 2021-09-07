@@ -6,7 +6,7 @@ from anndata import AnnData
 from scipy.spatial.distance import euclidean
 
 from spatialtis.abc import AnalysisBase
-from spatialtis.config import CONFIG
+from spatialtis.config import Config
 from spatialtis.spatial.utils import NeighborsNotFoundError
 from spatialtis.utils import col2adata_obs, doc
 from spatialtis.utils.log import pbar_iter
@@ -74,12 +74,12 @@ class cell_community(AnalysisBase):
 
             vertices = []
             edge_mapper = {}
-            for i, (x, y) in zip(g[CONFIG.neighbors_ix_key], centroids):
+            for i, (x, y) in zip(g[Config.neighbors_ix_key], centroids):
                 vertices.append({"name": i, "x": x, "y": y})
                 edge_mapper[i] = (x, y)
 
             graph_edges = []
-            for k, vs in zip(g[CONFIG.neighbors_ix_key], neighbors):
+            for k, vs in zip(g[Config.neighbors_ix_key], neighbors):
                 if len(vs) > 0:
                     for v in vs:
                         if k != v:

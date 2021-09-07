@@ -3,7 +3,7 @@ from typing import Dict, Optional
 
 from anndata import AnnData
 
-from spatialtis import CONFIG
+from spatialtis import Config
 from spatialtis.plotting.api.utils import query_df
 from spatialtis.plotting.base import expression_map_3d, expression_map_static
 from spatialtis.utils import doc
@@ -33,9 +33,9 @@ def expression_map(
 
     """
     if marker_key is None:
-        marker_key = CONFIG.MARKER_KEY
+        marker_key = Config.MARKER_KEY
     if centroid_key is None:
-        centroid_key = CONFIG.CENTROID_KEY
+        centroid_key = Config.centroid_key
 
     df = query_df(data.obs, roi)
     locations = df[centroid_key]

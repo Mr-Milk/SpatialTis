@@ -4,7 +4,7 @@ from typing import Dict, Optional
 
 from anndata import AnnData
 
-from spatialtis.config import ANALYSIS, CONFIG
+from spatialtis.config import analysis_list, Config
 from .utils import query_df
 from ..base import graph_position_interactive, graph_position_static
 from ...utils import doc
@@ -38,11 +38,11 @@ def community_map(
 
     """
     if community_key is None:
-        community_key = ANALYSIS["cell_community"].last_used_key
+        community_key = analysis_list["cell_community"].last_used_key
     if centroid_key is None:
-        centroid_key = CONFIG.CENTROID_KEY
+        centroid_key = Config.centroid_key
     if neighbors_key is None:
-        neighbors_key = CONFIG.NEIGHBORS_KEY
+        neighbors_key = Config.NEIGHBORS_KEY
 
     df = query_df(data.obs, roi)
 

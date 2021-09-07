@@ -68,8 +68,8 @@ class dot_plot(MatplotlibMixin):
             xticklabels=list(data.columns) + [""],
             yticklabels=list(data.index) + [""],
         )
-        plt.xticks(rotation=self.xtickslabel_rotation)
-        plt.yticks(rotation=self.ytickslabel_rotation)
+        plt.xticks(rotation=self.xticklabels_rotation)
+        plt.yticks(rotation=self.yticklabels_rotation)
 
         # for spine in plt.gca().spines.values():
         #     spine.set_visible(False)

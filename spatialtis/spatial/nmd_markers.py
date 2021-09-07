@@ -1,4 +1,3 @@
-import warnings
 from typing import Dict, Optional
 
 import numpy as np
@@ -9,8 +8,9 @@ from scipy.stats import spearmanr
 
 from spatialtis.abc import AnalysisBase
 from spatialtis.spatial.utils import NeighborsNotFoundError
-from spatialtis.typing import Array, Number
+from spatialtis.typing import Number
 from spatialtis.utils import doc
+from spatialtis.utils import read_exp, read_neighbors
 from spatialtis.utils.log import pbar_iter
 
 
@@ -18,7 +18,7 @@ from spatialtis.utils.log import pbar_iter
 class NMDMarkers(AnalysisBase):
     """Identify neighbor markers dependent marker
 
-    Similar to `NCDMarkers`
+    The neighborhood is treated as a single cell.
 
     Args:
         data: {adata}
@@ -34,14 +34,13 @@ class NMDMarkers(AnalysisBase):
     def __init__(
             self,
             data: AnnData,
-            exp_std_cutoff: Number = 1.0,
             pval: float = 0.01,
-            selected_markers: Optional[Array] = None,
-            layers_key: Optional[str] = None,
+            importance_cutoff: Number = 0.5,
+            layer_key: Optional[str] = None,
             tree_kwargs: Optional[Dict] = None,
             **kwargs,
     ):
-        super().__init__(data, task_name="NMDMarkers", **kwargs)
+        super().__init__(data, **kwargs)
 
         if not self.neighbors_exists:
             raise NeighborsNotFoundError("Run `find_neighbors` first before continue.")
@@ -51,31 +50,22 @@ class NMDMarkers(AnalysisBase):
             for k, v in tree_kwargs.items():
                 tree_kwargs_[k] = v
 
-        results_data = []
-        cent_cells, neigh_cells = self.get_neighbors_ix_pair()
-        markers, (cent_exp, neigh_exp), _ = self.get_exp_matrix_fraction(
-            markers=selected_markers,
-            layers_key=layers_key,
-            neighbors=(cent_cells, neigh_cells),
-        )
-        if len(markers) > 0:
-            cent_exp = cent_exp.T
+        markers = self.data.var[self.marker_key]
+        neighbors = read_neighbors(self.data.obs, self.neighbors_key)
+        cent_exp = read_exp(self.data, layer_key)
+        neigh_exp = [read_exp(self.data[n, :], layer_key).sum(1) for n in neighbors]
 
-            for ix, m in enumerate(pbar_iter(markers, desc="NMD Markers", )):
-                y = cent_exp[ix].copy()
-                if np.std(y) > exp_std_cutoff:
-                    reg = LGBMRegressor(**tree_kwargs_).fit(neigh_exp, y)
-                    weights = np.asarray(reg.feature_importances_)
-                    weights = weights / weights.sum()
-                    max_ix = np.argmax(weights)
-                    max_weight = weights[max_ix]
-                    max_marker = markers[max_ix]
-                    corr, pvalue = spearmanr(y, neigh_exp.T[max_ix])
-                    if pvalue < pval:
-                        results_data.append([m, max_marker, max_weight, corr, pvalue])
-        else:
-            warnings.warn("No markers left after filtering.")
-        self.result = pd.DataFrame(
-            data=results_data,
-            columns=["marker", "neighbor_marker", "dependency", "corr", "pvalue"],
-        )
+        results_data = []
+        for i, (x, y) in enumerate(pbar_iter(zip(neigh_exp, cent_exp), desc="Neighbor-depedent markers")):
+            reg = LGBMRegressor(**tree_kwargs_).fit(x, y)
+            weights = np.asarray(reg.feature_importances_)
+            weights = weights / weights.sum()
+            max_ix = np.argmax(weights)
+            max_weight = weights[max_ix]
+            if max_weight > importance_cutoff:
+                r, pvalue = spearmanr(y, x[max_ix])
+                if pvalue < pval:
+                    results_data.append([markers[i], markers[max_ix], max_weight, r, pvalue])
+
+        self.result = pd.DataFrame(data=results_data, columns=["marker", "neighbor_marker",
+                                                               "dependency", "corr", "pval"])

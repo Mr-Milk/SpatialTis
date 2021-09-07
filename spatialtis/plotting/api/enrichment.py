@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from anndata import AnnData
 
-from spatialtis.config import ANALYSIS
+from spatialtis.config import analysis_list
 from spatialtis.plotting.base import (
     dot_matrix,
     graph_layout_interactive,
@@ -42,7 +42,7 @@ def spatial_enrichment_analysis(
 
     """
     if key is None:
-        key = ANALYSIS["spatial_enrichment_analysis"].last_used_key
+        key = analysis_list["spatial_enrichment_analysis"].last_used_key
 
     df, params = get_result(data, key, params=True)
     exp_obs = params["exp_obs"]
@@ -145,7 +145,7 @@ def spatial_enrichment_analysis(
                 size_legend_title="Sign' ROI",
                 matrix_cbar_text=["-1", "1"],
                 dot_cbar_text=["Avoidance", "Association"],
-                xtickslabel_rotation=90,
+                xticklabels_rotation=90,
             )
             for k, v in kwargs.items():
                 plot_kwargs[k] = v

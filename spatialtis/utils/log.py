@@ -1,9 +1,7 @@
-from typing import Iterable
+import functools
+from time import time
 
-from rich.progress import track
-
-from spatialtis.config import CONFIG
-from spatialtis.console import console
+from spatialtis.config import Config, console
 
 
 def pretty_time(t):
@@ -25,7 +23,7 @@ def pretty_time(t):
 
 def log_print(text, custom=False, color="green", verbose=None):
     if verbose is None:
-        verbose = CONFIG.VERBOSE
+        verbose = Config.verbose
 
     if verbose:
         if not custom:
@@ -34,6 +32,33 @@ def log_print(text, custom=False, color="green", verbose=None):
             console.print(text)
 
 
-def pbar_iter(obj: Iterable, desc: str = None, **kwargs):
-    for i in track(obj, disable=CONFIG.VERBOSE, console=console, description=desc, **kwargs):
-        yield i
+def timer(task_name=None, suffix=None):
+    """
+    Timer decorator to measure the time a function used
+    Args:
+        task_name: content to add at the front
+        suffix: content to add at the tail
+    Returns:
+    """
+
+    def timeit(func):
+        @functools.wraps(func)
+        def timed(*args, **kw):
+            if task_name is not None:
+                log_print(
+                    f":hourglass_not_done: [green]{task_name}[/green]", custom=True
+                )
+            ts = time()
+            result = func(*args, **kw)
+            te = time()
+            if suffix is not None:
+                log_print(suffix)
+            log_print(
+                f":stopwatch: [green]Finished![/green] [bold cyan]{pretty_time(te - ts)}[/bold cyan]",
+                custom=True,
+            )
+            return result
+
+        return timed
+
+    return timeit

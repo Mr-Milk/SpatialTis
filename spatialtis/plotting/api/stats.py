@@ -3,7 +3,7 @@ from typing import List, Optional, Sequence
 import numpy as np
 from anndata import AnnData
 
-from spatialtis.config import ANALYSIS
+from spatialtis.config import analysis_list
 from spatialtis.plotting.base import (
     dot_plot,
     heatmap,
@@ -39,7 +39,7 @@ def cell_components(
 
     """
     if key is None:
-        key = ANALYSIS["cell_components"].last_used_key
+        key = analysis_list["cell_components"].last_used_key
 
     df, params = get_result(data, key, params=True)
     exp_obs = params["exp_obs"]
@@ -83,7 +83,7 @@ def cell_density(
 
     """
     if key is None:
-        key = ANALYSIS["cell_density"].last_used_key
+        key = analysis_list["cell_density"].last_used_key
 
     df = get_result(data, key)
 
@@ -121,7 +121,7 @@ def cell_co_occurrence(
 
     """
     if key is None:
-        key = ANALYSIS["cell_co_occurrence"].last_used_key
+        key = analysis_list["cell_co_occurrence"].last_used_key
 
     df, params = get_result(data, key, params=True)
     exp_obs = params["exp_obs"]
@@ -137,7 +137,7 @@ def cell_co_occurrence(
         )
         order = (ndf > 0).sum().sort_values().index.tolist()
 
-        plot_kwargs = dict(legend_title="ROI", xtickslabel_rotation=90)
+        plot_kwargs = dict(legend_title="ROI", xticklabels_rotation=90)
         for k, v in kwargs.items():
             plot_kwargs[k] = v
         p = dot_plot(
@@ -184,7 +184,7 @@ def cell_morphology(
 
     """
     if key is None:
-        key = ANALYSIS["cell_morphology"].last_used_key
+        key = analysis_list["cell_morphology"].last_used_key
 
     df = get_result(data, key)
 

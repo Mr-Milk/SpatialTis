@@ -1,17 +1,17 @@
 from ast import literal_eval
 from collections import Counter
 from time import time
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
 import numpy as np
 import pandas as pd
 from anndata import AnnData
+from natsort import natsorted
+from rich.progress import track
 
-from .config import ANALYSIS, CONFIG
-from .typing import Array
-from .utils import doc
-from .utils.io import df2adata_uns
-from .utils.log import log_print, pretty_time
+from spatialtis.config import Config, console
+from spatialtis.typing import Array
+from spatialtis.utils import doc, df2adata_uns, read_exp, log_print, pretty_time
 
 
 class Timer:
@@ -42,9 +42,25 @@ class Timer:
         return self._task_name
 
     @task_name.setter
-    def task_name(self, v):
+    def task_name(self, v: str):
         self._task_name = v
-        self.display_name = ANALYSIS[v].display_name
+        self.display_name = " ".join(v.split("_")).capitalize()
+
+
+def neighbors_pairs(labels: List[int], neighbors: List[List[int]], duplicates: bool = False):
+    p1, p2 = [], []
+    if duplicates:
+        for l, ns in zip(labels, neighbors):
+            for n in ns:
+                p1.append(l)
+                p2.append(n)
+    else:
+        for l, ns in zip(labels, neighbors):
+            for n in ns:
+                if n > l:
+                    p1.append(l)
+                    p2.append(n)
+    return np.array([p1, p2], dtype=np.int32)
 
 
 @doc
@@ -79,20 +95,20 @@ class AnalysisBase(Timer):
     data: AnnData
     exp_obs: List[str]
     task_name: str
-    export: bool = True
     export_key: str
     mp: bool
     _result: Optional[pd.DataFrame] = None
     method: Optional[str] = None
     params: Optional[Dict] = None
 
+    roi_key: str
     cell_type_key: str
     centroid_key: str
-    area_key: str
-    shape_key: str
-    eccentricity_key: str
     marker_key: str
-    neighbors_key: str
+    neighbors_key: str = "cell_neighbors"
+    cell_id_key: str = "cell_id"
+    area_key: str = "area"
+    eccentricity_key: str = "eccentricity"
 
     def __repr__(self):
         return ""
@@ -100,102 +116,105 @@ class AnalysisBase(Timer):
     def __init__(
             self,
             data: AnnData,
-            task_name: Optional[str] = None,
             method: Optional[str] = None,
             exp_obs: Optional[List[str]] = None,
-            export: Optional[bool] = None,
+            roi_key: Optional[str] = None,
             export_key: Optional[str] = None,
-            mp: Optional[bool] = None,
             cell_type_key: Optional[str] = None,
             centroid_key: Optional[str] = None,
-            area_key: Optional[str] = None,
             shape_key: Optional[str] = None,
-            eccentricity_key: Optional[str] = None,
             marker_key: Optional[str] = None,
-            neighbors_key: Optional[str] = None,
+            mp: Optional[bool] = None,
     ):
         self.data = data
-        self.task_name = task_name
-        if method is not None:
-            self.method = method
+        self.task_name = self.__class__.__name__
+        self.method = method
+        self.cell_type_key = Config.cell_type_key if cell_type_key is None else cell_type_key
+        self.centroid_key = Config.centroid_key if centroid_key is None else centroid_key
+        self.marker_key = Config.marker_key if marker_key is None else marker_key
+        self.shape_key = Config.shape_key if shape_key is None else shape_key
+        self.mp = Config.mp if mp is None else mp
+        self.cell_types = natsorted(pd.unique(self.data.obs[self.cell_type_key]))
+        self.markers = natsorted(pd.unique(self.data.var[self.marker_key]))
+
         if exp_obs is None:
-            self.exp_obs = CONFIG.EXP_OBS
+            self.exp_obs = Config.exp_obs
             if self.exp_obs is None:
-                raise ValueError("Please set CONFIG.EXP_OBS or pass `exp_obs=`")
+                raise ValueError("Please set Config.exp_obs or pass `exp_obs=`")
         elif isinstance(exp_obs, (str, int, float)):
             self.exp_obs = [exp_obs]
         else:
             self.exp_obs = list(exp_obs)
 
-        if export is not None:
-            self.export = export
+        if roi_key is None:
+            self.roi_key = self.exp_obs[-1]
+        else:
+            if roi_key not in self.exp_obs:
+                raise ValueError("The `roi_key` is not in your `exp_obs`")
+            else:
+                if self.exp_obs[-1] != roi_key:
+                    exp_obs = self.exp_obs
+                    exp_obs.remove(roi_key)
+                    exp_obs.append(roi_key)
+                    self.exp_obs = exp_obs
+                self.roi_key = roi_key
 
         if export_key is None:
-            if self.task_name is not None:
-                self.export_key = ANALYSIS[self.task_name].export_key
+            self.export_key = self.task_name
         else:
             self.export_key = export_key
-        ANALYSIS[self.task_name].last_used_key = self.export_key
-        if cell_type_key is None:
-            self.cell_type_key = CONFIG.CELL_TYPE_KEY
-        else:
-            self.cell_type_key = cell_type_key
-        if centroid_key is None:
-            self.centroid_key = CONFIG.CENTROID_KEY
-        else:
-            self.centroid_key = centroid_key
-        if area_key is None:
-            self.area_key = CONFIG.AREA_KEY
-        else:
-            self.area_key = area_key
-        if shape_key is None:
-            self.shape_key = CONFIG.SHAPE_KEY
-        else:
-            self.shape_key = shape_key
-        if eccentricity_key is None:
-            self.eccentricity_key = CONFIG.ECCENTRICITY_KEY
-        else:
-            self.eccentricity_key = eccentricity_key
-        if marker_key is None:
-            self.marker_key = CONFIG.MARKER_KEY
-        else:
-            self.marker_key = marker_key
-        if neighbors_key is None:
-            self.neighbors_key = CONFIG.NEIGHBORS_KEY
-        else:
-            self.neighbors_key = neighbors_key
-        if mp is None:
-            self.mp = CONFIG.MP
-        else:
-            self.mp = mp
-
-        if self.cell_type_key is not None:
-            self.cell_types = pd.unique(self.data.obs[self.cell_type_key])
-
-        self.neighbors_ix_key = CONFIG.neighbors_ix_key
 
         self.start_timer()
 
+    def roi_iter(self,
+                 sort: bool = False,
+                 desc: Optional[str] = None,
+                 disable_pbar: bool = False,
+                 ):
+        if disable_pbar:
+            disable = True
+        else:
+            disable = Config.verbose
+        for roi_name, roi_data in track(self.data.obs.groupby(self.exp_obs, sort=sort),
+                                        description=desc,
+                                        disable=disable,
+                                        console=console):
+            yield roi_name, roi_data
+
+    def roi_exp_iter(self,
+                     selected_markers: Optional[List[Any]] = None,
+                     layer_key: Optional[str] = None,
+                     sort: bool = False,
+                     desc: Optional[str] = None,
+                     disable_pbar: bool = False,
+                     ) -> (List, pd.DataFrame, List, np.ndarray):
+        if disable_pbar:
+            disable = True
+        else:
+            disable = Config.verbose
+
+        markers_mask = self.data.var[self.marker_key].isin(selected_markers)
+        markers = self.data.var[self.marker_key][markers_mask]
+        for roi_name, roi_data in track(self.data.obs.groupby(self.exp_obs, sort=sort),
+                                        description=desc,
+                                        disable=disable,
+                                        console=console):
+            exp = read_exp(self.data[roi_data.index, markers_mask])
+            yield roi_name, roi_data, markers, exp
+
     def type_counter(self) -> pd.DataFrame:
-        df = self.data.obs[self.exp_obs + [self.cell_type_key]]
-        groups = df.groupby(self.exp_obs)
-        matrix = list()
-        meta = list()
-        for n, g in groups:
-            c = Counter(g[self.cell_type_key])
+        matrix = []
+        meta = []
+        for roi_name, roi_data in self.roi_iter([self.cell_type_key], disable_pbar=True):
+            c = Counter(roi_data[self.cell_type_key])
             matrix.append([c.get(t, 0) for t in self.cell_types])
-            if isinstance(n, str):
-                meta.append((n,))
+            if isinstance(roi_name, (str, int, float)):
+                meta.append((roi_name,))
             else:
-                meta.append((*n,))
-        result = dict(
-            **dict(
-                zip(self.exp_obs, np.asarray(meta).T),
-                **dict(zip(self.cell_types, np.asarray(matrix).T)),
-            )
-        )
-        result = pd.DataFrame(result)
-        return result
+                meta.append((*roi_name,))
+        index = pd.MultiIndex.from_tuples(meta)
+        index.names = self.exp_obs
+        return pd.DataFrame(data=matrix, index=index, columns=self.cell_types)
 
     def get_exp_matrix_fraction(
             self,
@@ -346,11 +365,10 @@ class AnalysisBase(Timer):
         else:
             return False
 
-    def export_result(self) -> None:
+    def export_result(self):
         export_params = {"exp_obs": self.exp_obs, "method": self.method}
         if self.params is not None:
-            for k, v in self.params.items():
-                export_params[k] = v
+            export_params = {**export_params, **self.params}
         if self.export:
             df2adata_uns(self.result, self.data, self.export_key, params=export_params)
 

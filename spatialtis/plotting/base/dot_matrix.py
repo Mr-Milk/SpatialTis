@@ -119,11 +119,11 @@ class dot_matrix(MatplotlibMixin):
         if not show_ticks:
             self.ax.xaxis.set_ticks_position("none")
             self.ax.yaxis.set_ticks_position("none")
-        self.ax.set_xlabel(self.xaxis_title)
-        self.ax.set_ylabel(self.yaxis_title)
+        self.ax.set_xlabel(self.xlabel)
+        self.ax.set_ylabel(self.ylabel)
 
-        plt.xticks(rotation=self.xtickslabel_rotation)
-        plt.yticks(rotation=self.ytickslabel_rotation)
+        plt.xticks(rotation=self.xticklabels_rotation)
+        plt.yticks(rotation=self.yticklabels_rotation)
 
         # turn off outer frame
         for spine in self.ax.spines.values():

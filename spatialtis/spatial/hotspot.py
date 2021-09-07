@@ -5,13 +5,12 @@ import pandas as pd
 from anndata import AnnData
 from scipy.spatial import cKDTree
 from scipy.stats import norm
-from shapely.geometry import MultiPoint
+from spatialtis_core import getis_ord, points_bbox
 
 from spatialtis.abc import AnalysisBase
-from spatialtis.spatial.utils import QuadStats, get_eval
+from spatialtis.spatial.utils import QuadStats
 from spatialtis.typing import Array
-from spatialtis.utils import col2adata_obs, create_remote, doc, run_ray
-from spatialtis.utils.log import pbar_iter
+from spatialtis.utils import col2adata_obs, doc
 
 
 def _hotspot(cells, bbox, grid_size, level, pval):
@@ -60,7 +59,7 @@ def _hotspot(cells, bbox, grid_size, level, pval):
                 else:
                     # z score for region
                     z = sum_wc - (mean_C * sum_w / (S * U))
-                    p_value = norm.sf(np.abs(z))
+                    p_value = norm.sf(np.abs(z)) * 2
                     hot = p_value < pval
                     hotsquad.append(hot)
 
@@ -96,62 +95,33 @@ class hotspot(AnalysisBase):
             data: AnnData,
             selected_types: Optional[Array] = None,
             search_level: int = 3,
-            grid_size: int = 50,
+            quad: Optional[Tuple[int, int]] = None,
+            rect_side: Optional[Tuple[float, float]] = None,
             pval: float = 0.01,
             **kwargs
     ):
-        super().__init__(data, task_name="hotspot", **kwargs)
-
-        df = data.obs[self.exp_obs + [self.cell_type_key, self.centroid_key]]
-        if selected_types is not None:
-            df = df[df[self.cell_type_key].isin(selected_types)]
-        groups = df.groupby(self.exp_obs)
-        need_eval = self.is_col_str(self.centroid_key)
+        super().__init__(data, **kwargs)
 
         hotcells = []
-        if self.mp:
-
-            hotspot_mp = create_remote(_hotspot)
-
-            jobs = []
-            indexs = []
-            for name, group in groups:
-                for t, tg in group.groupby(self.cell_type_key):
-                    if len(tg) > 1:
-                        cells = get_eval(tg, self.centroid_key, need_eval)
-                        bbox = MultiPoint(cells).bounds
-                        jobs.append(
-                            hotspot_mp.remote(
-                                cells, bbox, grid_size, search_level, pval
-                            )
-                        )
-                        indexs.append(tg.index)
-                    elif len(tg) == 1:
-                        hotcells.append(pd.Series(["cold"], index=tg.index))
-
-            results = run_ray(jobs, desc="Hotspot analysis")
-
-            for hots, i in zip(results, indexs):
-                hotcells.append(pd.Series(hots, index=i))
-
-        else:
-            for name, group in pbar_iter(groups, desc="Hotspot analysis", ):
-                for t, tg in group.groupby(self.cell_type_key):
-                    if len(tg) > 1:
-                        cells = get_eval(tg, self.centroid_key, need_eval)
-                        bbox = MultiPoint(cells).bounds
-                        hots = _hotspot(cells, bbox, grid_size, search_level, pval)
-                        hotcells.append(pd.Series(hots, index=tg.index))
-                    elif len(tg) == 1:
-                        hotcells.append(pd.Series(["cold"], index=tg.index))
+        for roi_name, roi_data in self.roi_iter(desc="Hotspot analysis"):
+            points = read_points(roi_data, self.centroid_key)
+            bbox = points_bbox(points)
+            for t, g in roi_data.groupby(self.cell_type_key):
+                cells = read_points(g, self.centroid_key)
+                if t in selected_types:
+                    hots = getis_ord(cells, bbox, search_level=search_level, quad=quad, rect_side=rect_side)
+                    hotcells.append(pd.Series(hots, index=g.index))
 
         result = pd.concat(hotcells)
         self.data.obs[self.export_key] = result
         # Cell map will leave blank if fill with None value
         self.data.obs[self.export_key].fillna("other", inplace=True)
+        arr = self.data.obs[self.export_key].astype("category")
+        arr = arr.cat.rename_categories({True: "hot", False: "cold", "other": "other"})
         # Call this to invoke the print
         col2adata_obs(self.data.obs[self.export_key], self.data, self.export_key)
         self.stop_timer()
+
 
     @property
     def result(self):

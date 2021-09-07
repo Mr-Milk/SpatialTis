@@ -1,15 +1,14 @@
-import warnings
 from pathlib import Path
 from typing import Optional, Sequence, Union
 
 import anndata as ad
 import numpy as np
 import pandas as pd
+from spatialtis_core import points_shapes, dumps_wkt_points, dumps_wkt_polygons
 
-from spatialtis.config import CONFIG
-from spatialtis.preprocessing.geom import get_cell_exp_stack, mask2cells
+from spatialtis.config import Config
 from spatialtis.utils import create_remote, doc, run_ray
-from spatialtis.utils.log import pbar_iter
+from spatialtis.utils import pbar_iter
 
 
 def get_roi(
@@ -27,12 +26,14 @@ def get_roi(
     # read page by page, we don't know how user will store their file
     # some store 40 channels on one page, some store 1 channel per page
     try:
-        import tifffile
+        from skimage.io import imread
+        from skimage.measure import label, regionprops
+        from skimage.external.tifffile import TiffFile
     except ImportError:
-        raise ImportError("Required tifffile, try `pip install tifffile`.")
+        raise ImportError("Required scikit-image, try `pip install scikit-image`.")
 
     exp = []
-    with tifffile.TiffFile(str(exp_img)) as img:
+    with TiffFile(str(exp_img)) as img:
         for i in img.pages:
             exp.append(i.asarray())
 
@@ -40,14 +41,26 @@ def get_roi(
     if exp.ndim > 4:
         raise ValueError("The dimensions of image are too much")
     else:
-        # if the channels info store in the
+        # if the channels info store in one page
         if exp.shape[0] == 1:
-            exp = np.transpose(exp[0], (2, 1, 0))
+            exp = exp[0]
+    area, borders, centroids, eccentricities = [], [], [], []
+    cells = []
+    mask = imread(mask_img)
+    label_mask = label(mask, background=bg)
+    for cell in regionprops(label_mask):
+        # if cell has less than 3 points, then it's meaningless
+        if len(cell) >= 3:
+            border = points_shapes(cell.coords, method=polygonize, concavity=alpha)
+            area.append(cell.area)
+            borders.append(border)
+            centroids.append(cell.centroid)
+            eccentricities.append(cell.eccentricity)
+            cells.append(cell.coords)
+    cell_exp = [getattr(np, method).__call__(exp[:, [i[0] for i in cell], [i[1] for i in cell]])
+                for cell in cells]
 
-    cells, geom_info = mask2cells(mask_img, bg=bg, polygonize=polygonize, alpha=alpha)
-    data = get_cell_exp_stack(exp, cells, method=method)
-
-    return [data, geom_info]
+    return cell_exp, area, borders, centroids, eccentricities
 
 
 class read_ROIs:
@@ -153,88 +166,62 @@ class read_ROIs:
 
         .. note:: **"convex" or "concave" to determine cell shape?**
 
-                    The cell shape is represent by the border points to simplify the following analysis process.
+                The cell shape is represent by the border points to simplify the following analysis process.
 
-                    - **convex**: Convex hull, much faster but less accurate.
-                    - **concave**: Concave hull, very slow, a parameter "alpha" is needed.
-
+                - **convex**: Convex hull, much faster but less accurate.
+                - **concave**: Concave hull, very slow, a parameter "alpha" is needed.
 
         """
 
         if mp is None:
-            mp = CONFIG.MP
+            mp = Config.mp
 
-        X = []
-        ann_obs = []
-
-        areas = []
-        shapes = []
-        centroids = []
-        eccentricities = []
-
-        if polygonize == "concave":
-            warnings.warn("Running concave hull is very slow", RuntimeWarning)
+        X, ann_obs, areas, shapes, centroids, eccentricities = [], [], [], [], [], []
 
         if mp:
-
             get_roi_mp = create_remote(get_roi)
-
             jobs = []
             for exp_img, mask_img in zip(self._exp_img, self._mask_img):
-                jobs.append(
-                    get_roi_mp.remote(
-                        exp_img,
-                        mask_img,
-                        bg=bg,
-                        method=method,
-                        polygonize=polygonize,
-                        alpha=alpha,
-                    )
-                )
+                jobs.append(get_roi_mp.remote(exp_img, mask_img, bg=bg, method=method,
+                                              polygonize=polygonize, alpha=alpha,))
 
             mp_results = run_ray(jobs, desc="Process images")
 
-            for (exp, cells), obs in zip(mp_results, self.obs):
+            for (exp, area, borders, centroids_, eccentricities_), obs in zip(mp_results, self.obs):
                 X += exp
-                ann_obs += list(np.repeat(np.array([obs]), len(cells[0]), axis=0))
-                areas += cells[0]
-                shapes += cells[1]
-                centroids += cells[2]
-                eccentricities += cells[3]
+                cell_count = len(area)
+                ann_obs += list(np.repeat(np.array([obs]), cell_count, axis=0))
+                areas += area
+                shapes += borders
+                centroids += centroids_
+                eccentricities += eccentricities_
 
         else:
             for exp_img, mask_img, obs in pbar_iter(
                     zip(self._exp_img, self._mask_img, self.obs), desc="Process images", total=len(self._exp_img)
             ):
-                [exp, cells] = get_roi(
-                    exp_img,
-                    mask_img,
-                    bg=bg,
-                    method=method,
-                    polygonize=polygonize,
-                    alpha=alpha,
-                )
+                exp, area, borders, centroids_, eccentricities_ = get_roi(exp_img, mask_img, bg=bg, method=method,
+                                                                          polygonize=polygonize, alpha=alpha,)
                 X += exp
-                ann_obs += list(np.repeat(np.array([obs]), len(cells[0]), axis=0))
-                areas += cells[0]
-                shapes += cells[1]
-                centroids += cells[2]
-                eccentricities += cells[3]
+                cell_count = len(area)
+                ann_obs += list(np.repeat(np.array([obs]), cell_count, axis=0))
+                areas += area
+                shapes += borders
+                centroids += centroids_
+                eccentricities += eccentricities_
 
-        # print(len(ann_obs), len(areas))
         # anndata require str index, hard set to str
         ann_obs = pd.DataFrame(
             ann_obs,
             columns=self._obs_names,
             index=[str(i) for i in range(0, len(ann_obs))],
         )
-        ann_obs[CONFIG.AREA_KEY] = areas
-        ann_obs[CONFIG.SHAPE_KEY] = [str(s) for s in shapes]
-        ann_obs[CONFIG.CENTROID_KEY] = [str(c) for c in centroids]
-        ann_obs[CONFIG.ECCENTRICITY_KEY] = eccentricities
+        ann_obs["cell_area"] = areas
+        ann_obs["cell_eccentricity"] = eccentricities
+        ann_obs[Config.shape_key] = dumps_wkt_polygons(shapes)
+        ann_obs[Config.centroid_key] = dumps_wkt_points(centroids)
 
         X = np.asarray(X, dtype=float)
-
         self.anndata = ad.AnnData(X, obs=ann_obs, var=self.var, dtype="float")
 
         return self.anndata

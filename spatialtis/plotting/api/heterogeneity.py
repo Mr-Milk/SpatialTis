@@ -3,7 +3,7 @@ from typing import List, Optional
 import pandas as pd
 from anndata import AnnData
 
-from spatialtis.config import ANALYSIS
+from spatialtis.config import analysis_list
 from spatialtis.plotting.base import bar_static, violin_static
 from spatialtis.utils import doc, get_result
 
@@ -28,7 +28,7 @@ def spatial_heterogeneity(
 
     """
     if key is None:
-        key = ANALYSIS["spatial_heterogeneity"].last_used_key
+        key = analysis_list["spatial_heterogeneity"].last_used_key
 
     if metric != "heterogeneity":
         metric = "KL"

@@ -7,7 +7,7 @@ import pandas as pd
 from anndata import AnnData
 from scipy.stats import pearsonr
 
-from spatialtis.config import ANALYSIS
+from spatialtis.config import analysis_list
 from spatialtis.plotting.base import (
     dot_matrix,
     graph_layout_interactive,
@@ -43,7 +43,7 @@ def neighborhood_analysis(
 
     """
     if key is None:
-        key = ANALYSIS["neighborhood_analysis"].last_used_key
+        key = analysis_list["neighborhood_analysis"].last_used_key
 
     df, params = get_result(data, key, params=True)
     exp_obs = params["exp_obs"]
@@ -126,7 +126,7 @@ def neighborhood_analysis(
         ).reset_index()
         if use == "dot_matrix":
             try:
-                df = get_result(data, ANALYSIS["cell_components"].last_used_key)
+                df = get_result(data, analysis_list["cell_components"].last_used_key)
                 cc = {}
                 for n, g in df.groupby("type"):
                     cc[n] = g["value"].tolist()
@@ -168,7 +168,7 @@ def neighborhood_analysis(
                 matrix_cbar_text=["-1", "1"],
                 dot_cbar_text=["Avoidance", "Association"],
                 dot_cbar_title="●\n% of\ninteraction",
-                xtickslabel_rotation=90,
+                xticklabels_rotation=90,
             )
             for k, v in kwargs.items():
                 plot_kwargs[k] = v

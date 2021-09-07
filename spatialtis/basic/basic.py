@@ -1,15 +1,14 @@
-from ast import literal_eval
 from itertools import combinations_with_replacement
-from typing import Optional
+from typing import Optional, List
 
 import numpy as np
 import pandas as pd
 from anndata import AnnData
-from shapely.geometry import MultiPoint
+from spatialtis_core import multipoints_bbox, polygons_area, multipolygons_area
 
 from spatialtis.abc import AnalysisBase
-from spatialtis.typing import Number
-from spatialtis.utils import doc
+from spatialtis.utils import doc, read_points, read_shapes, col2adata_obs
+from .utils import bbox_eccentricity
 
 
 @doc
@@ -22,10 +21,20 @@ class cell_components(AnalysisBase):
 
     """
 
-    def __init__(self, data: AnnData, **kwargs):
-        super().__init__(data, task_name="cell_components", **kwargs)
-        counter = self.type_counter()
-        self.result = pd.melt(counter, id_vars=self.exp_obs, var_name="type")
+    def __init__(self,
+                 data: AnnData,
+                 exp_obs: Optional[List[str]] = None,
+                 roi_key: Optional[List[str]] = None,
+                 cell_type_key: Optional[str] = None,
+                 export_key: Optional[str] = None,
+                 ):
+        super().__init__(data,
+                         exp_obs=exp_obs,
+                         roi_key=roi_key,
+                         cell_type_key=cell_type_key,
+                         export_key=export_key)
+
+        self.result = self.type_counter()
 
 
 @doc
@@ -44,46 +53,43 @@ class cell_density(AnalysisBase):
 
     """
 
-    def __init__(self, data: AnnData, ratio: Number = 1.0, **kwargs):
-        super().__init__(data, task_name="cell_density", **kwargs)
-        counter = self.type_counter()
-        df = counter.iloc[:, len(self.exp_obs)::]
+    def __init__(self, data: AnnData, ratio: float = 1.0, **kwargs):
+        super().__init__(data, **kwargs)
+        df = self.type_counter()
 
-        groups = data.obs[self.exp_obs + [self.centroid_key]].groupby(self.exp_obs)
-        need_eval = self.is_col_str(self.centroid_key)
         area = []
-        for _, g in groups:
-            if need_eval:
-                cells = [literal_eval(c) for c in g[self.centroid_key].tolist()]
-            else:
-                cells = [c for c in g[self.centroid_key].tolist()]
-            area.append(MultiPoint(cells).convex_hull.area)
-        area = np.asarray(area) * ratio * ratio
-        results = df.div(area, axis=0)
-        results = pd.concat([counter.loc[:, self.exp_obs], results], axis=1)
-        self.result = pd.melt(results, id_vars=self.exp_obs, var_name="type")
+        for roi_name, roi_data in self.roi_iter():
+            points = read_points(roi_data, self.centroid_key)
+            area.append(polygons_area(points))
+
+        area = np.asarray(area) * (ratio * ratio)
+        self.results = df.div(area, axis=0)
 
 
 @doc
 class cell_morphology(AnalysisBase):
     """Cell morphology variation between different groups
 
+    This function only works for data with cell shape information.
+    The area is calculated using shoelace formula
+    The eccentricity is assume that the cell is close to ellipse, the semi-minor and semi-major axis
+    is get from the bbox side.
+
     Args:
         data: {adata}
-        metric_key: Which key in `AnnData.obs` to measure morphology (Default: eccentricity key)
         **kwargs: {analysis_kwargs}
 
     """
 
-    def __init__(self, data: AnnData, metric_key: Optional[str] = None, **kwargs):
-        super().__init__(data, task_name="cell_morphology", **kwargs)
-        if metric_key is None:
-            metric_key = self.eccentricity_key
-        result = data.obs.loc[:, self.exp_obs + [self.cell_type_key, metric_key]]
-        result.rename(
-            columns={self.cell_type_key: "type", metric_key: "value"}, inplace=True
-        )
-        self.result = result
+    def __init__(self, data: AnnData, metric: Optional[str] = None, **kwargs):
+        super().__init__(data, **kwargs)
+
+        shapes = read_shapes(self.data.obs, self.shape_key)
+        areas = multipolygons_area(shapes)
+        eccentricity = [bbox_eccentricity(bbox) for bbox in multipoints_bbox(shapes)]
+        col2adata_obs(areas, self.data, self.area_key)
+        col2adata_obs(eccentricity, self.data, self.eccentricity_key)
+        self.stop_timer()  # write to obs, stop timer manually
 
 
 @doc
@@ -97,21 +103,24 @@ class cell_co_occurrence(AnalysisBase):
     """
 
     def __init__(self, data: AnnData, **kwargs):
-        super().__init__(data, task_name="cell_co_occurrence", **kwargs)
-        counter = self.type_counter()
-        df = counter.iloc[:, len(self.exp_obs)::]
+        super().__init__(data, **kwargs)
+        df = self.type_counter().T
         # normalize it using mean, greater than mean suggest it's occurrence
         df = ((df - df.mean()) / (df.max() - df.min()) > 0).astype(int)
+        df = df.T
         # generate combination of cell types
         cell_comb = [i for i in combinations_with_replacement(df.columns, 2)]
-        chunks = []
+
+        index = []
+        values = []
         for c in cell_comb:
+            c1 = c[0]
+            c2 = c[1]
+            index.append((c1, c2))
+            index.append((c2, c1))
             # if two type of cells are all 1, the result is 1, if one is 0, the result is 0
-            co = pd.DataFrame({"co_occur": df[c[0]] * df[c[1]]})
-            co["type1"] = c[0]
-            co["type2"] = c[1]
-            co = pd.concat([co, counter.loc[:, self.exp_obs]], axis=1)
-            chunks.append(co)
-        self.result = pd.concat(chunks)[
-            self.exp_obs + ["type1", "type2", "co_occur"]
-            ].reset_index(drop=True)
+            co_occur = df[c1] * df[c2]
+            values.append(co_occur)
+            values.append(co_occur)
+
+        self.result = pd.DataFrame(data=values, index=df.index, columns=pd.MultiIndex.from_tuples(index))

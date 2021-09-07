@@ -4,7 +4,7 @@ import pandas as pd
 from anndata import AnnData
 
 from spatialtis import get_result
-from spatialtis.config import ANALYSIS
+from spatialtis.config import analysis_list
 from spatialtis.plotting.base import (
     graph_layout_interactive,
     graph_layout_static,
@@ -37,7 +37,7 @@ def spatial_co_expression(
 
     """
     if key is None:
-        key = ANALYSIS["spatial_co_expression"].last_used_key
+        key = analysis_list["spatial_co_expression"].last_used_key
 
     df = get_result(data, key)
     if selected_markers is not None:

@@ -2,7 +2,7 @@ from typing import Optional
 
 from anndata import AnnData
 
-from spatialtis.config import ANALYSIS
+from spatialtis.config import analysis_list
 from spatialtis.plotting.base import graph_layout_interactive, graph_layout_static
 from spatialtis.utils import doc, get_result
 
@@ -21,7 +21,7 @@ def NMDMarkers(
 
     """
     if key is None:
-        key = ANALYSIS["NMDMarkers"].last_used_key
+        key = analysis_list["NMDMarkers"].last_used_key
 
     df = get_result(adata, key)
     df = df[["neighbor_marker", "marker", "dependency", "corr"]]

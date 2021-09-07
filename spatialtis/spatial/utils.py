@@ -65,9 +65,9 @@ def job_cutter(total, nums):
 
 
 def normalize(arr: np.ndarray):
-    min_max = arr.max() - arr.min()
+    min_max = arr.amax() - arr.amin()
     if min_max != 0:
-        return (arr - arr.min()) / min_max
+        return (arr - arr.amin()) / min_max
     else:
         return np.ones(arr.shape)
 

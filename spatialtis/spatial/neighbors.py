@@ -1,15 +1,12 @@
-import warnings
-from ast import literal_eval
 from typing import Optional
 
 import pandas as pd
 from anndata import AnnData
+from spatialtis_core import points_neighbors, bbox_neighbors, multipoints_bbox
 
 from spatialtis.abc import AnalysisBase
-from spatialtis.config import CONFIG
 from spatialtis.typing import Number
-from spatialtis.utils import col2adata_obs, doc
-from spatialtis.utils.log import pbar_iter
+from spatialtis.utils import col2adata_obs, doc, read_shapes, read_points
 
 
 @doc
@@ -34,97 +31,64 @@ class find_neighbors(AnalysisBase):
     def __init__(
             self,
             data: AnnData,
-            expand: Optional[Number] = None,
+            r: Optional[float] = None,
+            k: Optional[int] = None,
             scale: Optional[Number] = None,
-            count: Optional[bool] = True,
-            use_shape: Optional[bool] = False,
+            method: Optional[str] = "kdtree",  # kdtree, delaunay, rtree,
             **kwargs,
     ):
-        if use_shape:
-            self.method = "R-tree"
-        else:
-            self.method = "KD-tree"
-        if "export_key" not in kwargs:
-            kwargs["export_key"] = CONFIG.NEIGHBORS_KEY
-        super().__init__(data, task_name="find_neighbors", **kwargs)
 
-        try:
-            import neighborhood_analysis as na
-        except ImportError:
-            raise ImportError(
-                "Package not found, try `pip install neighborhood_analysis`."
-            )
+        super().__init__(data, method=method, **kwargs)
 
-        if (expand is None) & (scale is None):
-            raise ValueError("Neither 'expand' or 'scale' are specific")
-
-        if expand is not None:
-            if expand < 0:
-                raise ValueError("Can't shrink cell, 'expand' must >= 0")
-
+        if method == "kdtree":
+            if (r is None) & (k is None):
+                raise ValueError("When search with KD-Tree, please specific"
+                                 "search radius `r` or number of neighbors `k`")
+        elif method == "rtree":
+            if (r is None) & (scale is None):
+                raise ValueError("When search with R-Tree, please specific"
+                                 "search radius `r` or scale ratio `scale`")
         if scale is not None:
             if scale < 1:
                 raise ValueError("Can't shrink cell, 'scale' must >= 1")
 
-        if (expand is not None) & (scale is not None):
-            warnings.warn(
-                f"Conflict parameters, can't set 'expand' and 'scale' in the same time, use expand={expand}"
-            )
+        if r is not None:
+            if r < 0:
+                raise ValueError("`r` must be greater than 0")
 
-        if (expand is None) & (not use_shape):
-            raise ValueError("Cannot scale a point, use 'expand' instead")
+        if k is not None:
+            if k < 0:
+                raise ValueError("`k` must be greater than 0")
+        # assign unique id to each cell, in case of someone cut the data afterwards
+        # this ensure the analysis still work with non-integrated AnnData
 
-        # prepare data for shape neighbor search
-        self.data.obs[self.neighbors_ix_key] = [
-            i for i in range(self.data.obs.shape[0])
-        ]
+        data.obs[self.cell_id_key] = [i for i in range(len(data.obs))]
+
         track_ix = []
-        neighbors = []
-        if use_shape:
-            need_eval = self.is_col_str(self.shape_key)
-            bboxs = []
-            labels = []
-            for n, g in pbar_iter(
-                    data.obs.groupby(self.exp_obs, sort=False),
-                    desc="Get cell bbox",
-            ):
-                shapes = g[self.shape_key]
-                if need_eval:
-                    cell_shapes = [literal_eval(cell) for cell in shapes]
-                else:
-                    cell_shapes = [cell for cell in shapes]
-                bbox = na.get_bbox(cell_shapes)
-                bboxs.append(bbox)
-                labels.append(list(g[self.neighbors_ix_key]))
-                track_ix += list(g.index)
-
-            for bbox, label in pbar_iter(
-                    zip(bboxs, labels), desc="Find neighbors", total=len(bbox),
-            ):
-                if expand is not None:
-                    neighbors += na.get_bbox_neighbors(
-                        bbox, expand=expand, labels=label
-                    )
-                else:
-                    neighbors += na.get_bbox_neighbors(bbox, scale=scale, labels=label)
+        neighbors_data = []
+        if method == "rtree":
+            for roi_name, roi_data in self.roi_iter(desc="Find neighbors"):
+                shapes = read_shapes(roi_data, self.shape_key)
+                bbox = multipoints_bbox(shapes)
+                labels = roi_data[self.cell_id_key]
+                neighbors = bbox_neighbors(bbox, labels, expand=r, scale=scale)
+                neighbors_data += neighbors
+                track_ix += list(roi_data.index)
         else:
-            groups = data.obs.groupby(self.exp_obs, sort=False)
-            for n, g in pbar_iter(
-                    groups,
-                    desc="Find neighbors",
-                    total=len(groups),
-            ):
-                cells = [literal_eval(c) for c in g[self.centroid_key]]
-                neighbors += na.get_point_neighbors(
-                    cells, expand, labels=list(g[self.neighbors_ix_key])
-                )
-                track_ix += list(g.index)
-        col2adata_obs(pd.Series(neighbors, index=track_ix), data, self.export_key)
-        if count:
-            counts = [len(i) for i in neighbors]
-            col2adata_obs(counts, data, f"{self.export_key}_count")
+            for roi_name, roi_data in self.roi_iter(desc="Find neighbors"):
+                points = read_points(roi_data, self.centroid_key)
+                labels = roi_data[self.cell_id_key]
+                neighbors = points_neighbors(points, labels, r=r, k=k, method=method)
+                neighbors_data += neighbors
+                track_ix += list(roi_data.index)
+        counts = [len(i) for i in neighbors_data]
+        neighbors_data = [str(i) for i in neighbors_data]
+        neighbors_data = pd.Series(neighbors_data, index=track_ix)
+        counts = pd.Series(counts, index=track_ix)
+        col2adata_obs(neighbors_data, data, self.neighbors_key)
+        col2adata_obs(counts, data, f"{self.neighbors_key}_count")
         self.stop_timer()
 
     @property
     def result(self):
-        return self.data.obs[self.exp_obs + [self.export_key]]
+        return self.data.obs[[self.cell_id_key, self.neighbors_key]]

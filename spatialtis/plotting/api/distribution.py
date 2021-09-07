@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from anndata import AnnData
 
-from spatialtis.config import ANALYSIS
+from spatialtis.config import analysis_list
 from spatialtis.plotting.base import dot_plot, heatmap
 from spatialtis.utils import doc, get_result
 
@@ -32,7 +32,7 @@ def spatial_distribution(
 
     """
     if key is None:
-        key = ANALYSIS["spatial_distribution"].last_used_key
+        key = analysis_list["spatial_distribution"].last_used_key
 
     df, params = get_result(data, key, params=True)
     exp_obs = params["exp_obs"]
@@ -60,7 +60,7 @@ def spatial_distribution(
 
         colors = np.array(["#FFC408", "#c54a52", "#4a89b9", "#5a539d"] * len(plot_df))
 
-        plot_kwargs = dict(legend_title="ROI", alpha=1, xtickslabel_rotation=90)
+        plot_kwargs = dict(legend_title="ROI", alpha=1, xticklabels_rotation=90)
         for k, v in kwargs.items():
             plot_kwargs[k] = v
 

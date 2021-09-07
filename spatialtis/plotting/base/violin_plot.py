@@ -65,8 +65,8 @@ class violin_static(MatplotlibMixin):
                     ax.get_legend().remove()
                     sg.set_xticklabels(
                         ax.get_xticklabels(),
-                        rotation=self.xtickslabel_rotation,
-                        ha=self.xtickslabel_loc,
+                        rotation=self.xticklabels_rotation,
+                        ha=self.xticklabels_loc,
                     )
                     if level2 == level1:
                         title_name = None
@@ -83,8 +83,8 @@ class violin_static(MatplotlibMixin):
                     )
                     sg.set_yticklabels(
                         ax.get_yticklabels(),
-                        rotation=self.ytickslabel_rotation,
-                        ha=self.ytickslabel_loc,
+                        rotation=self.yticklabels_rotation,
+                        ha=self.yticklabels_loc,
                     )
                     if level2 == level1:
                         title_name = None
@@ -107,8 +107,8 @@ class violin_static(MatplotlibMixin):
                 )
                 sb.set_xticklabels(
                     self.ax.get_xticklabels(),
-                    rotation=self.xtickslabel_rotation,
-                    ha=self.xtickslabel_loc,
+                    rotation=self.xticklabels_rotation,
+                    ha=self.xticklabels_loc,
                 )
                 sb.set(ylabel="", xlabel="")
             else:
@@ -122,12 +122,12 @@ class violin_static(MatplotlibMixin):
                 )
                 sb.set_yticklabels(
                     self.ax.get_yticklabels(),
-                    rotation=self.ytickslabel_rotation,
-                    ha=self.ytickslabel_loc,
+                    rotation=self.yticklabels_rotation,
+                    ha=self.yticklabels_loc,
                 )
                 sb.set(ylabel="", xlabel="")
-        self.fig.text(0.5, -0.05, self.xaxis_title, ha="center")
-        self.fig.text(-0.05, 0.5, self.yaxis_title, va="center", rotation="vertical")
+        self.fig.text(0.5, -0.05, self.xlabel, ha="center")
+        self.fig.text(-0.05, 0.5, self.ylabel, va="center", rotation="vertical")
         plt.tight_layout()
         if hue is not None:
             plt.legend(

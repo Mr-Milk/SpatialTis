@@ -13,7 +13,7 @@ from matplotlib.figure import Figure
 from pyecharts.render import make_snapshot
 from snapshot_phantomjs import snapshot
 
-from spatialtis.config import CONFIG
+from spatialtis.config import Config
 from spatialtis.typing import Number
 from spatialtis.utils import doc
 
@@ -33,8 +33,8 @@ class PlotBase:
         xaxis_title: The title of X axis
         yaxis_title: The title of Y axis
         legend_title: The title of legend
-        xtickslabel_rotation: Degree to rotate X-axis's label
-        ytickslabel_rotation: Degree to rotate Y-axis's label
+        xticklabels_rotation: Degree to rotate X-axis's label
+        yticklabels_rotation: Degree to rotate Y-axis's label
         palette: Either a series of color in hex, or
             `name of palettes <https://docs.bokeh.org/en/latest/docs/reference/palettes.html>`_,
         saved_name: Default file name to save the plot
@@ -56,14 +56,14 @@ class PlotBase:
 
     # text control
     title: Optional[str] = None
-    xaxis_title: Optional[str] = None
-    yaxis_title: Optional[str] = None
+    xlabel: Optional[str] = None
+    ylabel: Optional[str] = None
     legend_title: Optional[str] = None
 
     # ticks control
     # ticks: Optional[bool] = None
-    xtickslabel_rotation: int = 0
-    ytickslabel_rotation: int = 0
+    xticklabels_rotation: int = 0
+    yticklabels_rotation: int = 0
 
     # color control
     palette: Union[str, List[str], None] = None
@@ -80,7 +80,7 @@ class PlotBase:
         return ""
 
     def preset(self):
-        if CONFIG.WORKING_ENV is None:
+        if Config.env is None:
             self.display = False
         else:
             self.display = True
@@ -120,8 +120,8 @@ class MatplotlibMixin(PlotBase):
         self.ax = None
         self.axes = None
         self.preset()
-        self.xtickslabel_loc = "center"
-        self.ytickslabel_loc = "center"
+        self.xticklabels_loc = "center"
+        self.yticklabels_loc = "center"
         super().__init__(**plot_options)
 
     def set_up(self):
@@ -136,8 +136,8 @@ class MatplotlibMixin(PlotBase):
         else:
             plt.close()
 
-        if CONFIG.AUTO_SAVE:
-            self.save_path = CONFIG.SAVE_PATH / f"{self.saved_name}.png"
+        if Config.auto_save:
+            self.save_path = Config.SAVE_PATH / f"{self.saved_name}.png"
         if self.save_path is not None:
             self.save()
 
@@ -155,7 +155,7 @@ class MatplotlibMixin(PlotBase):
         elif self.save_path is not None:
             save_path = Path(self.save_path)
         else:
-            save_path = CONFIG.SAVE_PATH
+            save_path = Config.SAVE_PATH
         inbuilt_save_options = dict(dpi=300, bbox_inches="tight")
         for k, v in save_options.items():
             inbuilt_save_options[k] = v
@@ -182,8 +182,8 @@ class BokehMixin(PlotBase):
         if self.display:
             show(self.plot)
 
-        if CONFIG.AUTO_SAVE:
-            self.save_path = CONFIG.SAVE_PATH / f"{self.saved_name}.html"
+        if Config.auto_save:
+            self.save_path = Config.SAVE_PATH / f"{self.saved_name}.html"
         if self.save_path is not None:
             self.save()
 
@@ -203,7 +203,7 @@ class BokehMixin(PlotBase):
         elif self.save_path is not None:
             save_path = Path(self.save_path)
         else:
-            save_path = CONFIG.SAVE_PATH
+            save_path = Config.SAVE_PATH
         file_ext = save_path.suffix[1:]
         save_path = str(save_path)
 
@@ -254,8 +254,8 @@ class PyechartsMixin(PlotBase):
         if self.display:
             self.plot.load_javascript()
 
-        if CONFIG.AUTO_SAVE:
-            self.save_path = CONFIG.SAVE_PATH / f"{self.saved_name}.html"
+        if Config.auto_save:
+            self.save_path = Config.SAVE_PATH / f"{self.saved_name}.html"
         if self.save_path is not None:
             self.save()
 
@@ -275,7 +275,7 @@ class PyechartsMixin(PlotBase):
         elif self.save_path is not None:
             save_path = Path(self.save_path)
         else:
-            save_path = CONFIG.SAVE_PATH
+            save_path = Config.SAVE_PATH
         file_ext = save_path.suffix[1:]
         self.plot.renderer = "canvas"
 
