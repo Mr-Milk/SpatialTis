@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from spatialtis import CONFIG
+from spatialtis import Config
 from spatialtis.utils import col2adata_obs, df2adata_uns
 from spatialtis.utils.log import pretty_time
 
@@ -11,65 +11,66 @@ class FakeType:
 
 
 def test_read_config_property():
-    CONFIG
-    CONFIG.VERBOSE
-    CONFIG.ROI_KEY
-    CONFIG.EXP_OBS
-    CONFIG.CELL_TYPE_KEY
-    CONFIG.WORKING_ENV
+    Config
+    Config.verbose
+    Config.roi_key
+    Config.exp_obs
+    Config.cell_type_key
+    Config.env
 
 
 def test_read_set_roi_key():
-    CONFIG.EXP_OBS = ["Patient", "Part", "ROI"]
-    CONFIG.ROI_KEY = "ROI"
-    CONFIG.ROI_KEY = "Part"
+    Config.exp_obs = ["Patient", "Part", "ROI"]
+    assert Config.roi_key == "ROI"
+    Config.roi_key = "Part"
+    assert Config.exp_obs == ["Patient", "ROI", "Part"]
 
 
 @pytest.mark.xfail
 def test_set_roi_key_failed():
-    CONFIG.EXP_OBS = None
-    CONFIG.EXP_OBS = ["Patient", "Part", "ROI"]
-    CONFIG.ROI_KEY = "ttt"
+    Config.exp_obs = None
+    Config.exp_obs = ["Patient", "Part", "ROI"]
+    Config.roi_key = "ttt"
 
 
 def test_set_exp_obs():
-    CONFIG.EXP_OBS = 1
-    CONFIG.EXP_OBS = 10.1
-    CONFIG.EXP_OBS = None
-    CONFIG.EXP_OBS = "ttt"
+    Config.exp_obs = 1
+    Config.exp_obs = 10.1
+    Config.exp_obs = None
+    Config.exp_obs = "ttt"
 
 
 @pytest.mark.xfail
 def test_set_exp_obs_failed():
     ft = FakeType
-    CONFIG.EXP_OBS = ft
+    Config.exp_obs = ft
 
 
 def test_set_cell_type_key():
-    CONFIG.CELL_TYPE_KEY = 1
-    CONFIG.CELL_TYPE_KEY = 10.1
-    CONFIG.CELL_TYPE_KEY = None
-    CONFIG.CELL_TYPE_KEY = "type"
+    Config.cell_type_key = 1
+    Config.cell_type_key = 10.1
+    Config.cell_type_key = None
+    Config.cell_type_key = "type"
 
 
 @pytest.mark.xfail
 def test_set_cell_type_key_failed():
-    CONFIG.CELL_TYPE_KEY = [123]
+    Config.cell_type_key = [123]
 
 
 def test_set_working_env():
-    CONFIG.WORKING_ENV = "what"
-    CONFIG.WORKING_ENV = "jupyter"
+    Config.env = "what"
+    Config.env = "jupyter"
 
 
 def test_set_verbose():
-    CONFIG.VERBOSE = True
-    CONFIG.VERBOSE = False
+    Config.verbose = True
+    Config.verbose = False
 
 
 @pytest.mark.xfail
 def test_set_verbose_failed():
-    CONFIG.VERBOSE = 1
+    Config.verbose = 1
 
 
 def test_pretty_time():
@@ -80,10 +81,10 @@ def test_pretty_time():
     assert pretty_time(3661) == "1h1m1s"
 
 
-CONFIG.EXP_OBS = ["Patient", "Part", "ROI"]
-CONFIG.CELL_TYPE_KEY = "leiden"
-CONFIG.MARKER_KEY = "Markers"
-CONFIG.WORKING_ENV = None
+Config.exp_obs = ["Patient", "Part", "ROI"]
+Config.cell_type_key = "leiden"
+Config.MARKER_KEY = "Markers"
+Config.env = None
 
 
 def test_data2adata(data):
@@ -95,9 +96,9 @@ def test_data2adata(data):
     )
 
     col = [0 for _ in range(len(data.obs))]
-    CONFIG.VERBOSE = True
+    Config.verbose = True
     df2adata_uns(df, data, "test_df")
     col2adata_obs(col, data, "test_col")
-    CONFIG.WORKING_ENV = "jupyter_notebook"
+    Config.env = "jupyter_notebook"
     df2adata_uns(df, data, "test_df")
     col2adata_obs(col, data, "test_col")

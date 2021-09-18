@@ -2,8 +2,8 @@ import pandas as pd
 import pytest
 
 import spatialtis as st
-import spatialtis.plotting as sp
-from spatialtis import CONFIG
+import spatialtis._plotting as sp
+from spatialtis import Config
 
 plotting_kwargs = dict(
     title="just a title",
@@ -21,12 +21,12 @@ GORDER = {"Patient": ["HPAP005", "HPAP002"]}
 
 
 def test_set_config(tmpdir):
-    CONFIG.EXP_OBS = ["Patient", "Part", "ROI"]
-    CONFIG.CELL_TYPE_KEY = "leiden"
-    CONFIG.MARKER_KEY = "Markers"
-    CONFIG.WORKING_ENV = None
-    CONFIG.AUTO_SAVE = True
-    CONFIG.SAVE_PATH = tmpdir
+    Config.exp_obs = ["Patient", "Part", "ROI"]
+    Config.cell_type_key = "leiden"
+    Config.MARKER_KEY = "Markers"
+    Config.env = None
+    Config.auto_save = True
+    Config.SAVE_PATH = tmpdir
 
 
 @pytest.mark.xfail

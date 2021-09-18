@@ -3,19 +3,16 @@ from typing import Dict, Optional
 import numpy as np
 import pandas as pd
 from anndata import AnnData
-from lightgbm import LGBMRegressor
 from scipy.stats import spearmanr
 
 from spatialtis.abc import AnalysisBase
 from spatialtis.spatial.utils import NeighborsNotFoundError
 from spatialtis.typing import Number
-from spatialtis.utils import doc
-from spatialtis.utils import read_exp, read_neighbors
-from spatialtis.utils.log import pbar_iter
+from spatialtis.utils import doc, pbar_iter, read_exp, read_neighbors
 
 
 @doc
-class NMDMarkers(AnalysisBase):
+class NMD_marker(AnalysisBase):
     """Identify neighbor markers dependent marker
 
     The neighborhood is treated as a single cell.
@@ -32,15 +29,19 @@ class NMDMarkers(AnalysisBase):
     """
 
     def __init__(
-            self,
-            data: AnnData,
-            pval: float = 0.01,
-            importance_cutoff: Number = 0.5,
-            layer_key: Optional[str] = None,
-            tree_kwargs: Optional[Dict] = None,
-            **kwargs,
+        self,
+        data: AnnData,
+        pval: float = 0.01,
+        importance_cutoff: Number = 0.5,
+        layer_key: Optional[str] = None,
+        tree_kwargs: Optional[Dict] = None,
+        **kwargs,
     ):
-        super().__init__(data, **kwargs)
+        try:
+            from lightgbm import LGBMRegressor
+        except ImportError:
+            raise ImportError("lightgbm is not installed, please try `pip install lightgbm`.")
+        super().__init__(data, display_name="NMD marker", **kwargs)
 
         if not self.neighbors_exists:
             raise NeighborsNotFoundError("Run `find_neighbors` first before continue.")
@@ -53,19 +54,26 @@ class NMDMarkers(AnalysisBase):
         markers = self.data.var[self.marker_key]
         neighbors = read_neighbors(self.data.obs, self.neighbors_key)
         cent_exp = read_exp(self.data, layer_key)
-        neigh_exp = [read_exp(self.data[n, :], layer_key).sum(1) for n in neighbors]
-
+        # treat the neighbors as single cell
+        # sum the expression
+        neigh_exp = np.asarray([read_exp(self.data[n, :], layer_key).sum(1) for n in neighbors])
         results_data = []
-        for i, (x, y) in enumerate(pbar_iter(zip(neigh_exp, cent_exp), desc="Neighbor-depedent markers")):
-            reg = LGBMRegressor(**tree_kwargs_).fit(x, y)
+        for i, y in enumerate(pbar_iter(cent_exp, desc="Neighbor-depedent markers",)):
+            reg = LGBMRegressor(**tree_kwargs_).fit(neigh_exp, y)
             weights = np.asarray(reg.feature_importances_)
-            weights = weights / weights.sum()
-            max_ix = np.argmax(weights)
-            max_weight = weights[max_ix]
-            if max_weight > importance_cutoff:
-                r, pvalue = spearmanr(y, x[max_ix])
-                if pvalue < pval:
-                    results_data.append([markers[i], markers[max_ix], max_weight, r, pvalue])
+            ws = weights.sum()
+            if ws != 0:
+                weights = weights / weights.sum()
+                max_ix = np.argmax(weights)
+                max_weight = weights[max_ix]
+                if max_weight > importance_cutoff:
+                    r, pvalue = spearmanr(y, neigh_exp[:, max_ix])
+                    if pvalue < pval:
+                        results_data.append(
+                            [markers[i], markers[max_ix], max_weight, r, pvalue]
+                        )
 
-        self.result = pd.DataFrame(data=results_data, columns=["marker", "neighbor_marker",
-                                                               "dependency", "corr", "pval"])
+        self.result = pd.DataFrame(
+            data=results_data,
+            columns=["marker", "neighbor_marker", "dependency", "corr", "pval"],
+        )

@@ -7,10 +7,11 @@ from .iters import pbar_iter
 def create_remote(funcs: Callable):
     try:
         import ray
-
-        ray.init(
-            logging_level=logging.FATAL, ignore_reinit_error=True,
-        )
+        if not ray.is_initialized():
+            ray.init(
+                logging_level=logging.FATAL,
+                ignore_reinit_error=True,
+            )
     except Exception:
         raise SystemError("Initiate ray failed, parallel processing not available.")
 

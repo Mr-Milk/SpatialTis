@@ -1,7 +1,7 @@
 from ast import literal_eval
 from collections import Counter
 from time import time
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -11,7 +11,7 @@ from rich.progress import track
 
 from spatialtis.config import Config, console
 from spatialtis.typing import Array
-from spatialtis.utils import doc, df2adata_uns, read_exp, log_print, pretty_time
+from spatialtis.utils import df2adata_uns, doc, log_print, pretty_time, read_exp
 
 
 class Timer:
@@ -47,7 +47,9 @@ class Timer:
         self.display_name = " ".join(v.split("_")).capitalize()
 
 
-def neighbors_pairs(labels: List[int], neighbors: List[List[int]], duplicates: bool = False):
+def neighbors_pairs(
+    labels: List[int], neighbors: List[List[int]], duplicates: bool = False
+):
     p1, p2 = [], []
     if duplicates:
         for l, ns in zip(labels, neighbors):
@@ -114,28 +116,42 @@ class AnalysisBase(Timer):
         return ""
 
     def __init__(
-            self,
-            data: AnnData,
-            method: Optional[str] = None,
-            exp_obs: Optional[List[str]] = None,
-            roi_key: Optional[str] = None,
-            export_key: Optional[str] = None,
-            cell_type_key: Optional[str] = None,
-            centroid_key: Optional[str] = None,
-            shape_key: Optional[str] = None,
-            marker_key: Optional[str] = None,
-            mp: Optional[bool] = None,
+        self,
+        data: AnnData,
+        method: Optional[str] = None,
+        exp_obs: Optional[List[str]] = None,
+        roi_key: Optional[str] = None,
+        export_key: Optional[str] = None,
+        cell_type_key: Optional[str] = None,
+        centroid_key: Optional[str] = None,
+        shape_key: Optional[str] = None,
+        marker_key: Optional[str] = None,
+        mp: Optional[bool] = None,
+        display_name: Optional[str] = None,
     ):
         self.data = data
         self.task_name = self.__class__.__name__
+        if display_name is not None:
+            self.display_name = display_name
+
         self.method = method
-        self.cell_type_key = Config.cell_type_key if cell_type_key is None else cell_type_key
-        self.centroid_key = Config.centroid_key if centroid_key is None else centroid_key
+        self.cell_type_key = (
+            Config.cell_type_key if cell_type_key is None else cell_type_key
+        )
+        self.centroid_key = (
+            Config.centroid_key if centroid_key is None else centroid_key
+        )
         self.marker_key = Config.marker_key if marker_key is None else marker_key
         self.shape_key = Config.shape_key if shape_key is None else shape_key
         self.mp = Config.mp if mp is None else mp
-        self.cell_types = natsorted(pd.unique(self.data.obs[self.cell_type_key]))
-        self.markers = natsorted(pd.unique(self.data.var[self.marker_key]))
+        if self.cell_type_key is not None:
+            self.cell_types = natsorted(pd.unique(self.data.obs[self.cell_type_key]))
+        if self.marker_key is not None:
+            self.markers = natsorted(pd.unique(self.data.var[self.marker_key]))
+            self.markers_col = self.data.var[self.marker_key]
+        else:
+            self.markers = natsorted(pd.unique(self.data.var.index))
+            self.markers_col = self.data.var.index
 
         if exp_obs is None:
             self.exp_obs = Config.exp_obs
@@ -166,46 +182,77 @@ class AnalysisBase(Timer):
 
         self.start_timer()
 
-    def roi_iter(self,
-                 sort: bool = False,
-                 desc: Optional[str] = None,
-                 disable_pbar: bool = False,
-                 ):
-        if disable_pbar:
-            disable = True
-        else:
-            disable = Config.verbose
-        for roi_name, roi_data in track(self.data.obs.groupby(self.exp_obs, sort=sort),
-                                        description=desc,
-                                        disable=disable,
-                                        console=console):
-            yield roi_name, roi_data
-
-    def roi_exp_iter(self,
-                     selected_markers: Optional[List[Any]] = None,
-                     layer_key: Optional[str] = None,
-                     sort: bool = False,
-                     desc: Optional[str] = None,
-                     disable_pbar: bool = False,
-                     ) -> (List, pd.DataFrame, List, np.ndarray):
+    def roi_iter(
+        self,
+        sort: bool = False,
+        desc: Optional[str] = None,
+        disable_pbar: bool = False,
+    ):
         if disable_pbar:
             disable = True
         else:
             disable = Config.verbose
 
-        markers_mask = self.data.var[self.marker_key].isin(selected_markers)
-        markers = self.data.var[self.marker_key][markers_mask]
-        for roi_name, roi_data in track(self.data.obs.groupby(self.exp_obs, sort=sort),
-                                        description=desc,
-                                        disable=disable,
-                                        console=console):
-            exp = read_exp(self.data[roi_data.index, markers_mask])
-            yield roi_name, roi_data, markers, exp
+        if len(self.exp_obs) == 1:
+            for roi_name, roi_data in track(
+                self.data.obs.groupby(self.exp_obs, sort=sort),
+                description=desc,
+                disable=disable,
+                console=console,
+            ):
+                yield [roi_name], roi_data
+        else:
+            for roi_name, roi_data in track(
+                self.data.obs.groupby(self.exp_obs, sort=sort),
+                description=desc,
+                disable=disable,
+                console=console,
+            ):
+                yield roi_name, roi_data
+
+    def roi_exp_iter(
+        self,
+        selected_markers: Optional[List[Any]] = None,
+        layer_key: Optional[str] = None,
+        dtype: Any = None,
+        sort: bool = False,
+        desc: Optional[str] = None,
+        disable_pbar: bool = False,
+    ) -> (List, pd.DataFrame, List, np.ndarray):
+        if disable_pbar:
+            disable = True
+        else:
+            disable = Config.verbose
+        selected_markers = (
+            self.markers if selected_markers is None else selected_markers
+        )
+        markers_mask = self.markers_col.isin(selected_markers)
+        markers = self.markers_col[markers_mask]
+        if len(self.exp_obs) == 1:
+            for roi_name, roi_data in track(
+                self.data.obs.groupby(self.exp_obs, sort=sort),
+                description=desc,
+                disable=disable,
+                console=console,
+            ):
+                exp = read_exp(self.data[roi_data.index, markers_mask], dtype=dtype)
+                yield [roi_name], roi_data, markers, exp
+        else:
+            for roi_name, roi_data in track(
+                self.data.obs.groupby(self.exp_obs, sort=sort),
+                description=desc,
+                disable=disable,
+                console=console,
+            ):
+                exp = read_exp(self.data[roi_data.index, markers_mask], dtype=dtype)
+                yield roi_name, roi_data, markers, exp
 
     def type_counter(self) -> pd.DataFrame:
         matrix = []
         meta = []
-        for roi_name, roi_data in self.roi_iter([self.cell_type_key], disable_pbar=True):
+        for roi_name, roi_data in self.roi_iter(
+            [self.cell_type_key], disable_pbar=True
+        ):
             c = Counter(roi_data[self.cell_type_key])
             matrix.append([c.get(t, 0) for t in self.cell_types])
             if isinstance(roi_name, (str, int, float)):
@@ -216,161 +263,160 @@ class AnalysisBase(Timer):
         index.names = self.exp_obs
         return pd.DataFrame(data=matrix, index=index, columns=self.cell_types)
 
-    def get_exp_matrix_fraction(
-            self,
-            markers: Optional[Array] = None,
-            types: Optional[Array] = None,
-            layers_key: Optional[str] = None,
-            std: Optional[float] = None,
-            neighbors_ix: Optional[Array] = None,
-            neighbors: Optional[tuple] = None,
-            data: Optional[AnnData] = None,
-    ) -> (Array, np.ndarray, AnnData):
-        if data is None:
-            data = self.data
-        if types is not None:
-            data = data[data.obs[self.cell_type_key].isin(types)].copy()
-        markers_mask = []
-        if markers is not None:
-            if len(markers) > 1:
-                markers_mask = (
-                    data.var[self.marker_key].isin(markers).to_numpy(dtype=bool)
-                )
-            else:
-                raise ValueError("Need more than two markers for `selected_markers`.")
-
-        if std is not None:
-            mask = np.asarray(data.X.std(axis=0) > std, dtype=bool)
-            if len(markers_mask) == 0:
-                markers_mask = mask
-            else:
-                markers_mask = markers_mask & mask
-
-        if len(markers_mask) > 0:
-            cut_data = data[:, markers_mask].copy()
-            cut_markers = cut_data.var[self.marker_key]
-        else:
-            cut_data = data
-            cut_markers = data.var[self.marker_key]
-
-        if layers_key is not None:
-            exp_matrix = cut_data.layers[layers_key].copy()
-        else:
-            exp_matrix = cut_data.X.copy()
-
-        if neighbors is not None:
-            meta = (
-                cut_data.obs.reset_index(drop=True)
-                    .reset_index()
-                    .set_index(self.neighbors_ix_key)
-            )
-            cent_exp_ix = meta.loc[neighbors[0]]["index"].values
-            neigh_exp_ix = meta.loc[neighbors[1]]["index"].values
-            cent_exp = exp_matrix[cent_exp_ix]
-            neigh_exp = exp_matrix[neigh_exp_ix]
-            assert cent_exp.shape == neigh_exp.shape
-            return cut_markers, (cent_exp, neigh_exp), cut_data
-        elif neighbors_ix is not None:
-            meta = (
-                cut_data.obs.reset_index(drop=True)
-                    .reset_index()
-                    .set_index(self.neighbors_ix_key)
-            )
-            exp_ix = meta.loc[neighbors_ix]["index"].values
-            exp = exp_matrix[exp_ix]
-            return cut_markers, exp, cut_data
-        else:
-            return cut_markers, exp_matrix, cut_data
-
-    def get_neighbors_ix(self) -> (List, List):
-        need_eval = self.is_col_str(self.neighbors_key)
-        if need_eval:
-            neighbors = [literal_eval(n) for n in self.data.obs[self.neighbors_key]]
-        else:
-            neighbors = [n for n in self.data.obs[self.neighbors_key]]
-        cent = [nix for nix in self.data.obs[self.neighbors_ix_key]]
-        return cent, neighbors
-
-    def get_neighbors_ix_map(self) -> Dict:
-        """To get the array of index for both center and it's neighbor cells"""
-        neighbors_map = {}
-        cent, neighbors = self.get_neighbors_ix()
-        for ix, nxs in zip(cent, neighbors):
-            neighbors_map[ix] = []
-            for nx in nxs:
-                if ix < nx:
-                    neighbors_map[ix].append(nx)
-
-        return neighbors_map
-
-    def get_neighbors_ix_pair(self) -> (List, List):
-        """To get the array of index for both center and it's neighbor cells"""
-        cent_cells = []
-        neigh_cells = []
-        cent, neighbors = self.get_neighbors_ix()
-        for ix, nxs in zip(cent, neighbors):
-            for nx in nxs:
-                if ix < nx:
-                    cent_cells.append(ix)
-                    neigh_cells.append(nx)
-
-        return cent_cells, neigh_cells
-
-    def get_types_neighbors_ix(self, selected_types=None):
-
-        if selected_types is None:
-            types = self.cell_types
-        else:
-            types = []
-            for t in selected_types:
-                if t in self.cell_types:
-                    types.append(t)
-
-        neighbors = {i: {i: ([], []) for i in types} for i in types}
-        # we get pairs that's not repeated from this function
-        cent_cells, neigh_cells = self.get_neighbors_ix_pair()
-        types_map = self.data.obs[
-            [self.neighbors_ix_key, self.cell_type_key]
-        ].set_index(self.neighbors_ix_key)
-        cent_type = types_map.loc[cent_cells][self.cell_type_key]
-        neigh_type = types_map.loc[neigh_cells][self.cell_type_key]
-        for cent, neigh, c_type, n_type in zip(
-                cent_cells, neigh_cells, cent_type, neigh_type
-        ):
-            if (c_type in types) & (n_type in types):
-                # it's a pair, so we need to add it twice
-                container = neighbors[c_type][n_type]
-                container[0].append(cent)
-                container[1].append(neigh)
-
-                container = neighbors[n_type][c_type]
-                container[0].append(neigh)
-                container[1].append(cent)
-        return neighbors
-
-    def is_col_str(self, key) -> bool:
-        """To determine whether a column need to eval from str
-
-        When writing to file, the python structure like list or tuple won't be correctly interpreted,
-        May need to do it manually.
-
-        Args:
-            key: The key in anndata.obs
-
-        Returns: bool
-
-        """
-        if isinstance(self.data.obs[key][0], str):
-            return True
-        else:
-            return False
+    # def get_exp_matrix_fraction(
+    #         self,
+    #         markers: Optional[Array] = None,
+    #         types: Optional[Array] = None,
+    #         layers_key: Optional[str] = None,
+    #         std: Optional[float] = None,
+    #         neighbors_ix: Optional[Array] = None,
+    #         neighbors: Optional[tuple] = None,
+    #         data: Optional[AnnData] = None,
+    # ) -> (Array, np.ndarray, AnnData):
+    #     if data is None:
+    #         data = self.data
+    #     if types is not None:
+    #         data = data[data.obs[self.cell_type_key].isin(types)].copy()
+    #     markers_mask = []
+    #     if markers is not None:
+    #         if len(markers) > 1:
+    #             markers_mask = (
+    #                 data.var[self.marker_key].isin(markers).to_numpy(dtype=bool)
+    #             )
+    #         else:
+    #             raise ValueError("Need more than two markers for `selected_markers`.")
+    #
+    #     if std is not None:
+    #         mask = np.asarray(data.X.std(axis=0) > std, dtype=bool)
+    #         if len(markers_mask) == 0:
+    #             markers_mask = mask
+    #         else:
+    #             markers_mask = markers_mask & mask
+    #
+    #     if len(markers_mask) > 0:
+    #         cut_data = data[:, markers_mask].copy()
+    #         cut_markers = cut_data.var[self.marker_key]
+    #     else:
+    #         cut_data = data
+    #         cut_markers = data.var[self.marker_key]
+    #
+    #     if layers_key is not None:
+    #         exp_matrix = cut_data.layers[layers_key].copy()
+    #     else:
+    #         exp_matrix = cut_data.X.copy()
+    #
+    #     if neighbors is not None:
+    #         meta = (
+    #             cut_data.obs.reset_index(drop=True)
+    #                 .reset_index()
+    #                 .set_index(self.neighbors_ix_key)
+    #         )
+    #         cent_exp_ix = meta.loc[neighbors[0]]["index"].values
+    #         neigh_exp_ix = meta.loc[neighbors[1]]["index"].values
+    #         cent_exp = exp_matrix[cent_exp_ix]
+    #         neigh_exp = exp_matrix[neigh_exp_ix]
+    #         assert cent_exp.shape == neigh_exp.shape
+    #         return cut_markers, (cent_exp, neigh_exp), cut_data
+    #     elif neighbors_ix is not None:
+    #         meta = (
+    #             cut_data.obs.reset_index(drop=True)
+    #                 .reset_index()
+    #                 .set_index(self.neighbors_ix_key)
+    #         )
+    #         exp_ix = meta.loc[neighbors_ix]["index"].values
+    #         exp = exp_matrix[exp_ix]
+    #         return cut_markers, exp, cut_data
+    #     else:
+    #         return cut_markers, exp_matrix, cut_data
+    #
+    # def get_neighbors_ix(self) -> (List, List):
+    #     need_eval = self.is_col_str(self.neighbors_key)
+    #     if need_eval:
+    #         neighbors = [literal_eval(n) for n in self.data.obs[self.neighbors_key]]
+    #     else:
+    #         neighbors = [n for n in self.data.obs[self.neighbors_key]]
+    #     cent = [nix for nix in self.data.obs[self.neighbors_ix_key]]
+    #     return cent, neighbors
+    #
+    # def get_neighbors_ix_map(self) -> Dict:
+    #     """To get the array of index for both center and it's neighbor cells"""
+    #     neighbors_map = {}
+    #     cent, neighbors = self.get_neighbors_ix()
+    #     for ix, nxs in zip(cent, neighbors):
+    #         neighbors_map[ix] = []
+    #         for nx in nxs:
+    #             if ix < nx:
+    #                 neighbors_map[ix].append(nx)
+    #
+    #     return neighbors_map
+    #
+    # def get_neighbors_ix_pair(self) -> (List, List):
+    #     """To get the array of index for both center and it's neighbor cells"""
+    #     cent_cells = []
+    #     neigh_cells = []
+    #     cent, neighbors = self.get_neighbors_ix()
+    #     for ix, nxs in zip(cent, neighbors):
+    #         for nx in nxs:
+    #             if ix < nx:
+    #                 cent_cells.append(ix)
+    #                 neigh_cells.append(nx)
+    #
+    #     return cent_cells, neigh_cells
+    #
+    # def get_types_neighbors_ix(self, selected_types=None):
+    #
+    #     if selected_types is None:
+    #         types = self.cell_types
+    #     else:
+    #         types = []
+    #         for t in selected_types:
+    #             if t in self.cell_types:
+    #                 types.append(t)
+    #
+    #     neighbors = {i: {i: ([], []) for i in types} for i in types}
+    #     # we get pairs that's not repeated from this function
+    #     cent_cells, neigh_cells = self.get_neighbors_ix_pair()
+    #     types_map = self.data.obs[
+    #         [self.neighbors_ix_key, self.cell_type_key]
+    #     ].set_index(self.neighbors_ix_key)
+    #     cent_type = types_map.loc[cent_cells][self.cell_type_key]
+    #     neigh_type = types_map.loc[neigh_cells][self.cell_type_key]
+    #     for cent, neigh, c_type, n_type in zip(
+    #             cent_cells, neigh_cells, cent_type, neigh_type
+    #     ):
+    #         if (c_type in types) & (n_type in types):
+    #             # it's a pair, so we need to add it twice
+    #             container = neighbors[c_type][n_type]
+    #             container[0].append(cent)
+    #             container[1].append(neigh)
+    #
+    #             container = neighbors[n_type][c_type]
+    #             container[0].append(neigh)
+    #             container[1].append(cent)
+    #     return neighbors
+    #
+    # def is_col_str(self, key) -> bool:
+    #     """To determine whether a column need to eval from str
+    #
+    #     When writing to file, the python structure like list or tuple won't be correctly interpreted,
+    #     May need to do it manually.
+    #
+    #     Args:
+    #         key: The key in anndata.obs
+    #
+    #     Returns: bool
+    #
+    #     """
+    #     if isinstance(self.data.obs[key][0], str):
+    #         return True
+    #     else:
+    #         return False
 
     def export_result(self):
         export_params = {"exp_obs": self.exp_obs, "method": self.method}
         if self.params is not None:
             export_params = {**export_params, **self.params}
-        if self.export:
-            df2adata_uns(self.result, self.data, self.export_key, params=export_params)
+        df2adata_uns(self.result, self.data, self.export_key, params=export_params)
 
     @property
     def neighbors_exists(self) -> bool:

@@ -1,6 +1,7 @@
 import warnings
 from typing import Optional
 
+import numpy as np
 import pandas as pd
 from anndata import AnnData
 from natsort import natsorted
@@ -33,20 +34,20 @@ class spatial_enrichment(AnalysisBase):
         order: If False, (Cell_A, Cell_B) and (Cell_B, Cell_A) are the same interaction (Default: False)
         **kwargs: {analysis_kwargs}
 
-    .. seealso:: `neighborhood_analysis <#spatialtis.plotting.neighborhood_analysis>`_
+    .. seealso:: `neighborhood_analysis <#spatialtis._plotting.neighborhood_analysis>`_
 
     """
 
     def __init__(
-            self,
-            data: AnnData,
-            threshold: Optional[float] = None,
-            layer_key: Optional[str] = None,
-            selected_markers: Optional[Array] = None,
-            resample: int = 500,
-            pval: float = 0.01,
-            order: bool = False,
-            **kwargs,
+        self,
+        data: AnnData,
+        threshold: Optional[float] = None,
+        layer_key: Optional[str] = None,
+        selected_markers: Optional[Array] = None,
+        resample: int = 500,
+        pval: float = 0.01,
+        order: bool = False,
+        **kwargs,
     ):
         super().__init__(data, **kwargs)
         self.params = {"order": order}
@@ -56,13 +57,17 @@ class spatial_enrichment(AnalysisBase):
 
         if (threshold is not None) & (layer_key is None):
             layers_key = f"gt_{threshold}"
-            data.layers[layers_key] = (data.X.copy() >= threshold).astype(int)
+            data.layers[layers_key] = (data.X.copy() >= threshold).astype(bool)
         elif (threshold is None) & (layer_key is not None):
-            warnings.warn("You specific both threshold and layers_key, "
-                          "using user defined layers_key")
+            warnings.warn(
+                "You specific both threshold and layers_key, "
+                "using user defined layers_key"
+            )
         else:
             layers_key = f"mean_cut"
-            data.layers[layers_key] = (data.X.copy() >= data.X.mean(axis=0)).astype(int)
+            data.layers[layers_key] = (data.X.copy() >= data.X.mean(axis=0)).astype(
+                bool
+            )
 
         if selected_markers is None:
             markers = self.markers
@@ -70,15 +75,30 @@ class spatial_enrichment(AnalysisBase):
             markers = natsorted(pd.unique(selected_markers))
 
         results_data = []
-        for roi_name, roi_data, mks, exp in self.roi_exp_iter(selected_markers=markers,
-                                                              layer_key=layer_key,
-                                                              desc="Spatial enrichment"):
+        for roi_name, roi_data, mks, exp in self.roi_exp_iter(
+            selected_markers=markers,
+            layer_key=layer_key,
+            dtype=np.bool,
+            desc="Spatial enrichment",
+        ):
             neighbors = read_neighbors(roi_data, self.neighbors_key)
             labels = roi_data[self.cell_id_key]
-            result = comb_bootstrap(exp, mks, neighbors, labels, order=order, times=resample, ignore_self=False)
+            result = comb_bootstrap(
+                exp,
+                mks,
+                neighbors,
+                labels,
+                order=order,
+                times=resample,
+                ignore_self=False,
+            )
             for pairs in result:
                 results_data.append([*roi_name, *pairs])
 
-        df = pd.DataFrame(data=results_data, columns=self.exp_obs + ["marker1", "marker2", "value"])
-        df = df.pivot_table(values="value", index=self.exp_obs, columns=["marker1", "marker2"])
+        df = pd.DataFrame(
+            data=results_data, columns=self.exp_obs + ["marker1", "marker2", "value"]
+        )
+        df = df.pivot_table(
+            values="value", index=self.exp_obs, columns=["marker1", "marker2"]
+        )
         self.result = df

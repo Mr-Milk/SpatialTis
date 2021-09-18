@@ -17,7 +17,7 @@ def bbox_eccentricity(bbox) -> float:
     y = (bbox[3] - bbox[1]) / 2.0
     if x < y:
         x, y = y, x
-    return np.sqrt(1.0 - y**2/x**2)
+    return np.sqrt(1.0 - y ** 2 / x ** 2)
 
 
 def type_counter(data: pd.DataFrame, exp_obs: List[str], count_on: str) -> pd.DataFrame:
@@ -48,4 +48,3 @@ def type_counter(data: pd.DataFrame, exp_obs: List[str], count_on: str) -> pd.Da
     index = pd.MultiIndex.from_tuples(meta)
     index.names = exp_obs
     return pd.DataFrame(data=matrix, index=index, columns=types)
-

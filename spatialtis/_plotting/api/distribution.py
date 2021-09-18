@@ -1,0 +1,94 @@
+from collections import Counter
+from typing import Optional, Sequence
+
+import numpy as np
+import pandas as pd
+from anndata import AnnData
+
+from spatialtis.config import analysis_list
+from spatialtis._plotting.base import dot_plot, heatmap
+from spatialtis.utils import doc, get_result
+
+
+@doc
+def spatial_distribution(
+    data: AnnData,
+    groupby: Optional[Sequence[str]] = None,
+    selected_types: Optional[Sequence] = None,
+    key: Optional[str] = None,
+    use: str = "dot",  # heatmap
+    **kwargs,
+):
+    """Visualization for spatial distribution
+
+    Args:
+        data: {adata_plotting}
+        groupby: {groupby}
+        selected_types: {selected_types}
+        key: {key}
+        use: "dot" or "heatmap" (Default: "dot")
+        **kwargs: Pass to :class:`spatialtis._plotting.base.dot_matrix` or
+            :class:`spatialtis._plotting.base.heatmap`
+
+    """
+    if key is None:
+        key = analysis_list["spatial_distribution"].last_used_key
+
+    df, params = get_result(data, key, params=True)
+    exp_obs = params["exp_obs"]
+
+    if groupby is None:
+        groupby = exp_obs
+
+    if selected_types is not None:
+        df = df[df["type"].isin(selected_types)]
+
+    if use == "dot":
+
+        plot_data = []
+        plot_index = []
+        for t, g in df.groupby("type"):
+            plot_index.append(t)
+            plot_data.append({0: 0, 1: 0, 2: 0, 3: 0, **Counter(g["pattern"])})
+
+        plot_df = pd.DataFrame(plot_data).rename(
+            columns=dict(
+                zip([0, 1, 2, 3], ["No cells", "Random", "Regular", "Cluster"])
+            )
+        )
+        plot_df.index = plot_index
+
+        colors = np.array(["#FFC408", "#c54a52", "#4a89b9", "#5a539d"] * len(plot_df))
+
+        plot_kwargs = dict(legend_title="ROI", alpha=1, xticklabels_rotation=90)
+        for k, v in kwargs.items():
+            plot_kwargs[k] = v
+
+        return dot_plot(
+            plot_df,
+            colors,
+            **plot_kwargs,
+            saved_name="spatial_distribution",
+        )
+
+    else:
+        plot_df = df.pivot(index=exp_obs, columns="type", values="pattern").fillna(0)
+        plot_kwargs = dict(
+            row_colors=groupby,
+            col_colors="type",
+            palette=["#fffec6", "#c54a52", "#4a89b9", "#5a539d"],
+            categorical_colorbar=["No Cell", "Random", "Regular", "Cluster"],
+            clustermap_kwargs=dict(
+                row_cluster=None,
+                col_cluster=True,
+            ),
+        )
+        # allow user to overwrite the default plot config
+        for k, v in kwargs.items():
+            plot_kwargs[k] = v
+
+        return heatmap(
+            plot_df,
+            **plot_kwargs,
+            saved_name="spatial_distribution",
+        )

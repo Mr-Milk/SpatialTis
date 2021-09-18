@@ -11,13 +11,11 @@ import spatialtis as st
 
 CPUs = int(sys.argv[1])
 
-
-
-st.CONFIG.CELL_TYPE_KEY = 'cell_type'
-st.CONFIG.CENTROID_KEY = 'centroid'
-st.CONFIG.EXP_OBS = ['roi']
-st.CONFIG.MARKER_KEY = 'gene'
-st.CONFIG.VERBOSE = False
+st.Config.cell_type_key = 'cell_type'
+st.Config.centroid_key = 'centroid'
+st.Config.exp_obs = ['roi']
+st.Config.marker_key = 'gene'
+st.Config.verbose = False
 
 cell_num = [1000, 2000, 5000, 10000, 50000]
 
@@ -45,7 +43,7 @@ def time_neighbors(data):
 
 def time_na(data):
     s1 = time()
-    st.neighborhood_analysis(data, order=False, resample=500)
+    st.cell_interaction(data, order=False, resample=500)
     s2 = time()
     return s2 - s1
 

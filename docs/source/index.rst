@@ -30,28 +30,14 @@ For a quick view of what it's does, check our the tutorial part.
    :caption: Usage
 
    usage/get_started
-   usage/example
    usage/installation
-   usage/save_results
-   usage/notebook
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Tutorial
-
-   tutorial/preprocessing
-   tutorial/1-basic_usage
-   tutorial/2-basic_analysis
-   tutorial/3-spatial_analysis_cell_type
-   tutorial/4-spatial_analysis_marker
-   tutorial/5-roi_viz
-   tutorial/6-set_config
+   usage/low_level
 
 .. toctree::
    :maxdepth: 1
    :caption: About
 
-   api_index/api_index
+   api
    about/implementation
    about/development_guide
    about/QA

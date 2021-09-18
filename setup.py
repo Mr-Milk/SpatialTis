@@ -6,11 +6,11 @@ from setuptools import find_packages, setup
 
 def get_version():
     root = Path(os.path.dirname(os.path.abspath(__file__)))
-    f = open(root / "spatialtis" / "__init__.py", "r").readline()
-    return f.split("'")[1]
+    f = open(root / "spatialtis" / "__init__.py", "r", encoding='utf-8').readline()
+    return f.split('"')[1]
 
 
-README = Path("README.md").read_text()
+README = Path("README.md").read_text(encoding='utf-8')
 
 setup(name="spatialtis",
       packages=find_packages(),
@@ -33,8 +33,8 @@ setup(name="spatialtis",
           "Topic :: Scientific/Engineering :: Bio-Informatics",
       ],
       python_requires='>=3.6',
-      install_requires=['anndata', 'numpy', 'pandas', 'scipy', 'shapely', 'bokeh', 'rich[jupyter]', 'seaborn', 'colour',
-                        'matplotlib', 'pyecharts', 'ray; python_version < "3.9"', 'lightgbm', 'scikit-learn',
-                        'spatialentropy', 'snapshot_phantomjs', 'neighborhood_analysis', 'leidenalg', 'python-igraph'],
-      extras_require={'all': ['scikit-image', 'alphashape', 'tifffile', ]}
+      install_requires=['anndata', 'numpy', 'pandas', 'scipy', 'scikit-learn', 'rich[jupyter]',
+                        'spatialtis_core', 'milkviz'],
+      extras_require={'all': ['scikit-image', 'ray', 'lightgbm',
+                              'leidenalg', 'python-igraph', ]}
       )

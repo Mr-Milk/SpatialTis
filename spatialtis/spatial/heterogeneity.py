@@ -8,7 +8,7 @@ from spatialtis_core import spatial_entropy
 
 from spatialtis.abc import AnalysisBase
 from spatialtis.typing import Array, Number
-from spatialtis.utils import doc
+from spatialtis.utils import doc, read_points
 
 
 @doc
@@ -38,27 +38,34 @@ class spatial_heterogeneity(AnalysisBase):
     """
 
     def __init__(
-            self,
-            data: AnnData,
-            method: str = "leibovici",
-            base: Optional[Number] = None,
-            d: Optional[int] = None,
-            cut: Union[int, Array, None] = None,
-            order: bool = False,
-            **kwargs,
+        self,
+        data: AnnData,
+        method: str = "leibovici",
+        base: Optional[Number] = None,
+        d: Optional[int] = None,
+        cut: Union[int, Array, None] = None,
+        order: bool = False,
+        **kwargs,
     ):
 
         methods_list = ["shannon", "altieri", "leibovici"]
         if method not in methods_list:
-            raise ValueError(f"Unknonw method: {method},"
-                             f"Available: {', '.join(methods_list)}.")
+            raise ValueError(
+                f"Unknonw method: {method}," f"Available: {', '.join(methods_list)}."
+            )
 
-        super().__init__(data, method=f"{method.capitalize()} entropy", **kwargs,)
+        super().__init__(
+            data,
+            method=f"{method.capitalize()} entropy",
+            **kwargs,
+        )
 
         if method == "shannon":
             df = self.type_counter()
             if len(df.columns) == 1:
-                warnings.warn("No heterogeneity, you only have one type of cell.", UserWarning)
+                warnings.warn(
+                    "No heterogeneity, you only have one type of cell.", UserWarning
+                )
             else:
                 ent = [entropy(row, base=base) for _, row in df.iterrows()]
                 self.result = pd.DataFrame({"heterogeneity": ent}, index=df.index)
@@ -67,10 +74,21 @@ class spatial_heterogeneity(AnalysisBase):
             points_collections = []
             types_collections = []
             track_ix = []
+            type_mapper = {t: i for i, t in enumerate(self.cell_types)}
             for roi_name, roi_data in self.roi_iter():
                 points_collections.append(read_points(roi_data, self.centroid_key))
-                types_collections.append(roi_data[self.cell_type_key].tolist())
+                types_collections.append(roi_data[self.cell_type_key].map(type_mapper))
                 track_ix.append(roi_name)
 
-            ent = spatial_entropy(points_collections, types_collections, method=method, d=d, cut=cut, order=order)
-            self.result = pd.DataFrame({"heterogeneity": ent}, index=pd.MultiIndex.from_tuples(track_ix))
+            ent = spatial_entropy(
+                points_collections,
+                types_collections,
+                method=method,
+                d=d,
+                cut=cut,
+                order=order,
+            )
+            self.result = pd.DataFrame(
+                {"heterogeneity": ent},
+                index=pd.MultiIndex.from_tuples(track_ix, names=self.exp_obs),
+            )

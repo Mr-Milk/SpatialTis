@@ -1,29 +1,29 @@
 from itertools import combinations_with_replacement
-from typing import Optional, Callable
+from typing import Callable, Optional
 
 import numpy as np
 import pandas as pd
 from anndata import AnnData
 from scipy.stats import pearsonr, spearmanr
+from joblib import Parallel, delayed
 
 from spatialtis.abc import AnalysisBase, neighbors_pairs
 from spatialtis.spatial.utils import NeighborsNotFoundError
 from spatialtis.typing import Number
-from spatialtis.utils import create_remote, doc, run_ray
-from spatialtis.utils.io import read_neighbors, read_exp
-from spatialtis.utils.log import pbar_iter
+from spatialtis.utils import create_remote, doc, pbar_iter, run_ray
+from spatialtis.utils.io import read_exp, read_neighbors
 
 
 def corr_types(
-        markers,
-        cent_exp,
-        neigh_exp,
-        cent,
-        neigh,
-        corr_func,
-        pval,
-        corr_cutoff,
-        exp_std_cutoff,
+    markers,
+    cent_exp,
+    neigh_exp,
+    cent,
+    neigh,
+    corr_func,
+    pval,
+    corr_cutoff,
+    exp_std_cutoff,
 ):
     result_data = []
     markers_num = len(markers)
@@ -62,15 +62,11 @@ def corr_t(exp1, exp2, t1, t2, markers, corr_func, end, pval):
                 results.append([t1, markers[i], t2, markers[t], r, p])
 
 
-corr_mp: Callable = create_remote(corr)
-corr_t_mp: Callable = create_remote(corr_t)
-
-
 DESCRIPTION = "co-expression"
 
 
 @doc
-class spatial_co_expression(AnalysisBase):
+class spatial_coexp(AnalysisBase):
     """Identifying spatial co-expression markers using correlation
 
     The correlation is calculated within pairs of neighbor cells
@@ -85,13 +81,13 @@ class spatial_co_expression(AnalysisBase):
     """
 
     def __init__(
-            self,
-            data: AnnData,
-            method: str = "spearman",
-            use_cell_type: bool = False,
-            layer_key: Optional[str] = None,
-            pval: Number = 0.01,
-            **kwargs,
+        self,
+        data: AnnData,
+        method: str = "spearman",
+        use_cell_type: bool = False,
+        layer_key: Optional[str] = None,
+        pval: Number = 0.01,
+        **kwargs,
     ):
         if method == "spearman":
             self.method = "spearman correlation"
@@ -113,40 +109,53 @@ class spatial_co_expression(AnalysisBase):
         neighbors = read_neighbors(self.data.obs, self.neighbors_key)
         labels = self.data.obs[self.cell_id_key]
         pairs = neighbors_pairs(labels, neighbors)
-        markers = self.data.var[self.marker_key]
+        markers = self.markers_col
 
         if use_cell_type:
-            type_pairs = self.data.obs[self.cell_type_key][pairs.ravel()].reshape(pairs.shape)
-            types = pd.DataFrame(np.hstack([pairs, type_pairs]), columns=['p1', 'p2', 'c1', 'c2'])
+            type_pairs = self.data.obs[self.cell_type_key][pairs.ravel()].to_numpy().reshape(
+                pairs.shape
+            )
+            types = pd.DataFrame(
+                np.vstack([pairs, type_pairs]).T, columns=["p1", "p2", "c1", "c2"]
+            )
 
             results_data = []
-            if self.mp:
-                jobs = []
-                for (t1, t2), df in types.groupby(['c1', 'c2']):
-                    exp1 = read_exp(self.data[df['p1'], :])
-                    exp2 = read_exp(self.data[df['p2'], :])
-                    end_index = len(exp1)
-                    jobs.append(corr_t_mp(exp1, exp2, t1, t2, markers, corr_func, end_index, pval))
 
+            if self.mp:
+                # init remote function when needed
+                corr_t_mp: Callable = create_remote(corr_t)
+                jobs = []
+                for (t1, t2), df in types.groupby(["c1", "c2"]):
+                    exp1 = read_exp(self.data[df["p1"].to_numpy(dtype=int), :])
+                    exp2 = read_exp(self.data[df["p2"].to_numpy(dtype=int), :])
+                    end_index = len(exp1)
+                    jobs.append(
+                        corr_t_mp.remote(
+                            exp1, exp2, t1, t2, markers, corr_func, end_index, pval
+                        )
+                    )
                 results = run_ray(jobs, desc=DESCRIPTION)
                 for r in results:
                     results_data += r
 
             else:
-                for (t1, t2), df in types.groupby(['c1', 'c2']):
-                    exp1 = read_exp(self.data[df['p1'], :])
-                    exp2 = read_exp(self.data[df['p2'], :])
+                for (t1, t2), df in pbar_iter(types.groupby(["c1", "c2"]), desc=DESCRIPTION):
+                    exp1 = read_exp(self.data[df["p1"].to_numpy(dtype=int), :])
+                    exp2 = read_exp(self.data[df["p2"].to_numpy(dtype=int), :])
                     end_index = len(exp1)
 
-                    for i in pbar_iter(range(end_index), desc=DESCRIPTION):
+                    for i in range(end_index):
                         for t in range(i + 1, end_index):
                             r, p = corr_func(exp1[i], exp2[t])
                             if p < pval:
-                                results_data.append([t1, markers[i], t2, markers[t], r, p])
+                                results_data.append(
+                                    [t1, markers[i], t2, markers[t], r, p]
+                                )
 
-            self.result = pd.DataFrame(results_data, columns=["cell1", "marker1",
-                                                              "cell2", "marker2",
-                                                              "corr", "pval"],)
+            self.result = pd.DataFrame(
+                results_data,
+                columns=["cell1", "marker1", "cell2", "marker2", "corr", "pval"],
+            )
         else:
             exp1 = read_exp(self.data[pairs[0], :])
             exp2 = read_exp(self.data[pairs[1], :])
@@ -154,10 +163,13 @@ class spatial_co_expression(AnalysisBase):
 
             results_data = []
             if self.mp:
+                # init remote function when needed
+                corr_mp: Callable = create_remote(corr)
                 jobs = []
                 for i in range(end_index):
-                    jobs.append(corr_mp(exp1, exp2, markers, corr_func, i, end_index, pval))
-
+                    jobs.append(
+                        corr_mp.remote(exp1, exp2, markers, corr_func, i, end_index, pval)
+                    )
                 results = run_ray(jobs, desc=DESCRIPTION)
                 for r in results:
                     results_data += r
@@ -169,5 +181,6 @@ class spatial_co_expression(AnalysisBase):
                         if p < pval:
                             results_data.append([markers[i], markers[t], r, p])
 
-            self.result = pd.DataFrame(results_data, columns=["marker1", "marker2", "corr", "pval"])
-
+            self.result = pd.DataFrame(
+                results_data, columns=["marker1", "marker2", "corr", "pval"]
+            )

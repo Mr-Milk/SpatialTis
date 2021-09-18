@@ -1,13 +1,14 @@
 from itertools import combinations_with_replacement
-from typing import Optional, List
+from typing import List, Optional
 
 import numpy as np
 import pandas as pd
 from anndata import AnnData
-from spatialtis_core import multipoints_bbox, polygons_area, multipolygons_area
+from spatialtis_core import multipoints_bbox, multipolygons_area, polygons_area
 
 from spatialtis.abc import AnalysisBase
-from spatialtis.utils import doc, read_points, read_shapes, col2adata_obs
+from spatialtis.utils import col2adata_obs, doc, read_points, read_shapes
+
 from .utils import bbox_eccentricity
 
 
@@ -21,18 +22,21 @@ class cell_components(AnalysisBase):
 
     """
 
-    def __init__(self,
-                 data: AnnData,
-                 exp_obs: Optional[List[str]] = None,
-                 roi_key: Optional[List[str]] = None,
-                 cell_type_key: Optional[str] = None,
-                 export_key: Optional[str] = None,
-                 ):
-        super().__init__(data,
-                         exp_obs=exp_obs,
-                         roi_key=roi_key,
-                         cell_type_key=cell_type_key,
-                         export_key=export_key)
+    def __init__(
+        self,
+        data: AnnData,
+        exp_obs: Optional[List[str]] = None,
+        roi_key: Optional[List[str]] = None,
+        cell_type_key: Optional[str] = None,
+        export_key: Optional[str] = None,
+    ):
+        super().__init__(
+            data,
+            exp_obs=exp_obs,
+            roi_key=roi_key,
+            cell_type_key=cell_type_key,
+            export_key=export_key,
+        )
 
         self.result = self.type_counter()
 
@@ -63,7 +67,7 @@ class cell_density(AnalysisBase):
             area.append(polygons_area(points))
 
         area = np.asarray(area) * (ratio * ratio)
-        self.results = df.div(area, axis=0)
+        self.result = df.div(area, axis=0)
 
 
 @doc
@@ -81,7 +85,7 @@ class cell_morphology(AnalysisBase):
 
     """
 
-    def __init__(self, data: AnnData, metric: Optional[str] = None, **kwargs):
+    def __init__(self, data: AnnData, **kwargs):
         super().__init__(data, **kwargs)
 
         shapes = read_shapes(self.data.obs, self.shape_key)
@@ -104,7 +108,8 @@ class cell_co_occurrence(AnalysisBase):
 
     def __init__(self, data: AnnData, **kwargs):
         super().__init__(data, **kwargs)
-        df = self.type_counter().T
+        df = self.type_counter()
+        df = df.T
         # normalize it using mean, greater than mean suggest it's occurrence
         df = ((df - df.mean()) / (df.max() - df.min()) > 0).astype(int)
         df = df.T
@@ -116,11 +121,15 @@ class cell_co_occurrence(AnalysisBase):
         for c in cell_comb:
             c1 = c[0]
             c2 = c[1]
-            index.append((c1, c2))
-            index.append((c2, c1))
             # if two type of cells are all 1, the result is 1, if one is 0, the result is 0
-            co_occur = df[c1] * df[c2]
+            co_occur = (df[c1] * df[c2]).to_numpy()
+            index.append((c1, c2))
             values.append(co_occur)
-            values.append(co_occur)
-
-        self.result = pd.DataFrame(data=values, index=df.index, columns=pd.MultiIndex.from_tuples(index))
+            if c1 != c2:
+                index.append((c2, c1))
+                values.append(co_occur)
+        self.result = pd.DataFrame(
+            data=np.array(values).T,
+            index=df.index,
+            columns=pd.MultiIndex.from_tuples(index),
+        )

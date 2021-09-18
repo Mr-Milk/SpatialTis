@@ -2,11 +2,11 @@ from typing import Optional
 
 import pandas as pd
 from anndata import AnnData
-from spatialtis_core import points_neighbors, bbox_neighbors, multipoints_bbox
+from spatialtis_core import bbox_neighbors, multipoints_bbox, points_neighbors
 
 from spatialtis.abc import AnalysisBase
 from spatialtis.typing import Number
-from spatialtis.utils import col2adata_obs, doc, read_shapes, read_points
+from spatialtis.utils import col2adata_obs, doc, read_points, read_shapes
 
 
 @doc
@@ -29,25 +29,29 @@ class find_neighbors(AnalysisBase):
     """
 
     def __init__(
-            self,
-            data: AnnData,
-            r: Optional[float] = None,
-            k: Optional[int] = None,
-            scale: Optional[Number] = None,
-            method: Optional[str] = "kdtree",  # kdtree, delaunay, rtree,
-            **kwargs,
+        self,
+        data: AnnData,
+        r: Optional[float] = None,
+        k: Optional[int] = None,
+        scale: Optional[Number] = None,
+        method: Optional[str] = "kdtree",  # kdtree, delaunay, rtree,
+        **kwargs,
     ):
 
         super().__init__(data, method=method, **kwargs)
 
         if method == "kdtree":
             if (r is None) & (k is None):
-                raise ValueError("When search with KD-Tree, please specific"
-                                 "search radius `r` or number of neighbors `k`")
+                raise ValueError(
+                    "When search with KD-Tree, please specific"
+                    "search radius `r` or number of neighbors `k`"
+                )
         elif method == "rtree":
             if (r is None) & (scale is None):
-                raise ValueError("When search with R-Tree, please specific"
-                                 "search radius `r` or scale ratio `scale`")
+                raise ValueError(
+                    "When search with R-Tree, please specific"
+                    "search radius `r` or scale ratio `scale`"
+                )
         if scale is not None:
             if scale < 1:
                 raise ValueError("Can't shrink cell, 'scale' must >= 1")

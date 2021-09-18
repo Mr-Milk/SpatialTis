@@ -10,9 +10,28 @@
 ![pypi](https://flat.badgen.net/pypi/v/spatialtis?color=blue)
 ![licence](https://flat.badgen.net/github/license/Mr-Milk/SpatialTis)
 
-SpatialTis is a high-performance spatial analysis toolkit for single-cell multiplexed tissue data using [`AnnData`](https://icb-anndata.readthedocs-hosted.com/en/stable/#) object as input with **parallel processing** support.
+SpatialTis is an ultra-fast spatial analysis toolkit for single-cell multiplexed tissue data.
 
-**Documentation**: [![rtd](img/view_on_rtd.svg)](https://spatialtis.readthedocs.io/en/latest/)
+- ✔️ Spatial Transcriptome (Non single-cell)
+- ✔️ Spatial Proteome (Single-cell)
+- 🦀 Core algorithms implements in Rust
+- 🚀 Parallel processing support
+
+### 🔋 Highlighted spatial analysis
+
+- Cell neighbors search (KD-Tree/R-Tree/Delaunay)
+- Cell-Cell Interaction
+- Marker spatial co-expression
+- Spatial variable genes (current support: SOMDE)
+- GCNG: Inferring ligand-receptor using graph convolution network
+- Identify neighbor dependent markers
+
+### 📦 Other analysis
+
+  - Spatial distribution
+  - Hotspot detection
+  - Spatial auto-correlation
+  - Spatial heterogeneity
 
 [Quick Start](https://spatialtis.readthedocs.io/en/latest/tutorial/1-basic_usage.html)
 
@@ -38,20 +57,8 @@ Install the current development version
 pip install git+https://github.com/Mr-Milk/SpatialTis.git
 ```
 
-## SpatialTis modules
+## Low level API
 
-- **Preprocessing**
-- **Basic analysis**
-    - Cell components
-    - Cell density
-    - Cell morphology
-    - Cell co-occurrence
-- **Spatial analysis**
-    - Find cell neighbors
-    - Spatial distribution
-    - Spatial heterogeneity
-    - Hotspot detection
-    - Cell-cell interaction
-    - Spatial co-expression
-    - Spatial community detection
-    - Neighbor dependent markers
+If you are interested in using low level algorithms yourself,
+Please refer to [spatialtis_core](https://github.com/Mr-Milk/SpatialTis-core)
+It provides clear document for all exposed API.

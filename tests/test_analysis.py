@@ -1,15 +1,15 @@
 import pytest
 
 import spatialtis as st
-from spatialtis import CONFIG
+from spatialtis import Config
 
 
 # Basic analysis
 def test_basic(data):
-    CONFIG.EXP_OBS = ["Patient", "Part", "ROI"]
-    CONFIG.CELL_TYPE_KEY = "leiden"
-    CONFIG.MARKER_KEY = "Markers"
-    CONFIG.MP = False
+    Config.exp_obs = ["Patient", "Part", "ROI"]
+    Config.cell_type_key = "leiden"
+    Config.MARKER_KEY = "Markers"
+    Config.MP = False
 
     st.cell_components(data)
     st.cell_density(data)
@@ -66,21 +66,21 @@ def test_find_neighbors_failed(data):
 
 
 def test_neighborhood(data):
-    st.neighborhood_analysis(data)
-    st.neighborhood_analysis(data, method="zscore")
-    st.neighborhood_analysis(data, order=True, export_key="neighborhood_order")
+    st.cell_interaction(data)
+    st.cell_interaction(data, method="zscore")
+    st.cell_interaction(data, order=True, export_key="neighborhood_order")
 
 
 def test_spatial_enrichment(data):
-    st.spatial_enrichment_analysis(data)
-    st.spatial_enrichment_analysis(data, threshold=0.1)
-    st.spatial_enrichment_analysis(data, order=True, export_key="enrichment_order")
+    st.spatial_enrichment(data)
+    st.spatial_enrichment(data, threshold=0.1)
+    st.spatial_enrichment(data, order=True, export_key="enrichment_order")
 
 
 def test_spatial_coexpression(data):
-    st.spatial_co_expression(data, method="pearson")
-    st.spatial_co_expression(
-        data, selected_markers=data.var[CONFIG.MARKER_KEY].tolist()
+    st.spatial_coexp(data, method="pearson")
+    st.spatial_coexp(
+        data, selected_markers=data.var[Config.MARKER_KEY].tolist()
     )
 
 

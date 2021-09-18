@@ -27,13 +27,13 @@ class prepare_svca(AnalysisBase):
     """
 
     def __init__(
-            self,
-            data: AnnData,
-            out_dir: Union[Path, str],
-            entry: str = "svca_data",
-            **kwargs
+        self,
+        data: AnnData,
+        out_dir: Union[Path, str],
+        entry: str = "svca_data",
+        **kwargs
     ):
-        super().__init__(data, task_name="prepare_svca", **kwargs)
+        super().__init__(data, **kwargs)
         groups = data.obs.groupby(self.exp_obs)
 
         p = Path(out_dir) / entry

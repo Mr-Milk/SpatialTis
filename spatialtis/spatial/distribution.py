@@ -1,12 +1,13 @@
 from typing import Optional
 
+import numpy as np
 import pandas as pd
 from anndata import AnnData
-from spatialtis_core import spatial_distribution_pattern, points_bbox
+from spatialtis_core import points_bbox, spatial_distribution_pattern
 
 from spatialtis.abc import AnalysisBase
 from spatialtis.typing import Number, Tuple
-from spatialtis.utils import doc
+from spatialtis.utils import doc, read_points
 
 
 @doc
@@ -54,21 +55,21 @@ class cell_dispersion(AnalysisBase):
     """
 
     def __init__(
-            self,
-            data: AnnData,
-            method: str = "nns",
-            min_cells: int = 10,
-            pval: float = 0.01,
-            r: Optional[Number] = None,
-            resample: int = 1000,
-            quad: Optional[Tuple[int, int]] = None,
-            rect_size: Optional[Number] = None,
-            **kwargs,
+        self,
+        data: AnnData,
+        method: str = "clark_evans",
+        min_cells: int = 10,
+        pval: float = 0.01,
+        r: Optional[Number] = None,
+        resample: int = 1000,
+        quad: Optional[Tuple[int, int]] = None,
+        rect_size: Optional[Number] = None,
+        **kwargs,
     ):
         display_method = {
             "id": "Index of dispersion",
             "morisita": "Morisita index",
-            "clark_evans": "Clark evans index"
+            "clark_evans": "Clark evans index",
         }
         self.method = display_method[method]
 
@@ -78,17 +79,29 @@ class cell_dispersion(AnalysisBase):
         for roi_name, roi_data in self.roi_iter():
             points = read_points(roi_data, self.centroid_key)
             bbox = points_bbox(points)
-            new_df = pd.DataFrame(dict(points=points, cell_types=roi_data[self.cell_type_key]))
+            new_df = pd.DataFrame(
+                dict(points=points, cell_types=roi_data[self.cell_type_key])
+            )
             points_collections = []
             cell_types = []
-            for c, g in new_df.groupby(self.cell_type_key):
-                points_collections.append(g['points'])
+            for c, g in new_df.groupby("cell_types"):
+                points_collections.append(g["points"])
                 cell_types.append(c)
-            result = spatial_distribution_pattern(points_collections, bbox, method=method, r=r, resample=resample, quad=quad,
-                                                    rect_side=rect_size, pval=pval, min_cells=min_cells)
+            result = spatial_distribution_pattern(
+                points_collections,
+                bbox,
+                method=method,
+                r=r,
+                resample=resample,
+                quad=quad,
+                rect_side=rect_size,
+                pval=pval,
+                min_cells=min_cells,
+            )
             for c, pattern in zip(cell_types, result):
                 results_data.append([*roi_name, c, *pattern])
-
-        results_data = pd.DataFrame(data=results_data, columns=[self.exp_obs + ['cell_type', 'index_value', 'pval', 'pattern']])
-        results_data.set_index(self.exp_obs)
+        results_data = pd.DataFrame(
+            data=results_data,
+            columns=self.exp_obs + ["cell_type", "index_value", "pval", "pattern"],
+        )
         self.result = results_data

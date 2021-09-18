@@ -31,7 +31,7 @@ author = "Mr-Milk"
 def get_version():
     root = Path(os.path.dirname(os.path.abspath(__file__))).parent.parent
     f = open(root / "spatialtis" / "__init__.py", "r").readline()
-    return f.split("'")[1]
+    return f.split('"')[1]
 
 
 release = get_version()
@@ -50,9 +50,12 @@ extensions = [
     "sphinx.ext.autosectionlabel",
     "sphinx.ext.mathjax",
     "sphinx.ext.viewcode",
+    "sphinx.ext.autosummary",
     "nbsphinx",
     "nbsphinx_link"
 ]
+
+autosummary_generate = True
 
 # nbsphinx_allow_errors = True
 nbsphinx_input_prompt = '[%s]:'

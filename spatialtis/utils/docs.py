@@ -10,12 +10,12 @@ PARAMETERS_DOCSTRINGS = dict(
     analysis_kwargs="Pass to :class:`spatialtis.abc.AnalysisBase`",
     tree_kwargs="The keyword arguments that pass to the boosting tree class, (Default: n_jobs=-1, random_state=0)",
     # keys
-    key="The key stores the data for plotting in `AnnData.uns`",
+    key="The key stores the data for _plotting in `AnnData.uns`",
     cell_type_key="The key to store cell types in `AnnData.obs` (Default: `spatialtis.CONFIG.CELL_TYPE_KEY`)",
     centroid_key="The key to store cell centroid in `AnnData.obs` (Default: `spatialtis.CONFIG.CENTROID_KEY`)",
     area_key="The key to store cell area in `AnnData.obs` (Default: `spatialtis.CONFIG.AREA_KEY`)",
     eccentricity_key="The key to store cell eccentricity in `AnnData.obs` "
-                     "(Default: `spatialtis.CONFIG.ECCENTRICITY_KEY`)",
+    "(Default: `spatialtis.CONFIG.ECCENTRICITY_KEY`)",
     shape_key="The key to store cell shape in `AnnData.obs` (Default: `spatialtis.CONFIG.SHAPE_KEY`)",
     community_key="The key to store cell communities in `AnnData.obs`",
     neighbors_key="The key to store cell neighbors in `AnnData.obs`",
@@ -23,8 +23,8 @@ PARAMETERS_DOCSTRINGS = dict(
     layers_key="The layer in `AnnData` to perform analysis",
     # plot
     agg="How to aggregate data, eg. sum, mean, median...",
-    plot_options="Pass to :class:`spatialtis.plotting.abc.PlotBase`",
-    adata_plotting="`AnnData` object for plotting",
+    plot_options="Pass to :class:`spatialtis._plotting.abc.PlotBase`",
+    adata_plotting="`AnnData` object for _plotting",
     roi="""A Dict use to select which ROI to display, 
              eg: :code:`{"Patients": "Patient 1", "ROI": "ROI3"}`, "Patients" and "ROI" are keys in `AnnData.obs`""",
     pyecharts_tips=""".. note::
@@ -36,7 +36,7 @@ PARAMETERS_DOCSTRINGS = dict(
     direction='"vertical" and "horizontal" (Default: "vertical")',
     annotate="Whether to show value number",
     alpha="Alpha value for opacity",
-    data_df="Data in `pandas.DataFrame` used for plotting",
+    data_df="Data in `pandas.DataFrame` used for _plotting",
 )
 
 

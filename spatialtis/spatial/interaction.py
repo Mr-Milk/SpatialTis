@@ -29,18 +29,18 @@ class cell_interaction(AnalysisBase):
         order: If False, (Cell_A, Cell_B) and (Cell_B, Cell_A) are the same interaction (Default: False)
         **kwargs: {analysis_kwargs}
 
-    .. seealso:: `spatial_enrichment_analysis <#spatialtis.plotting.spatial_enrichment_analysis>`_
+    .. seealso:: `spatial_enrichment_analysis <#spatialtis._plotting.spatial_enrichment_analysis>`_
 
     """
 
     def __init__(
-            self,
-            data: AnnData,
-            method: str = "pval",
-            resample: int = 1000,
-            pval: float = 0.01,
-            order: bool = False,
-            **kwargs,
+        self,
+        data: AnnData,
+        method: str = "pval",
+        resample: int = 1000,
+        pval: float = 0.01,
+        order: bool = False,
+        **kwargs,
     ):
         if method == "pval":
             self.method = "pseudo p-value"
@@ -59,11 +59,22 @@ class cell_interaction(AnalysisBase):
             neighbors = read_neighbors(roi_data, self.neighbors_key)
             labels = roi_data[self.cell_id_key]
             cell_types = roi_data[self.cell_type_key]
-            result = cc.bootstrap(cell_types, neighbors, labels, times=resample,
-                                  pval=pval, method=method, ignore_self=True)
+            result = cc.bootstrap(
+                cell_types,
+                neighbors,
+                labels,
+                times=resample,
+                pval=pval,
+                method=method,
+                ignore_self=True,
+            )
             for pairs in result:
                 results_data.append([*roi_name, *pairs])
 
-        df = pd.DataFrame(data=results_data, columns=self.exp_obs + ["type1", "type2", "value"])
-        df = df.pivot_table(values="value", index=self.exp_obs, columns=["type1", "type2"])
+        df = pd.DataFrame(
+            data=results_data, columns=self.exp_obs + ["type1", "type2", "value"]
+        )
+        df = df.pivot_table(
+            values="value", index=self.exp_obs, columns=["type1", "type2"]
+        )
         self.result = df

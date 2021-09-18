@@ -4,20 +4,19 @@ from typing import Optional, Sequence, Union
 import anndata as ad
 import numpy as np
 import pandas as pd
-from spatialtis_core import points_shapes, dumps_wkt_points, dumps_wkt_polygons
+from spatialtis_core import dumps_wkt_points, dumps_wkt_polygons, points_shapes
 
 from spatialtis.config import Config
-from spatialtis.utils import create_remote, doc, run_ray
-from spatialtis.utils import pbar_iter
+from spatialtis.utils import create_remote, doc, pbar_iter, run_ray
 
 
 def get_roi(
-        exp_img,
-        mask_img,
-        bg: Optional[int] = 0,
-        method: str = "mean",
-        polygonize: str = "convex",
-        alpha: Optional[float] = None,
+    exp_img,
+    mask_img,
+    bg: Optional[int] = 0,
+    method: str = "mean",
+    polygonize: str = "convex",
+    alpha: Optional[float] = None,
 ):
     # From skimage doc: The different color bands/channels are stored in the third dimension
     # so we need to transpose it
@@ -26,9 +25,9 @@ def get_roi(
     # read page by page, we don't know how user will store their file
     # some store 40 channels on one page, some store 1 channel per page
     try:
+        from skimage.external.tifffile import TiffFile
         from skimage.io import imread
         from skimage.measure import label, regionprops
-        from skimage.external.tifffile import TiffFile
     except ImportError:
         raise ImportError("Required scikit-image, try `pip install scikit-image`.")
 
@@ -57,8 +56,10 @@ def get_roi(
             centroids.append(cell.centroid)
             eccentricities.append(cell.eccentricity)
             cells.append(cell.coords)
-    cell_exp = [getattr(np, method).__call__(exp[:, [i[0] for i in cell], [i[1] for i in cell]])
-                for cell in cells]
+    cell_exp = [
+        getattr(np, method).__call__(exp[:, [i[0] for i in cell], [i[1] for i in cell]])
+        for cell in cells
+    ]
 
     return cell_exp, area, borders, centroids, eccentricities
 
@@ -81,12 +82,12 @@ class read_ROIs:
     """
 
     def __init__(
-            self,
-            entry: Union[Path, str],
-            obs_names: Sequence,
-            var: pd.DataFrame,
-            mask_pattern: Optional[str] = None,
-            img_pattern: Optional[str] = None,
+        self,
+        entry: Union[Path, str],
+        obs_names: Sequence,
+        var: pd.DataFrame,
+        mask_pattern: Optional[str] = None,
+        img_pattern: Optional[str] = None,
     ):
         self._obs_names = obs_names
         self._tree = []
@@ -135,7 +136,8 @@ class read_ROIs:
 
     # walk through the directory, until there is no directory
     def _exhaust_dir(
-            self, path: Union[Path, str],
+        self,
+        path: Union[Path, str],
     ):
         d = [f for f in Path(path).iterdir() if f.is_dir()]
         for f in d:
@@ -146,12 +148,12 @@ class read_ROIs:
 
     @doc
     def to_anndata(
-            self,
-            bg: Optional[int] = 0,
-            method: str = "mean",
-            polygonize: str = "convex",
-            alpha: Optional[float] = None,
-            mp: Optional[bool] = None,
+        self,
+        bg: Optional[int] = 0,
+        method: str = "mean",
+        polygonize: str = "convex",
+        alpha: Optional[float] = None,
+        mp: Optional[bool] = None,
     ):
         """Get anndata object
 
@@ -182,12 +184,22 @@ class read_ROIs:
             get_roi_mp = create_remote(get_roi)
             jobs = []
             for exp_img, mask_img in zip(self._exp_img, self._mask_img):
-                jobs.append(get_roi_mp.remote(exp_img, mask_img, bg=bg, method=method,
-                                              polygonize=polygonize, alpha=alpha,))
+                jobs.append(
+                    get_roi_mp.remote(
+                        exp_img,
+                        mask_img,
+                        bg=bg,
+                        method=method,
+                        polygonize=polygonize,
+                        alpha=alpha,
+                    )
+                )
 
             mp_results = run_ray(jobs, desc="Process images")
 
-            for (exp, area, borders, centroids_, eccentricities_), obs in zip(mp_results, self.obs):
+            for (exp, area, borders, centroids_, eccentricities_), obs in zip(
+                mp_results, self.obs
+            ):
                 X += exp
                 cell_count = len(area)
                 ann_obs += list(np.repeat(np.array([obs]), cell_count, axis=0))
@@ -198,10 +210,18 @@ class read_ROIs:
 
         else:
             for exp_img, mask_img, obs in pbar_iter(
-                    zip(self._exp_img, self._mask_img, self.obs), desc="Process images", total=len(self._exp_img)
+                zip(self._exp_img, self._mask_img, self.obs),
+                desc="Process images",
+                total=len(self._exp_img),
             ):
-                exp, area, borders, centroids_, eccentricities_ = get_roi(exp_img, mask_img, bg=bg, method=method,
-                                                                          polygonize=polygonize, alpha=alpha,)
+                exp, area, borders, centroids_, eccentricities_ = get_roi(
+                    exp_img,
+                    mask_img,
+                    bg=bg,
+                    method=method,
+                    polygonize=polygonize,
+                    alpha=alpha,
+                )
                 X += exp
                 cell_count = len(area)
                 ann_obs += list(np.repeat(np.array([obs]), cell_count, axis=0))

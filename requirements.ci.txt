@@ -1,12 +1,8 @@
-alphashape
-h5py==2.10.0 # This has to be fixed before the anndata solve the issue
+h5py
 anndata
 bokeh
-colour
-colorama
 leidenalg
 matplotlib
-neighborhood_analysis>=0.2.1
 numpy
 pandas
 pyecharts
@@ -19,7 +15,6 @@ scipy
 seaborn
 Shapely
 snapshot_phantomjs
-spatialentropy
 tqdm
 tifffile
 rich[jupyter]

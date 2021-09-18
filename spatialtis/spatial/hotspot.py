@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -10,7 +10,7 @@ from spatialtis_core import getis_ord, points_bbox
 from spatialtis.abc import AnalysisBase
 from spatialtis.spatial.utils import QuadStats
 from spatialtis.typing import Array
-from spatialtis.utils import col2adata_obs, doc
+from spatialtis.utils import col2adata_obs, doc, read_points
 
 
 def _hotspot(cells, bbox, grid_size, level, pval):
@@ -46,7 +46,7 @@ def _hotspot(cells, bbox, grid_size, level, pval):
                 ix = np.asarray([p[0] for p in pp])
                 iy = np.asarray([p[1] for p in pp])
                 sum_wc = np.sum(
-                    quad_count[ix.min(): ix.max(), iy.min(): iy.max()].ravel()
+                    quad_count[ix.min() : ix.max(), iy.min() : iy.max()].ravel()
                 )
 
                 sum_w = len(neighbors)
@@ -91,17 +91,18 @@ class hotspot(AnalysisBase):
     """
 
     def __init__(
-            self,
-            data: AnnData,
-            selected_types: Optional[Array] = None,
-            search_level: int = 3,
-            quad: Optional[Tuple[int, int]] = None,
-            rect_side: Optional[Tuple[float, float]] = None,
-            pval: float = 0.01,
-            **kwargs
+        self,
+        data: AnnData,
+        selected_types: Optional[Array] = None,
+        search_level: int = 3,
+        quad: Optional[Tuple[int, int]] = None,
+        rect_side: Optional[Tuple[float, float]] = None,
+        pval: float = 0.01,
+        **kwargs,
     ):
         super().__init__(data, **kwargs)
-
+        self.export_key = f"hotspot_{'_'.join(selected_types)}"
+        print(self.export_key)
         hotcells = []
         for roi_name, roi_data in self.roi_iter(desc="Hotspot analysis"):
             points = read_points(roi_data, self.centroid_key)
@@ -109,7 +110,13 @@ class hotspot(AnalysisBase):
             for t, g in roi_data.groupby(self.cell_type_key):
                 cells = read_points(g, self.centroid_key)
                 if t in selected_types:
-                    hots = getis_ord(cells, bbox, search_level=search_level, quad=quad, rect_side=rect_side)
+                    hots = getis_ord(
+                        cells,
+                        bbox,
+                        search_level=search_level,
+                        quad=quad,
+                        rect_side=rect_side,
+                    )
                     hotcells.append(pd.Series(hots, index=g.index))
 
         result = pd.concat(hotcells)
@@ -121,7 +128,6 @@ class hotspot(AnalysisBase):
         # Call this to invoke the print
         col2adata_obs(self.data.obs[self.export_key], self.data, self.export_key)
         self.stop_timer()
-
 
     @property
     def result(self):

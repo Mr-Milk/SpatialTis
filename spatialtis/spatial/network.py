@@ -8,8 +8,7 @@ from scipy.spatial.distance import euclidean
 from spatialtis.abc import AnalysisBase
 from spatialtis.config import Config
 from spatialtis.spatial.utils import NeighborsNotFoundError
-from spatialtis.utils import col2adata_obs, doc
-from spatialtis.utils.log import pbar_iter
+from spatialtis.utils import col2adata_obs, doc, pbar_iter
 
 
 @doc
@@ -27,13 +26,13 @@ class cell_community(AnalysisBase):
     """
 
     def __init__(
-            self,
-            data: AnnData,
-            partition_type: Optional[Any] = None,
-            partition_kwargs: Optional[Dict] = None,
-            **kwargs,
+        self,
+        data: AnnData,
+        partition_type: Optional[Any] = None,
+        partition_kwargs: Optional[Dict] = None,
+        **kwargs,
     ):
-        super().__init__(data, task_name="cell_community", **kwargs)
+        super().__init__(data, **kwargs)
 
         try:
             import leidenalg
@@ -93,7 +92,8 @@ class cell_community(AnalysisBase):
         neighbors_graphs = dict(zip(names, graphs))
         sub_comm = []
         for _, graph in pbar_iter(
-                neighbors_graphs.items(), desc="Communities detection",
+            neighbors_graphs.items(),
+            desc="Communities detection",
         ):
             part = leidenalg.find_partition(graph, partition_type, **partition_kwargs)
             sub_comm += part.membership

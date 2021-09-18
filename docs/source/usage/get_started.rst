@@ -19,41 +19,65 @@ Optional:
 Basic Usage
 --------------------------
 
-Before any analysis using SpatialTis, it's necessary to set up some :doc:`global config <../api_index/config>`,
-so that you don't need to specific them every time::
+A recommended way to import SpatialTis
 
-    from spatialtis import CONFIG
+    >>> import spatialtis as st
+    >>> import spatialtis.plotting as sp
 
-    CONFIG.EXP_OBS = ['Patient', 'Sample', 'ROI']
-    CONFIG.ROI_KEY = 'ROI'
-    CONFIG.CELL_TYPE_KEY = 'cell_type'
-    CONFIG.CENTROID_KEY = 'centroid'
-    CONFIG.MARKERS_KEY = 'markers'
+Let's load some data for analysis, SpatialTis takes `AnnData` as input,
 
-There are an analysis module and a visualization module `plotting` in SpatialTis::
+    >>> from anndata import read_h5ad
+    >>> data = read_h5ad('seqFISH.h5ad')
+    >>> data
+    AnnData object with n_obs × n_vars = 913 × 9566
+        obs: 'Field of View', 'centroid', 'Region', 'cell_type'
+        var: 'markers'
 
-    import spatialtis as st
-    import spatialtis.plotting as sp
+We could start to construct the neighbors network and profile cell-cell interactions.
 
-First load the data::
+    >>> st.find_neighbors(data,
+    ...                   r=180,
+    ...                   exp_obs=['Region', 'Field of View'],
+    ...                   centroid_key='centroid')
+    ⏳ Find neighbors
+    🛠 Method: kdtree
+    📦 Added to AnnData, obs: 'cell_neighbors'
+    📦 Added to AnnData, obs: 'cell_neighbors_count'
+    ⏱ 10ms
 
-    from anndata import read_h5ad
-    data = read_h5ad('sample.h5ad')
+    >>> cci = st.cell_interactions(data,
+    ...                            exp_obs = ['Region', 'Field of View'],
+    ...                            centroid_key='centroid',
+    ...                            cell_type_key='cell_type')
+    ⏳ Cell interaction
+    📦 Added to AnnData, uns: 'cell_interaction'
+    ⏱ 164ms
 
-Normally an analysis function comes with a visualization function,
-they share the same name but registered in different modules.
-**DON'T** import these functions individually, it will cause conflicts
+Notice that we repeatedly enter :code:`exp_obs` and :code:`centroid_key` twice. Obviously,
+we don't want to write these for every analysis. SpatialTis allows you to set it via Global config.
 
-Call an analysis function for cell_components::
+    >>> from spatialtis import Config
+    >>> Config.exp_obs = ['Region', 'Field of View']
+    >>> Config.roi_key = 'Field of View'
+    >>> Config.cell_type_key = 'cell_type'
+    >>> Config.centroid_key = 'centroid'
+    >>> Config.marker_key = 'markers'
 
-    st.cell_components(data)
+Now we could run the analysis in a much cleaner way.
 
-Call visualization function for cell_components::
+    >>> _ = st.find_neighbors(data)
+    >>> cci = st.cell_interaction(data)
 
-    sp.cell_components(data)
+To access the result of `cell-cell interactions analysis`, you could use `result` attribute
+that's available for every analysis object.
 
-Now that you've learn some basic of SpatialTis, feel free to play around. If you want to know more about analysis and
-visualization with SpatialTis, check the :doc:`Tutorial <tutorial>`.
+    >>> result = cci.result
 
+Or you could call the :code:`get_result` to get it from `AnnData.uns`
 
+    >>> result = st.get_result(data, 'cell_interaction')
+
+To visualize the analysis.
+
+    >>> sp.cell_interaction(data)
 

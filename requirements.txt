@@ -1,26 +1,16 @@
-alphashape
 anndata
-bokeh
 leidenalg
 matplotlib
-neighborhood_analysis>=0.3.0
 numpy
 pandas
-pyecharts
 python-igraph
 ray
 scikit-image
-selenium
 scikit-learn
 scipy
 seaborn
-Shapely
-snapshot_phantomjs
-spatialentropy
-tifffile
 rich[jupyter]
 lightgbm
-ipython
 
 # dev
 python-hmr
@@ -28,7 +18,6 @@ python-hmr
 # test suite
 pytest
 pytest-cov
-pytest-datadir
 
 # doc
 sphinx
@@ -37,4 +26,3 @@ sphinx-autodoc-typehints
 setuptools
 nbsphinx
 nbsphinx_link
-jinja2==2.11

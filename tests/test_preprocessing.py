@@ -1,10 +1,10 @@
 import pandas as pd
 import pytest
 
-from spatialtis import CONFIG, read_ROIs
+from spatialtis import Config, read_ROIs
 
 conditions = ["Patients", "Sample", "ROI"]
-CONFIG.WORKING_ENV = None
+Config.env = None
 
 
 def test_read_rois(tmpdir):

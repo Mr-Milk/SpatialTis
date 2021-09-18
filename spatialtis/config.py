@@ -1,21 +1,19 @@
 """
 Setting Global config for whole processing level
 """
-import warnings
 from ast import literal_eval
 from pathlib import Path
 from typing import List, Optional, Sequence
 
-import pandas as pd
 from anndata import AnnData
-from pyecharts.globals import WarningType, CurrentConfig, NotebookType
 from rich.console import Console
+from rich.table import Table
 
-WarningType.ShowWarning = False
+console = Console()
 
 
 class History(object):
-    key = 'spatialtis_analysis_history'
+    key = "spatialtis_analysis_history"
 
     def __init__(self, data: AnnData):
         self.data = data
@@ -31,6 +29,39 @@ class History(object):
 
 
 class _Config(object):
+    """Global configurations for spatialtis
+
+    Don't directly import this class, import the instance created for you
+
+    .. code-block:: python
+
+        from spatialtis import Config
+
+    This allows you to set global configuration, so that you don't have to repeatly pass the same
+    parameters in every function.
+
+    Attributes:
+        exp_obs: **REQUIRED**, (Default: `None`); The columns in `AnnData.obs` that tells how your experiments organized,
+            for example, you have different columns ["patients", "sex", "organ_part", "roi_id"], the last one will
+            be used as `roi_key` by default.
+        roi_key: *OPTIONAL*, (Default: `None`); Overwrite the `roi_key`
+        centroid_key: **REQUIRED**, (Default: `None`); The column in `AnnData.obs` that store cell coordination,
+            must be in wkt format, you can use `spatialtis.transform_points` to transform you data into wkt.
+        shape_key: *OPTIONAL*, (Default: `None`);The columns in `AnnData.obs` that store cell shape,
+            must be in wkt format, you can use `spatialtis.transform_shapes` to transform you data into wkt.
+        cell_type_key: *OPTIONAL*, (Default: `None`); The columns in `AnnData.obs` that store cell type name,
+            some analysis require cell type name to proceed
+        marker_key: *OPTIONAL*, (Default: `None`); The columns in `AnnData.var` that store protein/gene/transcript... name,
+            if not specific, will use `AnnData.var.index`. some analysis require marker name to proceed
+        mp: *OPTIONAL*, (Default: `True`); To turn on/off multiprocessing. From v0.4.0, It only affects `spatial_coexp`,
+            other analysis are implemented in Rust with default parallel processing on.
+        verbose: *OPTIONAL*, (Default: `True`); Control the printed message
+        progress_bar: *OPTIONAL*, (Default: `True`); Control the progress bar
+        auto_save: *OPTIONAL*, (Default: `None`); Set to `True` will automatically save all images in
+            `spatialtis_result` fold created at current directory, or set a path to store else where.
+
+
+    """
     def __init__(self):
         self._exp_obs: Optional[List[str]] = None
         self._cell_type_key: Optional[str] = None
@@ -47,28 +78,37 @@ class _Config(object):
         self.shape_key: Optional[str] = None
         self.marker_key: Optional[str] = None
 
-    def __repr__(self):
-        current_configs = [
-            ['Multiprocessing', 'mp', str(self.mp)],
-            ['Env', 'env', str(self.env)],
-            ['Verbose', 'verbose', str(self.verbose)],
-            ['Progress bar', 'progress_bar', str(self.progress_bar)],
-            ["Auto save", "auto_save", str(self.save_path) if self.auto_save else str(self.auto_save)],
-            ["Experiment observations", "exp_obs", str(self.exp_obs)],
-            ["ROI key", "roi_key", str(self.roi_key)],
-            ["Cell type key", "cell_type_key", str(self.cell_type_key)],
-            ["Marker key", "marker_key", self.marker_key],
-            ["Centroid key", "centroid_key", self.centroid_key],
-            ["Shape key", "shape_key", self.shape_key],
-        ]
+    def view(self):
+        """Print a table with current configurations"""
+        table = Table(title="Current configurations of SpatialTis")
+        table.add_column("Options", style="bright_black")
+        table.add_column("Attributes", style="cyan")
+        table.add_column("Value", style="magenta")
+        # add content
+        table.add_row("Multiprocessing", "mp", str(self.mp))
+        table.add_row("Verbose", "verbose", str(self.verbose))
+        table.add_row("Progress bar", "progress_bar", str(self.progress_bar))
+        table.add_row(
+            "Auto save",
+            "auto_save",
+            str(self.save_path) if self.auto_save else str(self.auto_save),
+        )
+        table.add_row("Experiment observations", "exp_obs", str(self.exp_obs))
+        table.add_row("ROI key", "roi_key", self.roi_key)
+        table.add_row("Cell type key", "cell_type_key", self.cell_type_key)
+        table.add_row("Marker key", "marker_key", self.marker_key)
+        table.add_row("Centroid key", "centroid_key", self.centroid_key)
+        table.add_row("Shape key", "shape_key", self.shape_key)
+        console.print(table)
 
-        return pd.DataFrame(data=current_configs, columns=['Options', 'Attributes', 'Values'])
+    def __repr__(self):
+        self.view()
+        return "SpatialTis Global Configurations"
 
     def _to_dict(self):
 
         return dict(
             mp=self.mp,
-            env=self.env,
             verbose=self.verbose,
             progress_bar=self.progress_bar,
             save_path=self.save_path,
@@ -107,13 +147,14 @@ class _Config(object):
     def exp_obs(self, obs):
         if isinstance(obs, (str, int, float)):
             self._exp_obs = [obs]
+            self._roi_key = self._exp_obs[-1]
         elif isinstance(obs, Sequence):
             self._exp_obs = list(obs)
+            self._roi_key = self._exp_obs[-1]
         elif obs is None:
             self._exp_obs = None
         else:
             raise TypeError(f"Couldn't set `exp_obs` with type {type(obs)}")
-        self._roi_key = self._exp_obs[-1]
 
     @property
     def cell_type_key(self):
@@ -127,33 +168,6 @@ class _Config(object):
             self._cell_type_key = None
         else:
             raise TypeError(f"Couldn't set CELL_TYPE_KEY with type {type(type_key)}")
-
-    @property
-    def env(self):
-        return self._env
-
-    @env.setter
-    def env(self, env):
-        self._env = env
-        from bokeh.io import output_notebook
-
-        output_notebook(hide_banner=True)
-
-        if env is None:
-            pass
-        elif (env == "jupyter") | (env == "jupyter_lab"):
-            CurrentConfig.NOTEBOOK_TYPE = NotebookType.JUPYTER_LAB
-        elif env == "jupyter_notebook":
-            CurrentConfig.NOTEBOOK_TYPE = NotebookType.JUPYTER_NOTEBOOK
-        elif env == "nteract":
-            CurrentConfig.NOTEBOOK_TYPE = NotebookType.NTERACT
-        elif env == "zeppelin":
-            CurrentConfig.NOTEBOOK_TYPE = NotebookType.ZEPPELIN
-        elif env == "terminal":
-            pass
-        else:
-            self._env = None
-            warnings.warn("Unknown working environments, fallback to None", UserWarning)
 
     @property
     def verbose(self):
@@ -189,35 +203,50 @@ class _Config(object):
         self.save_path = path
 
     def dumps(self, data: AnnData):
-        data.uns['spatialtis_config'] = str(self._to_dict())
+        """Save configurations to anndata
+
+        Args:
+            data: The `AnnData` object to save the Config
+
+        """
+        data.uns["spatialtis_config"] = str(self._to_dict())
 
     def loads(self, data: AnnData):
-        config = literal_eval(data.uns['spatialtis_config'])
-        self.mp = config['mp']
-        self.roi_key = config['roi_key']
-        self.env = config['env']
-        self.verbose = config['verbose']
-        self.progress_bar = config['progress_bar']
-        self.save_path = config['save_path']
-        self.exp_obs = config['exp_obs']
-        self.roi_key = config['roi_key']
-        self.cell_type_key = config['cell_type_key']
-        self.marker_key = config['marker_key']
-        self.centroid_key = config['centroid_key']
-        self.shape_key = config['shape_key']
+        """Load configurations from anndata
+
+        Args:
+            data: The `AnnData` object to load the Config
+
+        """
+        config = literal_eval(data.uns["spatialtis_config"])
+        self.mp = config["mp"]
+        self.roi_key = config["roi_key"]
+        self.env = config["env"]
+        self.verbose = config["verbose"]
+        self.progress_bar = config["progress_bar"]
+        self.save_path = config["save_path"]
+        self.exp_obs = config["exp_obs"]
+        self.roi_key = config["roi_key"]
+        self.cell_type_key = config["cell_type_key"]
+        self.marker_key = config["marker_key"]
+        self.centroid_key = config["centroid_key"]
+        self.shape_key = config["shape_key"]
+
+    def reset(self):
+        """Reset to default"""
+        self.mp = True
+        self.roi_key = None
+        self.verbose = True
+        self.progress_bar = True
+        self.auto_save = False
+        self.exp_obs = None
+        self.roi_key = None
+        self.cell_type_key = None
+        self.marker_key = None
+        self.centroid_key = None
+        self.shape_key = None
 
 
 # two state variable that don't need to reload
 # need to init in the same place
 Config = _Config()
-console = Console()
-
-if console.is_dumb_terminal:
-    Config.env = None
-elif console.is_jupyter:
-    Config.env = "jupyter_lab"
-elif console.is_terminal:
-    Config.env = "terminal"
-else:
-    Config.env = None
-    Config.progress_bar = False
