@@ -13,6 +13,7 @@ from spatialtis_core import (
 )
 
 from spatialtis.config import Config, console
+from .error import NeighborsNotFoundError
 
 
 def writer_verbose(key, part: str, verbose: Optional[bool] = None):
@@ -147,24 +148,41 @@ def transform_points(
 
 def transform_shapes(data: AnnData, shape_key: str, export_key: str = "cell_shape"):
     shapes = data.obs[shape_key].tolist()
+    if isinstance(shapes[0], str):
+        shapes = [literal_eval(s) for s in shapes]
     data.obs[export_key] = dumps_wkt_polygons(shapes)
+    Config.shape_key = export_key
 
 
 def read_points(data: pd.DataFrame, centroid_key: str) -> List[Tuple[float, float]]:
     if centroid_key is None:
         raise KeyError("centroid_key is None")
     wkt_strings = data[centroid_key].tolist()
-    return reads_wkt_points(wkt_strings)
+    try:
+        points = reads_wkt_points(wkt_strings)
+    except Exception:
+        raise IOError("The points (cell coordination) must be in wkt format, "
+                      "try spatialtis.transform_points")
+    return points
     # return [list(wkt.loads(point).coords)[0] for point in data[centroid_key]]
 
 
 def read_shapes(data: pd.DataFrame, shape_key: str) -> List[List[Tuple[float, float]]]:
+    if shape_key is None:
+        raise KeyError("shape_key is None")
     wkt_strings = data[shape_key].tolist()
-    return reads_wkt_polygons(wkt_strings)
+    try:
+        shapes = reads_wkt_polygons(wkt_strings)
+    except Exception:
+        raise IOError("The shapes (cell shapes) must be in wkt format, "
+                      "try spatialtis.transform_shapes")
+    return shapes
     # return [list(wkt.loads(shape).coords) for shape in data[shape_key]]
 
 
 def read_neighbors(data: pd.DataFrame, neighbors_key: str) -> List[List[int]]:
+    if neighbors_key not in data.columns:
+        raise NeighborsNotFoundError("Please run spatialtis.find_neighbors before proceed")
     return [literal_eval(n) for n in data[neighbors_key]]
 
 

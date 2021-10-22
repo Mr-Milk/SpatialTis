@@ -1,6 +1,7 @@
 from itertools import cycle
-from typing import Union, List
+from typing import Union, List, Optional
 
+import pandas as pd
 from matplotlib import cm
 from matplotlib.colors import Colormap
 from matplotlib.colors import to_hex
@@ -12,3 +13,12 @@ COLOR_POOL = cycle(['#1f77b4ff', '#aec7e8ff', '#ff7f0eff', '#ffbb78ff',
                     '#17becfff', '#9edae5ff', '#e41a1cff', '#377eb8ff',
                     '#4daf4aff', '#984ea3ff', '#ff7f00ff', '#ffff33ff',
                     '#a65628ff', '#f781bfff'])
+
+
+def pairs_to_adj(data: pd.DataFrame, type_order: Optional[List] = None):
+    data.columns = ['type1', 'type2', 'value']
+    data = pd.pivot(data, columns='type1', index='type2', values='value')
+    if type_order is not None:
+        data = data.loc[type_order, type_order]
+    return data
+

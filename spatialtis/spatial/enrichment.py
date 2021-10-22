@@ -8,7 +8,7 @@ from natsort import natsorted
 from spatialtis_core import comb_bootstrap
 
 from spatialtis.abc import AnalysisBase
-from spatialtis.spatial.utils import NeighborsNotFoundError
+from spatialtis.utils import NeighborsNotFoundError
 from spatialtis.typing import Array
 from spatialtis.utils import doc
 from spatialtis.utils.io import read_neighbors
@@ -64,8 +64,8 @@ class spatial_enrichment(AnalysisBase):
                 "using user defined layers_key"
             )
         else:
-            layers_key = f"mean_cut"
-            data.layers[layers_key] = (data.X.copy() >= data.X.mean(axis=0)).astype(
+            layer_key = f"mean_cut"
+            data.layers[layer_key] = (data.X.copy() >= data.X.mean(axis=0)).astype(
                 bool
             )
 
@@ -88,6 +88,7 @@ class spatial_enrichment(AnalysisBase):
                 mks,
                 neighbors,
                 labels,
+                pval=pval,
                 order=order,
                 times=resample,
                 ignore_self=False,

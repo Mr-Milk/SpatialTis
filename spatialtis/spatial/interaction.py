@@ -3,7 +3,7 @@ from anndata import AnnData
 from spatialtis_core import CellCombs
 
 from spatialtis.abc import AnalysisBase
-from spatialtis.spatial.utils import NeighborsNotFoundError
+from spatialtis.utils import NeighborsNotFoundError
 from spatialtis.utils import doc
 from spatialtis.utils.io import read_neighbors
 
@@ -55,7 +55,7 @@ class cell_interaction(AnalysisBase):
         cc = CellCombs(self.cell_types, order)
 
         results_data = []
-        for roi_name, roi_data in self.roi_iter(desc="Neighborhood analysis"):
+        for roi_name, roi_data in self.roi_iter(desc="Cell interaction"):
             neighbors = read_neighbors(roi_data, self.neighbors_key)
             labels = roi_data[self.cell_id_key]
             cell_types = roi_data[self.cell_type_key]

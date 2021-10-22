@@ -191,12 +191,12 @@ class AnalysisBase(Timer):
         if disable_pbar:
             disable = True
         else:
-            disable = Config.verbose
+            disable = not Config.progress_bar
 
         if len(self.exp_obs) == 1:
             for roi_name, roi_data in track(
                 self.data.obs.groupby(self.exp_obs, sort=sort),
-                description=desc,
+                description=f"[green]{desc}",
                 disable=disable,
                 console=console,
             ):
@@ -204,7 +204,7 @@ class AnalysisBase(Timer):
         else:
             for roi_name, roi_data in track(
                 self.data.obs.groupby(self.exp_obs, sort=sort),
-                description=desc,
+                description=f"[green]{desc}",
                 disable=disable,
                 console=console,
             ):
@@ -222,7 +222,7 @@ class AnalysisBase(Timer):
         if disable_pbar:
             disable = True
         else:
-            disable = Config.verbose
+            disable = not Config.progress_bar
         selected_markers = (
             self.markers if selected_markers is None else selected_markers
         )
@@ -231,7 +231,7 @@ class AnalysisBase(Timer):
         if len(self.exp_obs) == 1:
             for roi_name, roi_data in track(
                 self.data.obs.groupby(self.exp_obs, sort=sort),
-                description=desc,
+                description=f"[green]{desc}",
                 disable=disable,
                 console=console,
             ):
@@ -240,7 +240,7 @@ class AnalysisBase(Timer):
         else:
             for roi_name, roi_data in track(
                 self.data.obs.groupby(self.exp_obs, sort=sort),
-                description=desc,
+                description=f"[green]{desc}",
                 disable=disable,
                 console=console,
             ):

@@ -8,7 +8,7 @@ from scipy.stats import mannwhitneyu
 from spatialtis_core import neighbor_components
 
 from spatialtis.abc import AnalysisBase
-from spatialtis.spatial.utils import NeighborsNotFoundError
+from spatialtis.utils import NeighborsNotFoundError
 from spatialtis.typing import Number
 from spatialtis.utils import doc, read_neighbors, read_exp
 

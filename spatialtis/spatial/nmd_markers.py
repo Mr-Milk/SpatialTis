@@ -6,7 +6,7 @@ from anndata import AnnData
 from scipy.stats import spearmanr
 
 from spatialtis.abc import AnalysisBase
-from spatialtis.spatial.utils import NeighborsNotFoundError
+from spatialtis.utils import NeighborsNotFoundError
 from spatialtis.typing import Number
 from spatialtis.utils import doc, pbar_iter, read_exp, read_neighbors
 

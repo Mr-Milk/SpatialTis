@@ -7,7 +7,7 @@ from scipy.spatial.distance import euclidean
 
 from spatialtis.abc import AnalysisBase
 from spatialtis.config import Config
-from spatialtis.spatial.utils import NeighborsNotFoundError
+from spatialtis.utils import NeighborsNotFoundError
 from spatialtis.utils import col2adata_obs, doc, pbar_iter
 
 

@@ -4,10 +4,6 @@ from collections import OrderedDict
 import numpy as np
 
 
-class NeighborsNotFoundError(Exception):
-    pass
-
-
 # modify from PySAL pointpats
 class QuadStats:
     def __init__(self, points, bbox, nx=None, ny=None, grid_size=None):

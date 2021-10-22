@@ -38,7 +38,9 @@ class cell_components(AnalysisBase):
             export_key=export_key,
         )
 
-        self.result = self.type_counter()
+        result = self.type_counter()
+        result.columns.name = 'cell type'
+        self.result = result
 
 
 @doc
@@ -67,7 +69,9 @@ class cell_density(AnalysisBase):
             area.append(polygons_area(points))
 
         area = np.asarray(area) * (ratio * ratio)
-        self.result = df.div(area, axis=0)
+        result = df.div(area, axis=0)
+        result.columns.name = 'cell type'
+        self.result = result
 
 
 @doc
@@ -131,5 +135,5 @@ class cell_co_occurrence(AnalysisBase):
         self.result = pd.DataFrame(
             data=np.array(values).T,
             index=df.index,
-            columns=pd.MultiIndex.from_tuples(index),
+            columns=pd.MultiIndex.from_tuples(index, names=['type1', 'type2']),
         )

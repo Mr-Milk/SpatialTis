@@ -75,7 +75,7 @@ class spatial_heterogeneity(AnalysisBase):
             types_collections = []
             track_ix = []
             type_mapper = {t: i for i, t in enumerate(self.cell_types)}
-            for roi_name, roi_data in self.roi_iter():
+            for roi_name, roi_data in self.roi_iter(desc="Spatial heterogeneity"):
                 points_collections.append(read_points(roi_data, self.centroid_key))
                 types_collections.append(roi_data[self.cell_type_key].map(type_mapper))
                 track_ix.append(roi_name)

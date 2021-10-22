@@ -2,7 +2,7 @@ from typing import Optional
 
 import pandas as pd
 from anndata import AnnData
-from spatialtis_core import bbox_neighbors, multipoints_bbox, points_neighbors
+from spatialtis_core import bbox_neighbors, multipoints_bbox, points_neighbors, points_bbox
 
 from spatialtis.abc import AnalysisBase
 from spatialtis.typing import Number

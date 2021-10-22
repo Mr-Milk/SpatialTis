@@ -22,9 +22,11 @@ class cell_dispersion(AnalysisBase):
 
     Three methods are provided
 
-    - Variance-to-mean ratio (vmr): `Index of Dispersion <../about/implementation.html#index-of-dispersion>`_
-    - Quadratic statistics (quad): `Morisita’s index of dispersion <../about/implementation.html#morisitas-index-of-dispersion>`_
-    - Nearest neighbors search (nns): `Clark and Evans aggregation index <../about/implementation.html#clark-and-evans-aggregation-index>`_
+    - `Index of Dispersion <../about/implementation.html#index-of-dispersion>`_
+    - `Morisita’s index of dispersion <../about/implementation.html#morisitas-index-of-dispersion>`_
+    - `Clark and Evans aggregation index <../about/implementation.html#clark-and-evans-aggregation-index>`_
+
+    Notice that clark evans' index usually failed to detect local aggregation.
 
     +--------------------------------------+--------+---------+---------+
     |                                      | Random | Regular | Cluster |
@@ -38,7 +40,7 @@ class cell_dispersion(AnalysisBase):
 
     Args:
         data: {adata}
-        method: "vmr", "quad", and "nns" (Default: "nns")
+        method: "id", "morisita", and "clark_evans" (Default: "id")
         min_cells: The minimum number of the specific type of cells in a ROI to perform analysis
         pval: {pval}
         r: Only use when method="vmr", determine diameter of sample window, should be in [0, 1], default is 0.1
@@ -46,7 +48,7 @@ class cell_dispersion(AnalysisBase):
         resample: Only use when method="vmr", the number of random permutations to perform
         quad: Only use when method="quad", how to perform rectangle tessellation. Default is (10, 10), this will use a
             10*10 grid to perform tessellation.
-        grid_size: Only use when method="quad", the side of grid when perform rectangle tessellation.
+        rect_size: Only use when method="quad", the side of grid when perform rectangle tessellation.
         **kwargs: {analysis_kwargs}
 
 
@@ -57,7 +59,7 @@ class cell_dispersion(AnalysisBase):
     def __init__(
         self,
         data: AnnData,
-        method: str = "clark_evans",
+        method: str = "id",
         min_cells: int = 10,
         pval: float = 0.01,
         r: Optional[Number] = None,
@@ -76,7 +78,7 @@ class cell_dispersion(AnalysisBase):
         super().__init__(data, **kwargs)
 
         results_data = []
-        for roi_name, roi_data in self.roi_iter():
+        for roi_name, roi_data in self.roi_iter(desc="Cell dispersion"):
             points = read_points(roi_data, self.centroid_key)
             bbox = points_bbox(points)
             new_df = pd.DataFrame(
@@ -104,4 +106,5 @@ class cell_dispersion(AnalysisBase):
             data=results_data,
             columns=self.exp_obs + ["cell_type", "index_value", "pval", "pattern"],
         )
+        self.params = dict(exp_obs=self.exp_obs)
         self.result = results_data
