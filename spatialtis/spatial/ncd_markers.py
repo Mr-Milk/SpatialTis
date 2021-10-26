@@ -17,19 +17,19 @@ from spatialtis.utils import doc, read_neighbors, read_exp
 class NCD_marker(AnalysisBase):
     """Identify neighbor cells dependent marker
 
-    This method tells you the dependency and correlation between markers and its neighbor cell type.
-    The dependency is calculated by building a gradiant boosting tree (in here XGBoost) to determine
-    the feature importance. And the the spearman correlation is calculated.
-
-    A reasonable std cutoff should be set, the marker expression need to have certain degree of variance.
+    This method tells you the dependency between markers and its neighbor cell type.
+    The dependency is calculated by building a gradiant boosting tree (in here lightgbm) to determine
+    the feature importance. A statistic test and fold change will be calculate for importance markers and its
+    neighbor cells, the fold change is between marker with cell type at / not at the neighborhood.
 
     Args:
         data: {adata}
-        exp_std_cutoff: Standard deviation, threshold to filter out markers that are not variant enough
-        pval: {pval}
+        importance_cutoff: Threshold to determine the feature markers
         selected_markers: {selected_markers}
-        layers_key: {layers_key}
+        layer_key: {layer_key}
         tree_kwargs: {tree_kwargs}
+        test_method: which test method to use, anything from :code:`scipy.stats`
+        pval: {pval}
         **kwargs: {analysis_kwargs}
 
     """
@@ -38,10 +38,10 @@ class NCD_marker(AnalysisBase):
             self,
             data: AnnData,
             importance_cutoff: Number = 0.5,
-            pval: Number = 0.01,
             layer_key: Optional[str] = None,
             tree_kwargs: Optional[Dict] = None,
             test_method: str = "mannwhitneyu",
+            pval: Number = 0.01,
             **kwargs,
     ):
         try:
@@ -81,29 +81,24 @@ class NCD_marker(AnalysisBase):
         )
         results_data = []
         # For markers in different cell types
-        for t, x in neigh_comp.groupby(level=["type"]):
-            exp_ix = x.index.to_frame()["id"]
-            exp = read_exp(self.data[exp_ix, :], layer_key)
-            for i, y in enumerate(exp):
-                # copy it to prevent memory peak according to lightgbm
-                reg = LGBMRegressor(**tree_kwargs_).fit(x, y.copy())
-                weights = np.asarray(reg.feature_importances_)
-                ws = weights.sum()
-                # From this step on, most of the if branch is to prevent
-                # Divide by zero warning
-                if ws != 0:
+        with np.errstate(divide="ignore"):
+            for t, x in neigh_comp.groupby(level=["type"]):
+                exp_ix = x.index.to_frame()["id"]
+                exp = read_exp(self.data[exp_ix, :], layer_key)
+                for i, y in enumerate(exp):
+                    # copy it to prevent memory peak according to lightgbm
+                    reg = LGBMRegressor(**tree_kwargs_).fit(x, y.copy())
+                    weights = np.asarray(reg.feature_importances_)
                     weights = weights / weights.sum()
                     max_ix = np.argmax(weights)
                     max_weight = weights[max_ix]
                     max_type = col[max_ix]
                     if max_weight > importance_cutoff:
                         nx = x.copy()
-                        nx[
-                            "exp"
-                        ] = y  # add expression data to dataframe to allow cutting afterwards
-                        at_neighbor = (
-                                nx.iloc[:, max_ix] != 0
-                        )  # cells with max_type at neighbors
+                        # add expression data to dataframe to allow cutting afterwards
+                        nx["exp"] = y
+                        # cells with max_type at neighbors
+                        at_neighbor = (nx.iloc[:, max_ix] != 0)
                         at_neighbor_exp = nx[at_neighbor]["exp"].to_numpy()
                         non_at_neighbor_exp = nx[~at_neighbor]["exp"].to_numpy()
                         at_sum = at_neighbor_exp.sum()

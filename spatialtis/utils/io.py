@@ -83,7 +83,7 @@ def col2adata_obs(
 
 
 def get_result(
-    adata: AnnData,
+    data: AnnData,
     key: str,
     params: bool = False,
 ) -> Union[pd.DataFrame, Tuple[pd.DataFrame, Dict]]:
@@ -92,13 +92,13 @@ def get_result(
     To get the params, use `params=True`
 
     Args:
-        adata: The `AnnData` object for storage
+        data: The `AnnData` object for storage
         key: Which key in `AnnData.uns` you want to read
         params: Whether to return parameters
 
     """
 
-    container = adata.uns[key]
+    container = data.uns[key]
     try:
         df = pd.DataFrame(literal_eval(container["df"]))
         df = df.replace("nan", np.nan)
@@ -130,6 +130,14 @@ def transform_points(
     centroid_keys: Union[str, Tuple[str, str]],
     export_key: str = "centroid",
 ):
+    """Transform normal coordination in `AnnData.obs` to wkt-format
+
+    Args:
+        data: The `AnnData` object
+        centroid_keys: The key or a tuple of keys that store X, Y coordination
+        export_key: The key to export, will automatically update the global config
+
+    """
     if isinstance(centroid_keys, str):
         points = data.obs[centroid_keys].tolist()
         if isinstance(points[0], str):
@@ -147,6 +155,14 @@ def transform_points(
 
 
 def transform_shapes(data: AnnData, shape_key: str, export_key: str = "cell_shape"):
+    """Transform normal coordination in `AnnData.obs` to wkt-format
+
+    Args:
+        data: The `AnnData` object
+        shape_key: The key that store key information
+        export_key: The key to export, will automatically update the global config
+
+    """
     shapes = data.obs[shape_key].tolist()
     if isinstance(shapes[0], str):
         shapes = [literal_eval(s) for s in shapes]
@@ -177,7 +193,6 @@ def read_shapes(data: pd.DataFrame, shape_key: str) -> List[List[Tuple[float, fl
         raise IOError("The shapes (cell shapes) must be in wkt format, "
                       "try spatialtis.transform_shapes")
     return shapes
-    # return [list(wkt.loads(shape).coords) for shape in data[shape_key]]
 
 
 def read_neighbors(data: pd.DataFrame, neighbors_key: str) -> List[List[int]]:
@@ -186,11 +201,11 @@ def read_neighbors(data: pd.DataFrame, neighbors_key: str) -> List[List[int]]:
     return [literal_eval(n) for n in data[neighbors_key]]
 
 
-def read_exp(adata: AnnData, layers_key=None, dtype=None) -> np.ndarray:
-    if layers_key is None:
+def read_exp(adata: AnnData, layer_key=None, dtype=None) -> np.ndarray:
+    if layer_key is None:
         exp = adata.X
     else:
-        exp = adata.layers[layers_key]
+        exp = adata.layers[layer_key]
 
     if issparse(exp):
         exp = exp.toarray()

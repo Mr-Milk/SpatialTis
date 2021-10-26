@@ -22,19 +22,17 @@ class spatial_enrichment(AnalysisBase):
     Similar to neighborhood analysis which tells you the relationship between different type of cells.
     This analysis tells you the spatial relationship between markers.
 
-    This method is implemented in Rust, it executes in parallel automatically.
-
     Args:
         data: {adata}
         threshold: The expression level to determine whether a marker is positive
-        layers_key: {layers_key}
+        layer_key: {layer_key}
         selected_markers: {selected_markers}
         resample: Number of times to perform resample
         pval: {pval}
         order: If False, (Cell_A, Cell_B) and (Cell_B, Cell_A) are the same interaction (Default: False)
         **kwargs: {analysis_kwargs}
 
-    .. seealso:: `neighborhood_analysis <#spatialtis._plotting.neighborhood_analysis>`_
+    .. seealso:: :class:`spatialtis.cell_interaction`
 
     """
 
@@ -56,9 +54,9 @@ class spatial_enrichment(AnalysisBase):
             raise NeighborsNotFoundError("Run `find_neighbors` first before continue.")
 
         if (threshold is not None) & (layer_key is None):
-            layers_key = f"gt_{threshold}"
-            data.layers[layers_key] = (data.X.copy() >= threshold).astype(bool)
-        elif (threshold is None) & (layer_key is not None):
+            layer_key = f"gt_{threshold}"
+            data.layers[layer_key] = (data.X.copy() >= threshold).astype(bool)
+        elif (threshold is not None) & (layer_key is not None):
             warnings.warn(
                 "You specific both threshold and layers_key, "
                 "using user defined layers_key"

@@ -1,4 +1,4 @@
-from typing import Iterable, List
+from typing import Iterable, List, Optional
 
 import pandas as pd
 from rich.progress import track
@@ -6,7 +6,7 @@ from rich.progress import track
 from spatialtis.config import Config, console
 
 
-def pbar_iter(obj: Iterable, desc: str = None, **kwargs):
+def pbar_iter(obj: Iterable, desc: Optional[str] = None, **kwargs):
     for i in track(
         obj, disable=(not Config.verbose), console=console, description=desc, **kwargs
     ):

@@ -1,4 +1,4 @@
-Getting Started!
+Getting Started
 =================
 
 To install SpatialTis, please see the `Installation <installation.rst>`_ section. It's recommended to start a new virtual environment before installing the SpatialTis.
@@ -53,6 +53,9 @@ We could start to construct the neighbors network and profile cell-cell interact
     📦 Added to AnnData, uns: 'cell_interaction'
     ⏱ 164ms
 
+Setting Configurations
+-------------------------
+
 Notice that we repeatedly enter :code:`exp_obs` and :code:`centroid_key` twice. Obviously,
 we don't want to write these for every analysis. SpatialTis allows you to set it via Global config.
 
@@ -68,6 +71,9 @@ Now we could run the analysis in a much cleaner way.
     >>> _ = st.find_neighbors(data)
     >>> cci = st.cell_interaction(data)
 
+Save and get results
+---------------------
+
 To access the result of `cell-cell interactions analysis`, you could use `result` attribute
 that's available for every analysis object.
 
@@ -81,3 +87,26 @@ To visualize the analysis.
 
     >>> sp.cell_interaction(data)
 
+
+Input data
+-------------
+
+SpatialTis required cell coordination stored in
+`wkt <https://en.wikipedia.org/wiki/Well-known_text_representation_of_geometry>`_
+(well-known text) format, which could be easily serialized and deserialized.
+
+If you have two columns :code:`X` and :code:`Y` in `AnnData.obs` that store x, y coordination,
+you could transform them into wkt format:
+
+>>> st.transform_points(data, ('X', 'Y'), export_key='wkt_centroid')
+
+Or if you save your coordination in single column :code:`centroid`, transform it like:
+
+>>> st.transform_points(data, 'centroid', export='wkt_centroid')
+
+If you have shape information, which should be stored as multipolygons. You should have
+one columns 'shape' that store a series of points in a array container like
+:code:`[(1, 2), (3, 4), ..., (100, 100)]`,
+transform it like:
+
+>>> st.transform_shapes(data, 'shape', export='wkt_shape')

@@ -10,7 +10,7 @@
 ![pypi](https://flat.badgen.net/pypi/v/spatialtis?color=blue)
 ![licence](https://flat.badgen.net/github/license/Mr-Milk/SpatialTis)
 
-SpatialTis is an ultra-fast spatial analysis toolkit for single-cell multiplexed tissue data.
+SpatialTis is an ultra-fast spatial analysis toolkit for large-scale spatial single-cell data.
 
 - ✔️ Spatial Transcriptome (Non single-cell)
 - ✔️ Spatial Proteome (Single-cell)

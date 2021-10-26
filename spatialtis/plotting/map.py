@@ -160,7 +160,7 @@ def neighbors_map(data: AnnData,
         raise ValueError(f"ROI not exist, roi = {roi}")
     cell_types = roi_info[cell_type_key]
 
-    internal_kwargs = dict(legend_title="Cell type")
+    internal_kwargs = dict(legend_title="Cell type", **plot_options)
 
     cells = np.array(read_points(roi_info, centroid_key))
     x, y = cells[:, 0], cells[:, 1]

@@ -8,7 +8,6 @@ from spatialtis_core import multipoints_bbox, multipolygons_area, polygons_area
 
 from spatialtis.abc import AnalysisBase
 from spatialtis.utils import col2adata_obs, doc, read_points, read_shapes
-
 from .utils import bbox_eccentricity
 
 
@@ -18,6 +17,7 @@ class cell_components(AnalysisBase):
 
     Args:
         data: {adata}
+        export_key: {export_key}
         **kwargs: {analysis_kwargs}
 
     """
@@ -25,18 +25,10 @@ class cell_components(AnalysisBase):
     def __init__(
         self,
         data: AnnData,
-        exp_obs: Optional[List[str]] = None,
-        roi_key: Optional[List[str]] = None,
-        cell_type_key: Optional[str] = None,
         export_key: Optional[str] = None,
+        **kwargs,
     ):
-        super().__init__(
-            data,
-            exp_obs=exp_obs,
-            roi_key=roi_key,
-            cell_type_key=cell_type_key,
-            export_key=export_key,
-        )
+        super().__init__(data, export_key=export_key, **kwargs)
 
         result = self.type_counter()
         result.columns.name = 'cell type'
@@ -55,12 +47,18 @@ class cell_density(AnalysisBase):
                ratio = Dataset unit / real length unit;
                For example, if the resolution of your dataset is 1μm, but you want to use 1mm as unit,
                then you should set the ratio as 0.001, 1 pixels represent 0.001mm length.
+        export_key: {export_key}
         **kwargs: {analysis_kwargs}
 
     """
 
-    def __init__(self, data: AnnData, ratio: float = 1.0, **kwargs):
-        super().__init__(data, **kwargs)
+    def __init__(self,
+                 data: AnnData,
+                 ratio: float = 1.0,
+                 export_key: Optional[str] = None,
+                 **kwargs
+                 ):
+        super().__init__(data, export_key=export_key, **kwargs)
         df = self.type_counter()
 
         area = []
@@ -85,18 +83,26 @@ class cell_morphology(AnalysisBase):
 
     Args:
         data: {adata}
+        area_key: The key to store cell area, Default: 'area'
+        eccentricity_key: The key to store cell eccentricity, Default: 'eccentricity'
         **kwargs: {analysis_kwargs}
 
     """
 
-    def __init__(self, data: AnnData, **kwargs):
+    def __init__(self,
+                 data: AnnData,
+                 area_key: Optional[str] = None,
+                 eccentricity_key: Optional[str] = None,
+                 **kwargs):
         super().__init__(data, **kwargs)
 
         shapes = read_shapes(self.data.obs, self.shape_key)
         areas = multipolygons_area(shapes)
         eccentricity = [bbox_eccentricity(bbox) for bbox in multipoints_bbox(shapes)]
-        col2adata_obs(areas, self.data, self.area_key)
-        col2adata_obs(eccentricity, self.data, self.eccentricity_key)
+        area_key = self.area_key if area_key is None else area_key
+        eccentricity_key = self.eccentricity_key if eccentricity_key is None else eccentricity_key
+        col2adata_obs(areas, self.data, area_key)
+        col2adata_obs(eccentricity, self.data, eccentricity_key)
         self.stop_timer()  # write to obs, stop timer manually
 
 
@@ -106,12 +112,16 @@ class cell_co_occurrence(AnalysisBase):
 
     Args:
         data: {adata}
+        export_key: {export_key}
         **kwargs: {analysis_kwargs}
 
     """
 
-    def __init__(self, data: AnnData, **kwargs):
-        super().__init__(data, **kwargs)
+    def __init__(self,
+                 data: AnnData,
+                 export_key: Optional[str] = None,
+                 **kwargs):
+        super().__init__(data, export_key=export_key, **kwargs)
         df = self.type_counter()
         df = df.T
         # normalize it using mean, greater than mean suggest it's occurrence

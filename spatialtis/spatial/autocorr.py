@@ -13,26 +13,36 @@ from spatialtis.utils import read_neighbors, doc
 class spatial_autocorr(AnalysisBase):
     """Spatial auto-correlation for every markers
 
+    This is used measure the correlation of marker expression with spatial locations.
+
+    Moran's I is more for global spatial autocorrelation,
+    Geary's C is more for local spatial autocorrelation
+
     Args:
         data: {data}
-        marker_key: {marker_key}
+        method: "moran_i" or "geary_c" (Default: "moran_i")
+        pval: {pval}
+        two_tailed: Whether to use two tailed for p-value
         layer_key: {layer_key}
-        two_tailed: If using
-        method:
+        **kwargs: {analysis_kwargs}
+
+    .. seealso:: :class:`spatialtis.somde`
+
     """
     def __init__(
         self,
         data: AnnData,
-        marker_key: Optional[str] = None,
-        layer_key: Optional[str] = None,
-        two_tailed: bool = True,
         method: str = "moran_i",
+        pval: float = 0.05,
+        two_tailed: bool = True,
+        layer_key: Optional[str] = None,
+        **kwargs,
     ):
-        super().__init__(data, marker_key=marker_key)
+        super().__init__(data, display_name="Spatial auto-correlation", **kwargs)
         track_ix = []
         results_data = []
         for roi_name, roi_data, markers, exp in self.roi_exp_iter(
-            layer_key=layer_key, desc="Spatial autocorrelation"
+            layer_key=layer_key, desc=self.display_name
         ):
             neighbors = read_neighbors(roi_data, self.neighbors_key)
             labels = roi_data[self.cell_id_key]
@@ -41,6 +51,7 @@ class spatial_autocorr(AnalysisBase):
                 neighbors,
                 labels=labels,
                 two_tailed=two_tailed,
+                pval=pval,
                 method=method,
             )
             markers = markers.to_numpy()

@@ -1,8 +1,3 @@
-.. spatialTis-doc documentation master file, created by
-   sphinx-quickstart on Wed Jan 22 08:48:16 2020.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Welcome to SpatialTis's documentation!
 ==========================================
 
@@ -18,10 +13,28 @@ Welcome to SpatialTis's documentation!
 .. |license| image:: https://flat.badgen.net/github/license/Mr-Milk/SpatialTis
 .. |pypi| image:: https://flat.badgen.net/pypi/v/spatialtis?color=blue
 
-SpatialTis is a high-performance spatial analysis toolkit for single-cell multiplexed tissue data.
+SpatialTis is an ultra-fast spatial analysis toolkit for large-scale spatial single-cell data.
 
-- Parallel processing support
-- Rich visualizations options
+- ✔️ Spatial Transcriptome (Non single-cell)
+- ✔️ Spatial Proteome (Single-cell)
+- 🦀 Core algorithms implements in Rust
+- 🚀 Parallel processing support
+
+### 🔋 Highlighted spatial analysis
+
+- Cell neighbors search (KD-Tree/R-Tree/Delaunay)
+- Cell-Cell Interaction
+- Marker spatial co-expression
+- Spatial variable genes (current support: SOMDE)
+- GCNG: Inferring ligand-receptor using graph convolution network
+- Identify neighbor dependent markers
+
+### 📦 Other analysis
+
+  - Spatial distribution
+  - Hotspot detection
+  - Spatial auto-correlation
+  - Spatial heterogeneity
 
 For a quick view of what it's does, check our the tutorial part.
 

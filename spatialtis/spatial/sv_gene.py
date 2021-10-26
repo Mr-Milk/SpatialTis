@@ -7,14 +7,26 @@ from anndata import AnnData
 from spatialtis_core import somde as smode_sv
 
 from spatialtis.abc import AnalysisBase
-from spatialtis.utils import read_points
+from spatialtis.utils import read_points, doc
 
 
+@doc
 class somde(AnalysisBase):
+    """This is a wrapper around somde
+
+    Args:
+        data: {adata}
+        k: Number of SOM nodes
+        alpha: Parameters for generate pseudo gene expression
+        epoch: Number of epoch
+        qval: Threshold for qval
+        pval: Threshold for pval
+        **kwargs: {analysis_kwargs}
+
+    """
     def __init__(
         self,
         data: AnnData,
-        marker_key: Optional[str] = None,
         k: int = 20,
         alpha: float = 0.5,
         epoch: int = 100,
@@ -22,6 +34,7 @@ class somde(AnalysisBase):
         qval: float = 0.05,
         **kwargs,
     ):
+        self.display_name = "SOMDE"
         super().__init__(data, **kwargs)
         track_ix = []
         results_data = []

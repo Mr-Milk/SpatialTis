@@ -1,65 +1,15 @@
 from itertools import combinations_with_replacement
-from typing import Callable, Optional
+from typing import Optional
 
 import numpy as np
 import pandas as pd
 from anndata import AnnData
-from scipy.stats import pearsonr, spearmanr
 from spatialtis_core import fast_corr
 
 from spatialtis.abc import AnalysisBase, neighbors_pairs
 from spatialtis.typing import Number
-from spatialtis.utils import create_remote, doc, pbar_iter, run_ray, NeighborsNotFoundError
+from spatialtis.utils import doc, pbar_iter, NeighborsNotFoundError
 from spatialtis.utils.io import read_exp, read_neighbors
-
-
-def corr_types(
-        markers,
-        cent_exp,
-        neigh_exp,
-        cent,
-        neigh,
-        corr_func,
-        pval,
-        corr_cutoff,
-        exp_std_cutoff,
-):
-    result_data = []
-    markers_num = len(markers)
-    marker_ix = np.asarray(
-        [i for i in combinations_with_replacement(range(markers_num), 2)]
-    )
-    for p1, p2 in marker_ix:
-        v1 = cent_exp[p1]
-        v2 = neigh_exp[p2]
-        guard1 = v1.std() > exp_std_cutoff
-        guard2 = v2.std() > exp_std_cutoff
-        # add a guard that make sure not ZeroDivision warning occur
-        if guard1 & guard2:
-            corr_value, pvalue = corr_func(v1, v2)
-            if (pvalue < pval) & (abs(corr_value) > corr_cutoff):
-                result_data.append(
-                    [cent, markers[p1], neigh, markers[p2], corr_value, pvalue]
-                )
-    return result_data
-
-
-def corr(exp1, exp2, markers, corr_func, start, end, pval):
-    results = []
-    for t in range(start + 1, end):
-        r, p = corr_func(exp1[start], exp2[t])
-        if p < pval:
-            results.append([markers[start], markers[t], r, p])
-
-
-def corr_t(exp1, exp2, t1, t2, markers, corr_func, end, pval):
-    results = []
-    for i in range(end):
-        for t in range(i + 1, end):
-            r, p = corr_func(exp1[i], exp2[t])
-            if p < pval:
-                results.append([t1, markers[i], t2, markers[t], r, p])
-
 
 DESCRIPTION = "co-expression"
 
@@ -73,9 +23,11 @@ class spatial_coexp(AnalysisBase):
     Args:
         data: {adata}
         method: "spearman" or "pearson" (Default: "spearman")
+        use_cel_type: Whether to use cell type information
         selected_markers: {selected_markers}
-        layers_key: {layers_key}
-        pval: {pval}
+        layer_key: {layer_key}
+        corr_thresh: The minimum correlation value to store the result,
+        **kwargs: {analysis_kwargs}
 
     """
 
@@ -85,7 +37,7 @@ class spatial_coexp(AnalysisBase):
             method: str = "spearman",
             use_cell_type: bool = False,
             layer_key: Optional[str] = None,
-            thresh: Number = 0.5,
+            corr_thresh: Number = 0.5,
             **kwargs,
     ):
         if method == "spearman":
@@ -94,7 +46,7 @@ class spatial_coexp(AnalysisBase):
             self.method = "pearson correlation"
         else:
             raise ValueError("Available options are `spearman` and `pearson`.")
-        super().__init__(data, **kwargs)
+        super().__init__(data, display_name="Spatial Co-expression", **kwargs)
         if not self.neighbors_exists:
             raise NeighborsNotFoundError("Run `find_neighbors` first before continue.")
 
@@ -130,88 +82,28 @@ class spatial_coexp(AnalysisBase):
                 np.vstack([pairs, type_pairs]).T, columns=["p1", "p2", "c1", "c2"]
             )
 
-            results_data = []
-
-            # if self.mp:
-            #     # init remote function when needed
-            #     corr_t_mp: Callable = create_remote(corr_t)
-            #     jobs = []
-            #     for (t1, t2), df in types.groupby(["c1", "c2"]):
-            #         exp1 = read_exp(self.data[df["p1"].to_numpy(dtype=int), :])
-            #         exp2 = read_exp(self.data[df["p2"].to_numpy(dtype=int), :])
-            #         end_index = len(exp1)
-            #         jobs.append(
-            #             corr_t_mp.remote(
-            #                 exp1, exp2, t1, t2, markers, corr_func, end_index, pval
-            #             )
-            #         )
-            #     results = run_ray(jobs, desc=DESCRIPTION)
-            #     for r in results:
-            #         results_data += r
-
-            # else:
-            # for (t1, t2), df in pbar_iter(types.groupby(["c1", "c2"]), desc=DESCRIPTION):
-            #     exp1 = read_exp(self.data[df["p1"].to_numpy(dtype=int), :])
-            #     exp2 = read_exp(self.data[df["p2"].to_numpy(dtype=int), :])
-            #     end_index = len(exp1)
-            #     for i in range(end_index):
-            #         for t in range(i + 1, end_index):
-            #             r, p = corr_func(exp1[i], exp2[t])
-            #             if p < pval:
-            #                 results_data.append(
-            #                     [t1, markers[i], t2, markers[t], r, p]
-            #                 )
-            #
-            # self.result = pd.DataFrame(
-            #     results_data,
-            #     columns=["cell1", "marker1", "cell2", "marker2", "corr", "pval"],
-            # )
             data_collector = []
             for (t1, t2), df in pbar_iter(types.groupby(["c1", "c2"]), desc=DESCRIPTION):
-                exp1 = read_exp(self.data[df["p1"].to_numpy(dtype=int), :], dtype=np.float)
-                exp2 = read_exp(self.data[df["p2"].to_numpy(dtype=int), :], dtype=np.float)
+                exp1 = read_exp(self.data[df["p1"].to_numpy(dtype=int), :], dtype=np.float, layer_key=layer_key)
+                exp2 = read_exp(self.data[df["p2"].to_numpy(dtype=int), :], dtype=np.float, layer_key=layer_key)
 
                 r = fast_corr(exp1, exp2, method=method)
                 d = pd.DataFrame(markers_combs, columns=['marker1', 'marker2'])
                 d['cell1'] = t1
                 d['cell2'] = t2
                 d['corr'] = r
-                d = d[(d['corr'] > thresh) | (d['corr'] < -thresh)]
+                d = d[(d['corr'] > corr_thresh) | (d['corr'] < -corr_thresh)]
                 data_collector.append(d)
             d = pd.concat(data_collector)
             self.result = d.sort_values('corr', ascending=False) \
                 .reset_index(drop=True)
 
         else:
-            exp1 = read_exp(self.data[pairs[0], :], dtype=np.float)
-            exp2 = read_exp(self.data[pairs[1], :], dtype=np.float)
+            exp1 = read_exp(self.data[pairs[0], :], dtype=np.float, layer_key=layer_key)
+            exp2 = read_exp(self.data[pairs[1], :], dtype=np.float, layer_key=layer_key)
             r = fast_corr(exp1, exp2, method=method)
             d = pd.DataFrame(markers_combs, columns=['marker1', 'marker2'])
             d['corr'] = r
-            self.result = d[(d['corr'] > thresh) | (d['corr'] < -thresh)] \
+            self.result = d[(d['corr'] > corr_thresh) | (d['corr'] < -corr_thresh)] \
                 .sort_values('corr', ascending=False) \
                 .reset_index(drop=True)
-            #
-            # results_data = []
-            # if self.mp:
-            #     # init remote function when needed
-            #     corr_mp: Callable = create_remote(corr)
-            #     jobs = []
-            #     for i in range(end_index):
-            #         jobs.append(
-            #             corr_mp.remote(exp1, exp2, markers, corr_func, i, end_index, pval)
-            #         )
-            #     results = run_ray(jobs, desc=DESCRIPTION)
-            #     for r in results:
-            #         results_data += r
-            #
-            # else:
-            #     for i in pbar_iter(range(end_index), desc=DESCRIPTION):
-            #         for t in range(i + 1, end_index):
-            #             r, p = corr_func(exp1[i], exp2[t])
-            #             if p < pval:
-            #                 results_data.append([markers[i], markers[t], r, p])
-            #
-            # self.result = pd.DataFrame(
-            #     results_data, columns=["marker1", "marker2", "corr", "pval"]
-            # )

@@ -84,9 +84,10 @@ class hotspot(AnalysisBase):
         data: {adata}
         selected_types: {selected_types}
         search_level: How deep the search level to reach
-        grid_size: Length of the side of square grid
+        quad: {quad}
+        rect_size: {rect_size}
         pval: {pval}
-        kwargs: {analysis_kwargs}
+        **kwargs: {analysis_kwargs}
 
     """
 
@@ -101,8 +102,11 @@ class hotspot(AnalysisBase):
         **kwargs,
     ):
         super().__init__(data, **kwargs)
-        self.export_key = f"hotspot_{'_'.join(selected_types)}"
-        print(self.export_key)
+        self.export_key = "hotspot_all"
+        if selected_types is not None:
+            self.export_key = f"hotspot_{'_'.join(selected_types)}"
+        else:
+            selected_types = self.cell_types
         hotcells = []
         for roi_name, roi_data in self.roi_iter(desc="Hotspot analysis"):
             points = read_points(roi_data, self.centroid_key)
@@ -116,6 +120,7 @@ class hotspot(AnalysisBase):
                         search_level=search_level,
                         quad=quad,
                         rect_side=rect_side,
+                        pval=pval,
                     )
                     hotcells.append(pd.Series(hots, index=g.index))
 

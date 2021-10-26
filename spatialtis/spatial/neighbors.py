@@ -1,44 +1,56 @@
-from typing import Optional
+from typing import Optional, List
 
 import pandas as pd
 from anndata import AnnData
-from spatialtis_core import bbox_neighbors, multipoints_bbox, points_neighbors, points_bbox
+from spatialtis_core import bbox_neighbors, multipoints_bbox, points_neighbors, spatial_weight
 
 from spatialtis.abc import AnalysisBase
 from spatialtis.typing import Number
-from spatialtis.utils import col2adata_obs, doc, read_points, read_shapes
+from spatialtis.utils import col2adata_obs, doc, read_points, read_shapes, read_neighbors
 
 
 @doc
 class find_neighbors(AnalysisBase):
     """To `find the neighbors <../about/implementation.html#find-cell-neighbors>`_ of each cell
 
-    KD-tree is used when cells are points
+    KD-tree and Delaunay triangulation are used when cells are points
 
     R-tree is used when cells are polygons (use_shape=True)
 
+    .. note::
+        When :code:`method="kdtree"`, you can search neighbors within radius and/or by nearest-neighbors.
+        If you specific :code:`r=30, k=5`, this will search within 30 while limited the number of neighbors
+        to 5;
+
     Args:
         data: {adata}
-        expand: If the cell has shape, it means how much units to expand each cell;
-                If the cell is point, it's the search radius;
+        method: "kdtree", "rtree" and "delaunay", Default: "kdtree"
+        r: The search radius
+        k: The (minimum) number of nearest-neighbors
         scale: How much to scale each cell, only if cell has shape
-        count: Count the number of neighbors for each cell (Default: True)
-        use_shape: Cell representation is shape instead of point (Default: False)
+        export_key: {export_key}
         **kwargs: {analysis_kwargs}
+
+    Methods:
+        spatial_weights: A generator that return spatial weight in CSR matrix (roi_name, spatial_weight_matrix)
 
     """
 
     def __init__(
         self,
         data: AnnData,
+        method: Optional[str] = "kdtree",  # kdtree, delaunay, rtree,
         r: Optional[float] = None,
         k: Optional[int] = None,
         scale: Optional[Number] = None,
-        method: Optional[str] = "kdtree",  # kdtree, delaunay, rtree,
+        export_key: Optional[str] = None,
         **kwargs,
     ):
 
-        super().__init__(data, method=method, **kwargs)
+        super().__init__(data,
+                         method=method,
+                         export_key=export_key,
+                         **kwargs)
 
         if method == "kdtree":
             if (r is None) & (k is None):
@@ -89,10 +101,23 @@ class find_neighbors(AnalysisBase):
         neighbors_data = [str(i) for i in neighbors_data]
         neighbors_data = pd.Series(neighbors_data, index=track_ix)
         counts = pd.Series(counts, index=track_ix)
-        col2adata_obs(neighbors_data, data, self.neighbors_key)
-        col2adata_obs(counts, data, f"{self.neighbors_key}_count")
+        export_key = self.neighbors_key if export_key is None else export_key
+        col2adata_obs(neighbors_data, data, export_key)
+        col2adata_obs(counts, data, f"{export_key}_count")
         self.stop_timer()
 
     @property
     def result(self):
         return self.data.obs[[self.cell_id_key, self.neighbors_key]]
+
+    def spatial_weights(self):
+        """A generator that return spatial weight in CSR matrix
+
+        Returns:
+            (roi_name, spatial_weight_matrix)
+
+        """
+        for roi_name, roi_data in self.roi_iter(disable_pbar=True):
+            labels = roi_data[self.cell_id_key]
+            neighbors = read_neighbors(roi_data, self.neighbors_key)
+            yield roi_name, spatial_weight(neighbors, labels)

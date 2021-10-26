@@ -33,12 +33,35 @@ class _Config(object):
 
     Don't directly import this class, import the instance created for you
 
-    .. code-block:: python
-
-        from spatialtis import Config
+    >>> from spatialtis import Config
 
     This allows you to set global configuration, so that you don't have to repeatly pass the same
     parameters in every function.
+
+    To set a config, simple set the attribute
+
+    >>> Config.auto_save = True  # auto save to current directory
+    >>> Config.auto_save = "my_spatialtis_result"  # save to custom directory
+
+    To view your current configs
+
+    >>> Config.view()
+           Current configurations of SpatialTis
+    ┌─────────────────────────┬───────────────┬───────┐
+    │ Options                 │ Attributes    │ Value │
+    ├─────────────────────────┼───────────────┼───────┤
+    │ Multiprocessing         │ mp            │ True  │
+    │ Verbose                 │ verbose       │ True  │
+    │ Progress bar            │ progress_bar  │ False │
+    │ Auto save               │ auto_save     │ False │
+    │ Experiment observations │ exp_obs       │ None  │
+    │ ROI key                 │ roi_key       │       │
+    │ Cell type key           │ cell_type_key │       │
+    │ Marker key              │ marker_key    │       │
+    │ Centroid key            │ centroid_key  │       │
+    │ Shape key               │ shape_key     │       │
+    └─────────────────────────┴───────────────┴───────┘
+
 
     Attributes:
         exp_obs: **REQUIRED**, (Default: `None`); The columns in `AnnData.obs` that tells how your experiments organized,

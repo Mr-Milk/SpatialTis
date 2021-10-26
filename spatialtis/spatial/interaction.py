@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 from anndata import AnnData
 from spatialtis_core import CellCombs
@@ -19,8 +20,6 @@ class cell_interaction(AnalysisBase):
     - Avoidance (-1)
     - No relationship (0)
 
-    This method is implemented in Rust, it executes in parallel automatically.
-
     Args:
         data: {adata}
         method: "pval" and "zscore" (Default: "pval")
@@ -29,7 +28,7 @@ class cell_interaction(AnalysisBase):
         order: If False, (Cell_A, Cell_B) and (Cell_B, Cell_A) are the same interaction (Default: False)
         **kwargs: {analysis_kwargs}
 
-    .. seealso:: `spatial_enrichment_analysis <#spatialtis._plotting.spatial_enrichment_analysis>`_
+    .. seealso:: :class:`spatialtis.spatial_enrichment`
 
     """
 
@@ -55,6 +54,8 @@ class cell_interaction(AnalysisBase):
         cc = CellCombs(self.cell_types, order)
 
         results_data = []
+        roi_tracker = []
+        repeat_time = 0
         for roi_name, roi_data in self.roi_iter(desc="Cell interaction"):
             neighbors = read_neighbors(roi_data, self.neighbors_key)
             labels = roi_data[self.cell_id_key]
@@ -68,13 +69,12 @@ class cell_interaction(AnalysisBase):
                 method=method,
                 ignore_self=True,
             )
-            for pairs in result:
-                results_data.append([*roi_name, *pairs])
+            results_data += result
+            roi_tracker += [roi_name]
+            repeat_time = len(result)
+        df = pd.DataFrame(data=results_data, columns=["type1", "type2", "value"])
+        ix = pd.DataFrame(data=np.repeat(roi_tracker, repeat_time, axis=0), columns=self.exp_obs)
+        df = pd.concat([ix, df], axis=1)
+        df = df.pivot_table(values="value", index=self.exp_obs, columns=["type1", "type2"])
 
-        df = pd.DataFrame(
-            data=results_data, columns=self.exp_obs + ["type1", "type2", "value"]
-        )
-        df = df.pivot_table(
-            values="value", index=self.exp_obs, columns=["type1", "type2"]
-        )
         self.result = df

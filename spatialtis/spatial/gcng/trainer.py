@@ -6,7 +6,7 @@ from typing import Optional, Union, List, Tuple
 import pandas as pd
 from anndata import AnnData
 from spatialtis.abc import AnalysisBase
-from spatialtis.utils import read_neighbors, log_print
+from spatialtis.utils import read_neighbors, log_print, doc
 
 from .preprocess import overlap_genes, train_test_split, neighbors_pairs, \
     graph_data_loader, predict_data_loader
@@ -14,10 +14,31 @@ from .preprocess import overlap_genes, train_test_split, neighbors_pairs, \
 MODEL_SAVE_KEY = "SpatialTis-GCNG-Model-State"
 
 
+@doc
 class GCNG(AnalysisBase):
     """A pytorch reimplementation of GCNG
 
-    Use to identify directional gene-gene interactions
+    Use to identify directional gene-gene interactions. The trained model will be automatically save to anndata.
+
+    .. note::
+        To perform this analysis, you need `pytorch <https://pytorch.org/get-started/locally/#start-locally>`_,
+        `pytorch-geometry <https://pytorch-geometric.readthedocs.io/en/latest/notes/installation.html>`_ and
+        `pytorch-lightning <https://www.pytorchlightning.ai/>`_ installed. If you have GPU, make sure you install
+        pytorch with GPU support, it would be way more faster than CPU.
+
+    Args:
+        data: {adata}
+        known_pairs: The input data for training, should be a dataframe with three columns,
+            ligand, receptor, relationship; 0 means not interact, 1 means interact.
+        predict_pairs: The pairs that you interested
+        train_partition: The ratio to split the dataset for training
+        gpus: Number of gpu to use, can be auto-detected
+        max_epochs: Number of epoch
+        lr: Learning rate
+        batch_size: The batch size
+        random_seed: The random seed
+        load_model: To load a pretrained model from anndata
+        **kwargs: {analysis_kwargs}
 
     """
 
@@ -57,7 +78,7 @@ class GCNG(AnalysisBase):
         # To make pytorch a optional deps
         # We could only init the model from within
         class GCNGModel(LightningModule):
-            def __init__(self, node_size, output_features, lr=1e-4):
+            def __init__(self, node_size, output_features, lr=lr):
                 super().__init__()
                 self.conv1 = GCNConv(2, 32)
                 self.conv2 = GCNConv(32, 32)

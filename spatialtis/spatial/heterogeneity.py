@@ -28,12 +28,9 @@ class spatial_heterogeneity(AnalysisBase):
         Args:
             data: {adata}
             method: "shannon", "leibovici" and "altieri" (Default: "leibovici")
-            base: The log base
-            d: The distance threshold to determine co-occurrence events (method="leibovici")
-            cut: Distance interval (method="altieri")
-            compare: Compute Kullback-Leibler divergences based on which level (method="shannon")
+            d: :code:`method="leibovici"`, The distance threshold to determine co-occurrence events
+            cut: :code:`method="altieri"`, Distance interval
             **kwargs: {analysis_kwargs}
-
 
     """
 
@@ -41,7 +38,6 @@ class spatial_heterogeneity(AnalysisBase):
         self,
         data: AnnData,
         method: str = "leibovici",
-        base: Optional[Number] = None,
         d: Optional[int] = None,
         cut: Union[int, Array, None] = None,
         order: bool = False,
@@ -67,7 +63,7 @@ class spatial_heterogeneity(AnalysisBase):
                     "No heterogeneity, you only have one type of cell.", UserWarning
                 )
             else:
-                ent = [entropy(row, base=base) for _, row in df.iterrows()]
+                ent = [entropy(row) for _, row in df.iterrows()]
                 self.result = pd.DataFrame({"heterogeneity": ent}, index=df.index)
 
         else:

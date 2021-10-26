@@ -43,14 +43,12 @@ class cell_dispersion(AnalysisBase):
         method: "id", "morisita", and "clark_evans" (Default: "id")
         min_cells: The minimum number of the specific type of cells in a ROI to perform analysis
         pval: {pval}
-        r: Only use when method="vmr", determine diameter of sample window, should be in [0, 1], default is 0.1
+        r: :code:`method="id"`, determine diameter of sample window, should be in [0, 1], default is 0.1
             this take 1/10 of the shortest side of the ROI as the diameter.
-        resample: Only use when method="vmr", the number of random permutations to perform
-        quad: Only use when method="quad", how to perform rectangle tessellation. Default is (10, 10), this will use a
-            10*10 grid to perform tessellation.
-        rect_size: Only use when method="quad", the side of grid when perform rectangle tessellation.
+        resample: :code:`method="id"`, the number of random permutations to perform
+        quad: :code:`method="morisita"`, {quad}
+        rect_size: :code:`method="morisita"`, {rect_size}
         **kwargs: {analysis_kwargs}
-
 
     "quad" is quadratic statistic, it cuts a ROI into few rectangles, quad=(10,10) means the ROI will have 10*10 grid.
 

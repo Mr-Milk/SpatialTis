@@ -7,7 +7,7 @@ import pandas as pd
 from anndata import AnnData
 
 from spatialtis.abc import AnalysisBase
-from spatialtis.utils import doc
+from spatialtis.utils import doc, read_points
 
 
 @doc
@@ -53,14 +53,11 @@ class prepare_svca(AnalysisBase):
 
             # export to expressions.txt
             pd.DataFrame(
-                data.X[[int(i) for i in g.index]], columns=data.var[self.marker_key]
+                data.X[[int(i) for i in g.index]], columns=self.markers_col
             ).to_csv(expression_path, sep="\t", index=False)
 
             # export to positions.txt
-            cents = []
-            for c in g[self.centroid_key]:
-                c = literal_eval(c)
-                cents.append([c[0], c[1]])
+            cents = read_points(g, self.centroid_key)
             pd.DataFrame(cents).to_csv(
                 position_path, sep="\t", index=False, header=False
             )
