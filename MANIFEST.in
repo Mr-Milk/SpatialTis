@@ -11,4 +11,6 @@ exclude mypy.ini
 # Include published needed files
 include LICENSE
 include CHANGES.txt
-recursive-include spatialtis/ *.py
+recursive-include spatialtis/ *.pyinclude versioneer.py
+include spatialtis/_version.py
+include versioneer.py

@@ -1,7 +1,3 @@
-__version__ = "0.4.0"
-__author__ = "Mr-Milk"
-
-
 from .config import Config
 from .basic import cell_co_occurrence, cell_components, cell_density, cell_morphology
 from .ext import prepare_svca
@@ -21,3 +17,6 @@ from .spatial import (
     spatial_heterogeneity,
 )
 from .utils import get_result, transform_points, transform_shapes
+
+from ._version import version_tuple
+__version__ = ".".join([str(i) for i in version_tuple[:3]])

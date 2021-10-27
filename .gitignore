@@ -1,6 +1,8 @@
 # don't upload data folder
 data/
 benchmark/data*
+spatialtis-result/
+spatialtis/_version.py
 
 # ignore IDE stuff
 .vscode/

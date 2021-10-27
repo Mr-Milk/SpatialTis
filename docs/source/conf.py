@@ -13,6 +13,8 @@
 import os
 import sys
 from pathlib import Path
+import datetime
+from importlib.metadata import version
 
 import matplotlib
 
@@ -23,18 +25,11 @@ matplotlib.use('agg')
 # -- Project information -----------------------------------------------------
 
 project = "SpatialTis"
-copyright = "2021, Mr-Milk"
+copyright = f"{datetime.datetime.now().year}, Mr-Milk"
 author = "Mr-Milk"
 
-
-# The full version, including alpha/beta/rc tags
-def get_version():
-    root = Path(os.path.dirname(os.path.abspath(__file__))).parent.parent
-    f = open(root / "spatialtis" / "__init__.py", "r").readline()
-    return f.split('"')[1]
-
-
-release = get_version()
+release = version('spatialtis')
+version = '.'.join(release.split('.')[:2])
 
 master_doc = "index"
 
