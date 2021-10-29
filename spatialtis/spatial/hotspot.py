@@ -130,6 +130,7 @@ class hotspot(AnalysisBase):
         self.data.obs[self.export_key].fillna("other", inplace=True)
         arr = self.data.obs[self.export_key].astype("category")
         arr = arr.cat.rename_categories({True: "hot", False: "cold", "other": "other"})
+        self.data.obs[self.export_key] = arr
         # Call this to invoke the print
         col2adata_obs(self.data.obs[self.export_key], self.data, self.export_key)
         self.stop_timer()

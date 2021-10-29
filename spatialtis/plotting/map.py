@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import List, Optional
 
 import numpy as np
 from anndata import AnnData
@@ -7,23 +7,24 @@ from milkviz import point_map, polygon_map
 from scipy.sparse import issparse
 
 from spatialtis import Config
-from spatialtis.utils import doc, read_shapes, read_points, read_neighbors
+from spatialtis.utils import doc, read_neighbors, read_points, read_shapes
+
 from .utils import COLOR_POOL
 
 
 @doc
 def cell_map(
-        data: AnnData,
-        roi: str,
-        use_shape: bool = False,
-        selected_types: Optional[List] = None,
-        masked_type_name: str = "Other",
-        masked_type_color: str = "#7f7f7f",
-        cell_type_key: Optional[str] = None,
-        shape_key: Optional[str] = None,
-        centroid_key: Optional[str] = None,
-        roi_key: Optional[str] = None,
-        **plot_options,
+    data: AnnData,
+    roi: str,
+    use_shape: bool = False,
+    selected_types: Optional[List] = None,
+    masked_type_name: str = "Other",
+    masked_type_color: str = "#d3d3d3",
+    cell_type_key: Optional[str] = None,
+    shape_key: Optional[str] = None,
+    centroid_key: Optional[str] = None,
+    roi_key: Optional[str] = None,
+    **plot_options,
 ):
     """Visualize cells in ROI
 
@@ -75,15 +76,19 @@ def cell_map(
 
 
 @doc
-def expression_map(data: AnnData,
-                   roi: str,
-                   marker: str,
-                   use_shape: bool = False,
-                   marker_key: Optional[str] = None,
-                   shape_key: Optional[str] = None,
-                   centroid_key: Optional[str] = None,
-                   roi_key: Optional[str] = None,
-                   **plot_options, ):
+def expression_map(
+    data: AnnData,
+    roi: str,
+    marker: str,
+    use_shape: bool = False,
+    selected_types: Optional[List] = None,
+    cell_type_key: Optional[str] = None,
+    marker_key: Optional[str] = None,
+    shape_key: Optional[str] = None,
+    centroid_key: Optional[str] = None,
+    roi_key: Optional[str] = None,
+    **plot_options,
+):
     """
 
     Args:
@@ -119,12 +124,25 @@ def expression_map(data: AnnData,
         marker_v = marker_v.A
     marker_v = marker_v.flatten()
 
+    cell_mask = None
+    if selected_types is not None:
+        cell_type_key = Config.cell_type_key if cell_type_key is None else cell_type_key
+        cell_types = roi_info[cell_type_key]
+        utypes = np.unique(selected_types)
+        cell_mask = cell_types.isin(utypes)
+
     internal_kwargs = {**internal_kwargs, **plot_options}
     if use_shape:
         polygons = read_shapes(roi_info, shape_key)
+        if cell_mask is not None:
+            polygons = np.asarray(polygons)[cell_mask]
+            marker_v = marker_v[cell_mask]
         ax = polygon_map(polygons, values=marker_v, **internal_kwargs)
     else:
         cells = np.array(read_points(roi_info, centroid_key))
+        if cell_mask is not None:
+            cells = cells[cell_mask]
+            marker_v = marker_v[cell_mask]
         x, y = cells[:, 0], cells[:, 1]
         ax = point_map(x, y, values=marker_v, **internal_kwargs)
     plt.title(f"{marker}")
@@ -132,12 +150,14 @@ def expression_map(data: AnnData,
 
 
 @doc
-def neighbors_map(data: AnnData,
-                  roi: str,
-                  cell_type_key: Optional[str] = None,
-                  centroid_key: Optional[str] = None,
-                  roi_key: Optional[str] = None,
-                  **plot_options, ):
+def neighbors_map(
+    data: AnnData,
+    roi: str,
+    cell_type_key: Optional[str] = None,
+    centroid_key: Optional[str] = None,
+    roi_key: Optional[str] = None,
+    **plot_options,
+):
     """
 
     Args:
@@ -171,6 +191,6 @@ def neighbors_map(data: AnnData,
     for l, neigh in zip(labels, neighbors):
         for n in neigh:
             if n > l:
-                links.append((n-nmin, l-nmin))
+                links.append((n - nmin, l - nmin))
 
     return point_map(x, y, types=cell_types, links=links, **internal_kwargs)
