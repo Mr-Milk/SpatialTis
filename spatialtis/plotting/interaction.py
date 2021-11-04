@@ -93,7 +93,7 @@ def cell_interaction(
                 "pearson's R of cell proportion to the visualization"
             )
             matrix = None
-        dot_size_data = dot_size.to_numpy()
+        dot_size_data = dot_size.to_numpy(dtype=int)
         dot_hue_data = dot_hue.to_numpy()
         matrix_hue = matrix.to_numpy() if matrix is not None else None
         xticklabels = dot_size.columns
@@ -134,7 +134,7 @@ def spatial_enrichment(
 ):
     rdata = get_result(data, key)
     dot_size, dot_hue = count_size_side(rdata, type_order)
-    dot_size_data = dot_size.to_numpy()
+    dot_size_data = dot_size.to_numpy(dtype=int)
     dot_hue_data = dot_hue.to_numpy()
     xticklabels = dot_size.columns
     yticklabels = dot_size.index

@@ -1,9 +1,12 @@
+from itertools import cycle
 from typing import List, Optional
 
 import numpy as np
 from anndata import AnnData
 from matplotlib import pyplot as plt
+from matplotlib.colors import to_hex
 from milkviz import point_map, polygon_map
+from natsort import natsorted
 from scipy.sparse import issparse
 
 from spatialtis import Config
@@ -47,6 +50,11 @@ def cell_map(
     shape_key = Config.shape_key if shape_key is None else shape_key
     centroid_key = Config.centroid_key if centroid_key is None else centroid_key
     roi_key = Config.roi_key if roi_key is None else roi_key
+    masked_type_color = to_hex(masked_type_color, keep_alpha=True)
+
+    all_cell_types = natsorted(data.obs[cell_type_key].unique())
+    color_mapper = dict(zip(all_cell_types, cycle(COLOR_POOL)))
+    color_mapper[masked_type_name] = masked_type_color
 
     roi_info = data.obs[data.obs[roi_key] == roi]
     if len(roi_info) == 0:
@@ -59,10 +67,7 @@ def cell_map(
         utypes = np.unique(selected_types)
         cell_mask = cell_types.isin(utypes)
         cell_types = cell_types.to_numpy()
-        cell_types[~cell_mask] = masked_type_name
-        color_mapper = {masked_type_name: masked_type_color}
-        for i, c in zip(utypes, COLOR_POOL):
-            color_mapper[i] = c
+        cell_types[~cell_mask] = np.unique(masked_type_name)
         internal_kwargs["colors"] = [color_mapper.get(c) for c in cell_types]
 
     internal_kwargs = {**internal_kwargs, **plot_options}
