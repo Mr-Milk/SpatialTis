@@ -33,13 +33,6 @@ def test_set_roi_key_failed():
     Config.roi_key = "ttt"
 
 
-def test_set_exp_obs():
-    Config.exp_obs = 1
-    Config.exp_obs = 10.1
-    Config.exp_obs = None
-    Config.exp_obs = "ttt"
-
-
 @pytest.mark.xfail
 def test_set_exp_obs_failed():
     ft = FakeType
@@ -81,7 +74,7 @@ def test_pretty_time():
     assert pretty_time(3661) == "1h1m1s"
 
 
-Config.exp_obs = ["Patient", "Part", "ROI"]
+Config.exp_obs = ["Patient", "Part", "ROI_ID"]
 Config.cell_type_key = "leiden"
 Config.MARKER_KEY = "Markers"
 Config.env = None

@@ -6,14 +6,11 @@ from spatialtis import Config
 
 # Basic analysis
 def test_basic(data):
-    Config.exp_obs = ["Patient", "Part", "ROI"]
+    Config.exp_obs = ["Patient", "Part", "ROI_ID"]
     Config.cell_type_key = "leiden"
     Config.centroid_key = "centroid"
     Config.marker_key = "Markers"
     Config.shape_key = "cell_shape"
-
-    st.transform_points(data, 'centroid')
-    st.transform_shapes(data, 'cell_shape')
 
     st.cell_components(data)
     st.cell_density(data)
@@ -67,8 +64,8 @@ def test_spatial_enrichment(data):
 
 
 def test_spatial_coexp(data):
-    st.spatial_coexp(data, method="pearson")
-    st.spatial_coexp(data, method="spearman")
+    st.spatial_coexp(data)
+    st.spatial_coexp(data, use_cell_type=True)
 
 
 def test_ncd_markers(data):
