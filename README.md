@@ -35,6 +35,7 @@ SpatialTis is an ultra-fast spatial analysis toolkit for large-scale spatial sin
 
 [Quick Start](https://spatialtis.readthedocs.io/en/latest/tutorial/1-basic_usage.html)
 
+
 ## Installation
 
 ### pypi
@@ -62,3 +63,11 @@ pip install git+https://github.com/Mr-Milk/SpatialTis.git
 If you are interested in using low level algorithms yourself,
 Please refer to [spatialtis_core](https://github.com/Mr-Milk/SpatialTis-core)
 It provides clear document for all exposed API.
+
+## Examples: IMC 1.8 millions cells
+
+Easily run SpatialTis with large dataset in minutes.
+
+<p align="center">
+<img src="img/showcase.png" width="700"/>
+<p/>
