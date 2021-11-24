@@ -190,7 +190,7 @@ def neighbors_map(
     cells = np.array(read_points(roi_info, centroid_key))
     x, y = cells[:, 0], cells[:, 1]
     neighbors = read_neighbors(roi_info, "cell_neighbors")
-    labels = roi_info["cell_id"]
+    labels = roi_info["cell_id"].astype(int)
     nmin = labels.min()
     links = []
     for l, neigh in zip(labels, neighbors):

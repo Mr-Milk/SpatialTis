@@ -2,11 +2,12 @@ import logging
 from itertools import product
 from pathlib import Path
 from typing import Optional, Union, List, Tuple
+from time import time
 
 import pandas as pd
 from anndata import AnnData
 from spatialtis.abc import AnalysisBase
-from spatialtis.utils import read_neighbors, log_print, doc
+from spatialtis.utils import read_neighbors, log_print, doc, pbar_iter
 
 from .preprocess import overlap_genes, train_test_split, neighbors_pairs, \
     graph_data_loader, predict_data_loader
@@ -63,10 +64,17 @@ class GCNG(AnalysisBase):
             from torch_geometric.nn import GCNConv, global_max_pool
             import pytorch_lightning as pl
             from pytorch_lightning.core.lightning import LightningModule
-            logging.getLogger("lightning").setLevel(0)
         except ImportError:
             raise ImportError("To run GCNG, please install pytorch, pytorch-lightning, "
                               "torch-geometric, torch_sparse and torch_scatter.")
+        if known_pairs is None:
+            raise NotImplementedError("Currently, you need to supply the training pairs youself")
+        if predict_pairs is None:
+            raise ValueError("To run the model, you must specific the `predict_pairs`"
+                             "and tell spatialtis the ligand-receptor pairs you want to predict.")
+        else:
+            if len(predict_pairs) < batch_size:
+                raise ValueError("The predict_pairs must be longer than batch size")
         super().__init__(data, display_name="GCNG", **kwargs)
         device = "cpu"
         if gpus is None:
@@ -129,8 +137,20 @@ class GCNG(AnalysisBase):
             def predict_step(self, predict_data, batch_idx):
                 x, edge_index, batch = predict_data.x, predict_data.edge_index, predict_data.batch
                 x = self(x, edge_index)
-                self.pred += x.detach().cpu().numpy().flatten().round().tolist()
+                self.pred = x.detach().cpu().numpy().flatten().round().tolist()
                 return self.pred
+
+            def release_gpu_mem(self):
+                try:
+                    torch.cuda.empty_cache()
+                except Exception:
+                    pass
+
+            def on_train_end(self, *args, **kwargs):
+                self.release_gpu_mem()
+
+            def on_predict_batch_end(self, *args, **kwargs):
+                self.release_gpu_mem()
 
         # init model and trainer first
         gc = GCNGModel(data.n_obs, batch_size, lr=lr)
@@ -139,7 +159,8 @@ class GCNG(AnalysisBase):
                              max_epochs=max_epochs,
                              deterministic=True,
                              progress_bar_refresh_rate=0,
-                             weights_summary=None)
+                             weights_summary=None,
+                             precision=16)
         # create neighbors pairs
         npairs = neighbors_pairs(data.obs[self.cell_id_key],
                                  read_neighbors(data.obs, self.neighbors_key))
@@ -156,7 +177,7 @@ class GCNG(AnalysisBase):
             except KeyError:
                 raise ValueError("Pre-trained model not found, please retrain the model")
             gc.load_state_dict(state)
-        else:  # train the model
+        else:
             # find overlap genes
             lr_genes = known_pairs.iloc[:, [0, 1]].to_numpy().flatten()
             overlap_sets = overlap_genes(self.markers, lr_genes)
@@ -164,32 +185,42 @@ class GCNG(AnalysisBase):
                                          known_pairs.iloc[:, 1].isin(overlap_sets)].iloc[:, [0, 1, 2]]
             if len(filtered_pairs) == 0:
                 raise ValueError("The gene in `known_pairs` has no overlap with genes in data")
+            # train the model
             train, test = train_test_split(filtered_pairs, train_partition)
+            log_print(f"Training set: {len(train)}, Test set: {len(test)}")
+
             train_loader = graph_data_loader(train, exp, markers_mapper, npairs, device, batch_size, shuffle=True)
             test_loader = graph_data_loader(test, exp, markers_mapper, npairs, device, batch_size, shuffle=False)
+            log_print("Finish loading data, start training")
             trainer.fit(gc, train_loader)
             trainer.test(dataloaders=test_loader, verbose=False)
             log_print(f"Model accuracy {gc.acc}")
             self.data.uns[MODEL_SAVE_KEY] = gc.state_dict()  # save model
             self.model = gc  # allow user to access model
-            if predict_pairs is not None:
-                pairs_all = set(["*".join(p) for p in product(markers, repeat=2)])
-            else:
-                pairs_all = predict_pairs
-            pairs_db = set(["*".join(p) for p in filtered_pairs.iloc[:, [0, 1]].to_numpy()])
-            predict_pairs = [p.split("*") for p in pairs_all.difference(pairs_db)]
+            self.trainer = trainer
+
         # the model output is dynamically adjust according to batch size
         # the predict step should be able to iter through all pairs
-        if predict_pairs is None:
-            raise ValueError("To rerun the model, you must specific the `predict_pairs`"
-                             "and tell spatialtis the ligand-receptor pairs you want to predict.")
         predict_size = len(predict_pairs)
         append_amount = batch_size - predict_size % batch_size
         predict_pairs += predict_pairs[:append_amount]
         predict = pd.DataFrame(predict_pairs)
-        predict_loader = predict_data_loader(predict, exp, markers_mapper, npairs, device, batch_size)
-        # init the model and train
-        trainer.predict(dataloaders=predict_loader)
-        predict['relationship'] = gc.pred
+        # print(f"predict size {len(predict)}")
+        # predict_loader = predict_data_loader(predict, exp, markers_mapper, npairs, device, batch_size)
+        # # init the model and train
+        # trainer.predict(dataloaders=predict_loader)
+        # predict['relationship'] = gc.pred
+
+        pred = []
+        for i in pbar_iter(range(0, predict_size, batch_size), desc="Fetching predict result"):
+            predict_tmp = pd.DataFrame(predict_pairs[i: i+batch_size])
+            predict_loader = predict_data_loader(predict_tmp, exp, markers_mapper, npairs, device, batch_size)
+            # init the model and train
+            trainer.predict(dataloaders=predict_loader)
+            pred += gc.pred
+        #     release_gpu_mem()
+        # completely release mem when exit
+        gc.release_gpu_mem()
+        predict['relationship'] = pred
         predict.columns = ['Gene1', 'Gene2', 'relationship']
         self.result = predict.iloc[:predict_size, :].copy()

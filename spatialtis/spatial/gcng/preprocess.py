@@ -15,7 +15,7 @@ def neighbors_pairs(labels, neighbors):
 
 
 def overlap_genes(data_genes, lr_genes):
-    overlap_set = set([i.lower() for i in data_genes]).intersection(set([i.lower() for i in lr_genes]))
+    overlap_set = set([i for i in data_genes]).intersection(set([i for i in lr_genes]))
     return list(overlap_set)
 
 
