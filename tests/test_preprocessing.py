@@ -1,3 +1,5 @@
+import sys
+
 import pandas as pd
 import pytest
 
@@ -19,6 +21,9 @@ def test_read_rois(tmpdir):
     )
     pytest.data = data
     data.to_anndata()
-    data.to_anndata(mp=True)
     data.to_anndata(polygonize="concave", alpha=1.0)
+
+    # when <py3.10, run this
+    if sys.version_info[1] < 10:
+        data.to_anndata(mp=True)
 
