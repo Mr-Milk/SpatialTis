@@ -4,18 +4,13 @@ anndata
 matplotlib
 seaborn
 milkviz
-
-leidenalg
-python-igraph
-
-ray
+ray; python_version < '3.10'
 scikit-image
-
-
 scipy
 rich[jupyter]
 lightgbm
 ipython
+spatialtis_core
 
 # test suite
 pytest
