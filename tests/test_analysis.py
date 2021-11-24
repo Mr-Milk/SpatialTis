@@ -47,8 +47,8 @@ def test_spatial_autocorr(data):
     st.spatial_autocorr(data, method="geary_c")
 
 
-def test_somde(data):
-    st.somde(data, epoch=10)
+# def test_somde(data):
+#     st.somde(data, epoch=10)
 
 
 def test_neighborhood(data):
