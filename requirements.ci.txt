@@ -10,7 +10,6 @@ scipy
 rich[jupyter]
 lightgbm
 ipython
-spatialtis_core
 
 # test suite
 pytest
