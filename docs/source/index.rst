@@ -20,7 +20,7 @@ SpatialTis is an ultra-fast spatial analysis toolkit for large-scale spatial sin
 - 🦀 Core algorithms implements in Rust
 - 🚀 Parallel processing support
 
-### 🔋 Highlighted spatial analysis
+🔋 **Highlighted spatial analysis**
 
 - Cell neighbors search (KD-Tree/R-Tree/Delaunay)
 - Cell-Cell Interaction
@@ -29,12 +29,12 @@ SpatialTis is an ultra-fast spatial analysis toolkit for large-scale spatial sin
 - GCNG: Inferring ligand-receptor using graph convolution network
 - Identify neighbor dependent markers
 
-### 📦 Other analysis
+📦 **Other analysis**
 
-  - Spatial distribution
-  - Hotspot detection
-  - Spatial auto-correlation
-  - Spatial heterogeneity
+- Spatial distribution
+- Hotspot detection
+- Spatial auto-correlation
+- Spatial heterogeneity
 
 For a quick view of what it's does, check our the tutorial part.
 
