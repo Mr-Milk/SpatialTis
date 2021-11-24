@@ -68,6 +68,4 @@ It provides clear document for all exposed API.
 
 Easily run SpatialTis with large dataset in minutes.
 
-<p align="center">
-<img src="img/showcase.png" width="700"/>
-<p/>
+<img src="img/showcase.png" width="500"/>
