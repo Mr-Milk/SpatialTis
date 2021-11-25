@@ -26,6 +26,12 @@ def test_read_set_roi_key():
     assert Config.exp_obs == ["Patient", "ROI", "Part"]
 
 
+def test_config_dumps_loads(data):
+    Config.dumps(data)
+    Config.loads(data)
+    Config.reset()
+
+
 @pytest.mark.xfail
 def test_set_roi_key_failed():
     Config.exp_obs = None
