@@ -88,7 +88,6 @@ class _Config(object):
     def __init__(self):
         self._exp_obs: Optional[List[str]] = None
         self._cell_type_key: Optional[str] = None
-        self._env: Optional[str] = None
         self._verbose: bool = True
         self.save_path: Optional[Path] = None
         self.progress_bar: bool = False
@@ -243,12 +242,11 @@ class _Config(object):
         """
         config = literal_eval(data.uns["spatialtis_config"])
         self.mp = config["mp"]
+        self.exp_obs = config["exp_obs"]
         self.roi_key = config["roi_key"]
-        self.env = config["env"]
         self.verbose = config["verbose"]
         self.progress_bar = config["progress_bar"]
         self.save_path = config["save_path"]
-        self.exp_obs = config["exp_obs"]
         self.roi_key = config["roi_key"]
         self.cell_type_key = config["cell_type_key"]
         self.marker_key = config["marker_key"]
@@ -257,14 +255,15 @@ class _Config(object):
 
     def reset(self):
         """Reset to default"""
+
+        self._verbose = True
+        self._exp_obs = None
+        self._roi_key = None
+        self._cell_type_key = None
+
         self.mp = True
-        self.roi_key = None
-        self.verbose = True
         self.progress_bar = True
         self.auto_save = False
-        self.exp_obs = None
-        self.roi_key = None
-        self.cell_type_key = None
         self.marker_key = None
         self.centroid_key = None
         self.shape_key = None
