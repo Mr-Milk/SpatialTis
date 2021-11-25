@@ -20,10 +20,10 @@ def test_read_config_property():
 
 
 def test_read_set_roi_key():
-    Config.exp_obs = ["Patient", "Part", "ROI"]
-    assert Config.roi_key == "ROI"
     Config.roi_key = "Part"
-    assert Config.exp_obs == ["Patient", "ROI", "Part"]
+    assert Config.exp_obs == ["Patient", "ROI_ID", "Part"]
+    Config.exp_obs = ["Patient", "Part", "ROI_ID"]
+    assert Config.roi_key == "ROI_ID"
 
 
 def test_config_dumps_loads(data):

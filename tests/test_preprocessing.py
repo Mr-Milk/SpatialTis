@@ -26,4 +26,6 @@ def test_read_rois(tmpdir):
     # when <py3.10, run this
     if sys.version_info[1] < 10:
         data.to_anndata(mp=True)
+    else:
+        return
 
