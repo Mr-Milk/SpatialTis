@@ -13,67 +13,6 @@ from spatialtis.typing import Array
 from spatialtis.utils import col2adata_obs, doc, read_points
 
 
-def _hotspot(cells, bbox, grid_size, level, pval):
-    q = QuadStats(cells, bbox, grid_size=grid_size)
-
-    nx = q.nx
-    ny = q.ny
-    N = nx * ny
-
-    # the grid must bigger than 3 * 3 so that it can have neighbors
-    if N < 9:
-        return ["cold" for _ in range(0, len(cells))]
-    else:
-        dict_id_count = q.grid_counts()
-
-        quad_count = np.asarray(list(dict_id_count.values())).reshape(nx, ny)
-        idx_points = [(i, j) for i in range(0, nx) for j in range(0, ny)]
-        hotsquad = []
-
-        tree = cKDTree(idx_points)
-        # parameter in equation
-        mean_C = np.mean(quad_count)
-        sum_c = np.sum(np.square(quad_count.ravel()))
-        S = np.sqrt(sum_c / N - mean_C ** 2)
-        # There will be some situation when S == 0
-        if S == 0:
-            return ["cold" for _ in range(0, len(cells))]
-        else:
-            for p in idx_points:
-                # neighbors = tree.query_ball_point(p, r=np.sqrt(2))
-                neighbors = tree.query_ball_point(p, r=level * np.sqrt(2))
-                pp = [idx_points[i] for i in neighbors]
-                ix = np.asarray([p[0] for p in pp])
-                iy = np.asarray([p[1] for p in pp])
-                sum_wc = np.sum(
-                    quad_count[ix.min() : ix.max(), iy.min() : iy.max()].ravel()
-                )
-
-                sum_w = len(neighbors)
-
-                U = np.sqrt((N * sum_w - sum_w ** 2) / (N - 1))
-                # U == 0 means the neighbor cells is the entire regions
-                # meaning the regions is too small so no significant hotspot
-                if U == 0:
-                    hotsquad.append(False)
-                else:
-                    # z score for region
-                    z = sum_wc - (mean_C * sum_w / (S * U))
-                    p_value = norm.sf(np.abs(z)) * 2
-                    hot = p_value < pval
-                    hotsquad.append(hot)
-
-            marker_hot = []
-
-            for i in q.cells_grid_id:
-                if hotsquad[i]:
-                    marker_hot.append("hot")
-                else:
-                    marker_hot.append("cold")
-
-        return marker_hot
-
-
 @doc
 class hotspot(AnalysisBase):
     """`Getis-ord hotspot detection <../about/implementation.html#hotspot-detection>`_
