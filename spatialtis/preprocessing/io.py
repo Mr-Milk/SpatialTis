@@ -181,8 +181,7 @@ class read_ROIs:
 
         """
 
-        if mp is None:
-            mp = Config.mp
+        mp = Config.mp if mp is None else mp
 
         X, ann_obs, shapes, centroids = [], [], [], []
 

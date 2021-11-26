@@ -20,8 +20,8 @@ def test_read_rois(tmpdir):
         img_pattern="stacked",
     )
     pytest.data = data
-    data.to_anndata()
-    data.to_anndata(polygonize="concave", alpha=1.0)
+    data.to_anndata(mp=False)
+    data.to_anndata(polygonize="concave", alpha=1.0, mp=False)
 
     # when <py3.10, run this
     if sys.version_info[1] < 10:
