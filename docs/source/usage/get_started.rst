@@ -102,11 +102,11 @@ you could transform them into wkt format:
 
 Or if you save your coordination in single column :code:`centroid`, transform it like:
 
->>> st.transform_points(data, 'centroid', export='wkt_centroid')
+>>> st.transform_points(data, 'centroid', export_key='wkt_centroid')
 
 If you have shape information, which should be stored as multipolygons. You should have
 one columns 'shape' that store a series of points in a array container like
 :code:`[(1, 2), (3, 4), ..., (100, 100)]`,
 transform it like:
 
->>> st.transform_shapes(data, 'shape', export='wkt_shape')
+>>> st.transform_shapes(data, 'shape', export_key='wkt_shape')

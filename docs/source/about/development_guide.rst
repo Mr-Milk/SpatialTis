@@ -7,11 +7,15 @@ Found a bug? Saw a typo? Want a new feature? Any questions or suggestions? Pleas
 
 If you want to contribute to spatialtis, here is some information to start with.
 
-First clone the repository::
+First clone the repository
+
+.. code-block:: bash
 
     git clone https://github.com/Mr-Milk/SpatialTis.git
 
-And then install the dependencies, it should contain everything::
+And then install the dependencies, it should contain everything
+
+.. code-block:: bash
 
     pip install -r requirements.txt
 
@@ -34,8 +38,7 @@ Continuous Integration:
 - `Github Actions <https://github.com/features/actions>`_
 
 And here are some requirements:
-
-- Ideally, the test coverage should be > 90%.
+.
 - Every exposed API should have type annotation.
 - Docstring is google style
 

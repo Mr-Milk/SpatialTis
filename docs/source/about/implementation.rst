@@ -9,9 +9,7 @@ Determine cell shape
 --------------------
 
 There are two way to determine the shape of a cell, "convex hull" or "concave hull". The "concave hull" is slower and need an extra
-parameter, an alpha value. This will influence the `cell_shape` but no other geometry information. Although the shape
-look more authentic using concave hull, spatialtis use `alphashape <https://github.com/bellockk/alphashape>`_ which is pure-python
-implementation so it's super slow. We highly recommend using "convex hull" which is the default setting.
+parameter, an alpha value. This will influence the `cell_shape` but no other geometry information.
 
 .. figure:: ../img/convex_concave.png
     :align: center
@@ -33,10 +31,10 @@ subcellular resolution can resolve single cell in 2D-shape.
 For each ROI, every cell will be stored in a spatial index tree structure allowing for fast neighbor search.
 
 For point data, `KD-tree <https://en.wikipedia.org/wiki/K-d_tree>`_ is used and constructed using
-`kdbush <https://github.com/pka/rust-kdbush>`_.
+`kiddo <https://lib.rs/crates/kiddo>`_.
 
 For 2D-shape data, `R*-tree <https://en.wikipedia.org/wiki/R*_tree>`_ is used and constructed using
-`rstar <https://github.com/Stoeoef/rstar>`_.
+`rstar <https://lib.rs/crates/rstar>`_.
 
 Profiling of cell-cell interaction
 -----------------------------------
@@ -69,8 +67,6 @@ Or using z-score:
 .. math::
     z = \frac{real - \overline{perm}}{\sigma}
 
-This analysis is implemented with rust for a better performance.
-See `neighborhood_analysis <https://github.com/Mr-Milk/neighborhood_analysis>`_
 
 Profiling of markers enrichment
 ----------------------------------
@@ -304,7 +300,7 @@ Neighbor dependent markers
 -------------------------------------------
 
 This method tells you the dependency and correlation between markers and its neighbor cell/markers.
-The dependency is calculated by building a gradiant boosting tree (in here XGBoost) to determine
+The dependency is calculated by building a gradiant boosting tree (in here LightGBM) to determine
 the feature importance. And the the spearman correlation is calculated.
 
 

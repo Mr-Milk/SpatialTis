@@ -73,6 +73,20 @@ def get_roi(
 class read_ROIs:
     """Extract single cell expression matrix and geometry information from stacked images and masks
 
+    For details, please refer to :ref:`Multiplexed images to AnnData`.
+
+    >>> import spatialtis as st
+
+    >>> var = pd.read_csv("panel_markers.csv")
+
+    >>> reader = st.read_ROIs(entry="IMC_images",
+                              obs_names=['ROI'],
+                              var=var,
+                              mask_pattern="mask",
+                              img_pattern="full")
+    >>> data = reader.to_anndata()
+
+
     Args:
         entry: The root folder to start with
         obs_names: Array of names correspond to each level of your folders
@@ -81,8 +95,6 @@ class read_ROIs:
         img_pattern: Name pattern for all of your image
 
     Attributes:
-        obs: Will pass to `AnnData.obs`
-        var: Will pass to `AnnData.var`
         anndata: The processed `AnnData` object
 
     """

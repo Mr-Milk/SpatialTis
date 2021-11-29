@@ -1,5 +1,5 @@
 <p align="center">
-<img src="img/Logo.svg" width="200"/>
+<img src="https://raw.githubusercontent.com/Mr-Milk/SpatialTis/master/img/Logo.svg" width="200"/>
 <p/>
 
 
@@ -33,7 +33,7 @@ SpatialTis is an ultra-fast spatial analysis toolkit for large-scale spatial sin
   - Spatial auto-correlation
   - Spatial heterogeneity
 
-[Quick Start](https://spatialtis.readthedocs.io/en/latest/tutorial/1-basic_usage.html)
+[Quick Start](https://spatialtis.readthedocs.io/en/latest/usage/get_started.html)
 
 
 ## Installation
@@ -68,4 +68,4 @@ It provides clear document for all exposed API.
 
 Easily run SpatialTis with large dataset in minutes.
 
-<img src="img/showcase.png" width="500"/>
+<img src="https://github.com/Mr-Milk/SpatialTis/raw/master/img/showcase.png" width="500"/>

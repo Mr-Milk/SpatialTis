@@ -1,23 +1,22 @@
 Installation
 ============
 
-SpatialTis requires **Python >= 3.6**, it's recommended that you install it in a new environment.
+SpatialTis requires **Python >= 3.7**, it's recommended that you install it in a new environment.
 
 .. note::
-    Make sure you use SpatialTis with >= 0.4.0, I moved most of the implementation to Rust with huge
-    performance improve. Most of the parallelization don't rely on ray anymore. And I dropped the interactive
-    visualization support.
+    `spatialtis_core` has pre-compiled wheel for Mac M1 user, as long as other dependencies support
+    Mac M1, it should be workable on Mac M1 Chip.
 
 pypi
 ----
-Install the basic of spatialtis::
+Install the basic of spatialtis
+
+.. code-block:: bash
 
     pip install spatialtis
 
-For the full features::
+For the full features
 
-    pip install spatialtis[all]
+.. code-block:: bash
 
-    # In some terminal environment you may try
     pip install 'spatialtis[all]'
-

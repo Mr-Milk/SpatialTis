@@ -43,6 +43,7 @@ For a quick view of what it's does, check our the tutorial part.
    :caption: Usage
 
    usage/get_started
+   usage/read_image
    usage/installation
    usage/low_level
 

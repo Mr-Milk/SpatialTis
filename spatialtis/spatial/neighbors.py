@@ -15,7 +15,7 @@ class find_neighbors(AnalysisBase):
 
     KD-tree and Delaunay triangulation are used when cells are points
 
-    R-tree is used when cells are polygons (use_shape=True)
+    R-tree is used when cells are polygons
 
     .. note::
         When :code:`method="kdtree"`, you can search neighbors within radius and/or by nearest-neighbors.

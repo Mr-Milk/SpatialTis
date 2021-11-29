@@ -91,6 +91,9 @@ def get_result(
 
     To get the params, use `params=True`
 
+    >>> import spatialtis as st
+    >>> st.get_result(data, 'cell_components')
+
     Args:
         data: The `AnnData` object for storage
         key: Which key in `AnnData.uns` you want to read
@@ -132,6 +135,9 @@ def transform_points(
 ):
     """Transform normal coordination in `AnnData.obs` to wkt-format
 
+    >>> import spatialtis as st
+    >>> st.transform_points(data, ('x', 'y'), export_key="centroid_wkt")
+
     Args:
         data: The `AnnData` object
         centroid_keys: The key or a tuple of keys that store X, Y coordination
@@ -156,6 +162,9 @@ def transform_points(
 
 def transform_shapes(data: AnnData, shape_key: str, export_key: str = "cell_shape"):
     """Transform normal coordination in `AnnData.obs` to wkt-format
+
+    >>> import spatialtis as st
+    >>> st.transform_points(data, 'shape', export_key="shape_wkt")
 
     Args:
         data: The `AnnData` object
