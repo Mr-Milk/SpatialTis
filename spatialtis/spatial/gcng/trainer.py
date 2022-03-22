@@ -1,14 +1,10 @@
-import logging
-from itertools import product
-from pathlib import Path
-from typing import Optional, Union, List, Tuple
-from time import time
+from typing import Optional, List, Tuple
 
 import pandas as pd
 from anndata import AnnData
+
 from spatialtis.abc import AnalysisBase
 from spatialtis.utils import read_neighbors, log_print, doc, pbar_iter
-
 from .preprocess import overlap_genes, train_test_split, neighbors_pairs, \
     graph_data_loader, predict_data_loader
 
@@ -213,7 +209,7 @@ class GCNG(AnalysisBase):
 
         pred = []
         for i in pbar_iter(range(0, predict_size, batch_size), desc="Fetching predict result"):
-            predict_tmp = pd.DataFrame(predict_pairs[i: i+batch_size])
+            predict_tmp = pd.DataFrame(predict_pairs[i: i + batch_size])
             predict_loader = predict_data_loader(predict_tmp, exp, markers_mapper, npairs, device, batch_size)
             # init the model and train
             trainer.predict(dataloaders=predict_loader)

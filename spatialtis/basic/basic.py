@@ -1,5 +1,5 @@
 from itertools import combinations_with_replacement
-from typing import List, Optional
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -12,7 +12,11 @@ from .utils import bbox_eccentricity
 
 
 @doc
-class cell_components(AnalysisBase):
+def cell_components(
+        data: AnnData,
+        export_key: Optional[str] = None,
+        **kwargs,
+):
     """Count the proportion of each types of cells in each group
 
     Args:
@@ -21,22 +25,17 @@ class cell_components(AnalysisBase):
         **kwargs: {analysis_kwargs}
 
     """
-
-    def __init__(
-        self,
-        data: AnnData,
-        export_key: Optional[str] = None,
-        **kwargs,
-    ):
-        super().__init__(data, export_key=export_key, **kwargs)
-
-        result = self.type_counter()
-        result.columns.name = 'cell type'
-        self.result = result
+    ab = AnalysisBase(data, export_key=export_key, **kwargs)
+    result = ab.type_counter()
+    result.columns.name = 'cell type'
+    ab.result = result
 
 
 @doc
-class cell_density(AnalysisBase):
+def cell_density(data: AnnData,
+                 ratio: float = 1.0,
+                 export_key: Optional[str] = None,
+                 **kwargs):
     """Calculating cell density in each ROI
 
     The size of each ROI will be auto-computed, it's the area of convex hull of all the cells in a ROI
@@ -51,29 +50,25 @@ class cell_density(AnalysisBase):
         **kwargs: {analysis_kwargs}
 
     """
+    ab = AnalysisBase(data, export_key=export_key, **kwargs)
+    result = ab.type_counter()
 
-    def __init__(self,
-                 data: AnnData,
-                 ratio: float = 1.0,
-                 export_key: Optional[str] = None,
-                 **kwargs
-                 ):
-        super().__init__(data, export_key=export_key, **kwargs)
-        df = self.type_counter()
+    area = []
+    for roi_name, roi_data in ab.roi_iter():
+        points = read_points(roi_data, ab.centroid_key)
+        area.append(polygons_area(points))
 
-        area = []
-        for roi_name, roi_data in self.roi_iter():
-            points = read_points(roi_data, self.centroid_key)
-            area.append(polygons_area(points))
-
-        area = np.asarray(area) * (ratio * ratio)
-        result = df.div(area, axis=0)
-        result.columns.name = 'cell type'
-        self.result = result
+    area = np.asarray(area) * (ratio * ratio)
+    result = result.div(area, axis=0)
+    result.columns.name = 'cell type'
+    ab.result = result
 
 
 @doc
-class cell_morphology(AnalysisBase):
+def cell_morphology(data: AnnData,
+                    area_key: Optional[str] = None,
+                    eccentricity_key: Optional[str] = None,
+                    **kwargs):
     """Cell morphology variation between different groups
 
     This function only works for data with cell shape information.
@@ -88,26 +83,21 @@ class cell_morphology(AnalysisBase):
         **kwargs: {analysis_kwargs}
 
     """
-
-    def __init__(self,
-                 data: AnnData,
-                 area_key: Optional[str] = None,
-                 eccentricity_key: Optional[str] = None,
-                 **kwargs):
-        super().__init__(data, **kwargs)
-
-        shapes = read_shapes(self.data.obs, self.shape_key)
-        areas = multipolygons_area(shapes)
-        eccentricity = [bbox_eccentricity(bbox) for bbox in multipoints_bbox(shapes)]
-        area_key = self.area_key if area_key is None else area_key
-        eccentricity_key = self.eccentricity_key if eccentricity_key is None else eccentricity_key
-        col2adata_obs(areas, self.data, area_key)
-        col2adata_obs(eccentricity, self.data, eccentricity_key)
-        self.stop_timer()  # write to obs, stop timer manually
+    ab = AnalysisBase(data, **kwargs)
+    shapes = read_shapes(data.obs, ab.shape_key)
+    areas = multipolygons_area(shapes)
+    eccentricity = [bbox_eccentricity(bbox) for bbox in multipoints_bbox(shapes)]
+    area_key = ab.area_key if area_key is None else area_key
+    eccentricity_key = ab.eccentricity_key if eccentricity_key is None else eccentricity_key
+    col2adata_obs(areas, data, area_key)
+    col2adata_obs(eccentricity, data, eccentricity_key)
+    ab.stop_timer()  # write to obs, stop timer manually
 
 
 @doc
-class cell_co_occurrence(AnalysisBase):
+def cell_co_occurrence(data: AnnData,
+                       export_key: Optional[str] = None,
+                       **kwargs):
     """The likelihood of two type of cells occur simultaneously in a ROI
 
     Args:
@@ -117,33 +107,29 @@ class cell_co_occurrence(AnalysisBase):
 
     """
 
-    def __init__(self,
-                 data: AnnData,
-                 export_key: Optional[str] = None,
-                 **kwargs):
-        super().__init__(data, export_key=export_key, **kwargs)
-        df = self.type_counter()
-        df = df.T
-        # normalize it using mean, greater than mean suggest it's occurrence
-        df = ((df - df.mean()) / (df.max() - df.min()) > 0).astype(int)
-        df = df.T
-        # generate combination of cell types
-        cell_comb = [i for i in combinations_with_replacement(df.columns, 2)]
+    ab = AnalysisBase(data, export_key=export_key, **kwargs)
+    df = ab.type_counter()
+    df = df.T
+    # normalize it using mean, greater than mean suggest it's occurrence
+    df = ((df - df.mean()) / (df.max() - df.min()) > 0).astype(int)
+    df = df.T
+    # generate combination of cell types
+    cell_comb = [i for i in combinations_with_replacement(df.columns, 2)]
 
-        index = []
-        values = []
-        for c in cell_comb:
-            c1 = c[0]
-            c2 = c[1]
-            # if two type of cells are all 1, the result is 1, if one is 0, the result is 0
-            co_occur = (df[c1] * df[c2]).to_numpy()
-            index.append((c1, c2))
+    index = []
+    values = []
+    for c in cell_comb:
+        c1 = c[0]
+        c2 = c[1]
+        # if two type of cells are all 1, the result is 1, if one is 0, the result is 0
+        co_occur = (df[c1] * df[c2]).to_numpy()
+        index.append((c1, c2))
+        values.append(co_occur)
+        if c1 != c2:
+            index.append((c2, c1))
             values.append(co_occur)
-            if c1 != c2:
-                index.append((c2, c1))
-                values.append(co_occur)
-        self.result = pd.DataFrame(
-            data=np.array(values).T,
-            index=df.index,
-            columns=pd.MultiIndex.from_tuples(index, names=['type1', 'type2']),
-        )
+    ab.result = pd.DataFrame(
+        data=np.array(values).T,
+        index=df.index,
+        columns=pd.MultiIndex.from_tuples(index, names=['type1', 'type2']),
+    )

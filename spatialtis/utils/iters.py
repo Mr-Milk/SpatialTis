@@ -8,7 +8,7 @@ from spatialtis.config import Config, console
 
 def pbar_iter(obj: Iterable, desc: Optional[str] = None, **kwargs):
     for i in track(
-        obj, disable=(not Config.verbose), console=console, description=desc, **kwargs
+            obj, disable=(not Config.verbose), console=console, description=desc, **kwargs
     ):
         yield i
 

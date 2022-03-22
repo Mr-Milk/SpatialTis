@@ -6,14 +6,13 @@ import pandas as pd
 from anndata import AnnData
 from scipy.sparse import issparse
 from spatialtis_core import (
-    dumps_wkt_points,
-    dumps_wkt_polygons,
+    dumps_points_wkt,
+    dumps_polygons_wkt,
     reads_wkt_points,
     reads_wkt_polygons,
 )
 
 from spatialtis.config import Config, console
-from .error import NeighborsNotFoundError
 
 
 def writer_verbose(key, part: str, verbose: Optional[bool] = None):
@@ -25,11 +24,11 @@ def writer_verbose(key, part: str, verbose: Optional[bool] = None):
 
 
 def df2adata_uns(
-    df: pd.DataFrame,
-    adata: AnnData,
-    key: str,
-    params: Optional[Dict] = None,
-    verbose: Optional[bool] = None,
+        df: pd.DataFrame,
+        adata: AnnData,
+        key: str,
+        params: Optional[Dict] = None,
+        verbose: Optional[bool] = None,
 ):
     """Write pandas.DataFrame with parameters to `AnnData.uns`
 
@@ -67,7 +66,7 @@ def df2adata_uns(
 
 
 def col2adata_obs(
-    col: Sequence, adata: AnnData, key: str, verbose: Optional[bool] = None
+        col: Sequence, adata: AnnData, key: str, verbose: Optional[bool] = None
 ):
     """Write an array to `AnnData.obs`
 
@@ -83,9 +82,9 @@ def col2adata_obs(
 
 
 def get_result(
-    data: AnnData,
-    key: str,
-    params: bool = False,
+        data: AnnData,
+        key: str,
+        params: bool = False,
 ) -> Union[pd.DataFrame, Tuple[pd.DataFrame, Dict]]:
     """Read spatialtis result from `AnnData.uns` as `pandas.DataFrame` object
 
@@ -129,9 +128,9 @@ def get_result(
 
 
 def transform_points(
-    data: AnnData,
-    centroid_keys: Union[str, Tuple[str, str]],
-    export_key: str = "centroid",
+        data: AnnData,
+        centroid_keys: Union[str, Tuple[str, str]],
+        export_key: str = "centroid",
 ):
     """Transform normal coordination in `AnnData.obs` to wkt-format
 
@@ -156,7 +155,7 @@ def transform_points(
     else:
         raise TypeError("centroid_keys can either be str or (str, str)")
 
-    data.obs[export_key] = dumps_wkt_points(points)
+    data.obs[export_key] = dumps_points_wkt(points)
     Config.centroid_key = export_key
 
 
@@ -175,11 +174,11 @@ def transform_shapes(data: AnnData, shape_key: str, export_key: str = "cell_shap
     shapes = data.obs[shape_key].tolist()
     if isinstance(shapes[0], str):
         shapes = [literal_eval(s) for s in shapes]
-    data.obs[export_key] = dumps_wkt_polygons(shapes)
+    data.obs[export_key] = dumps_polygons_wkt(shapes)
     Config.shape_key = export_key
 
 
-def read_points(data: pd.DataFrame, centroid_key: str) -> List[Tuple[float, float]]:
+def read_points(data: pd.DataFrame, centroid_key: str) -> List[List[float]]:
     if centroid_key is None:
         raise KeyError("centroid_key is None")
     wkt_strings = data[centroid_key].tolist()
@@ -192,7 +191,7 @@ def read_points(data: pd.DataFrame, centroid_key: str) -> List[Tuple[float, floa
     # return [list(wkt.loads(point).coords)[0] for point in data[centroid_key]]
 
 
-def read_shapes(data: pd.DataFrame, shape_key: str) -> List[List[Tuple[float, float]]]:
+def read_shapes(data: pd.DataFrame, shape_key: str) -> List[List[List[float]]]:
     if shape_key is None:
         raise KeyError("shape_key is None")
     wkt_strings = data[shape_key].tolist()
@@ -205,8 +204,7 @@ def read_shapes(data: pd.DataFrame, shape_key: str) -> List[List[Tuple[float, fl
 
 
 def read_neighbors(data: pd.DataFrame, neighbors_key: str) -> List[List[int]]:
-    if neighbors_key not in data.columns:
-        raise NeighborsNotFoundError("Please run spatialtis.find_neighbors before proceed")
+    """No neighbors check before read"""
     return [literal_eval(n) for n in data[neighbors_key]]
 
 

@@ -1,4 +1,5 @@
 from .docs import doc
+from .guard import options_guard, try_import
 from .io import (
     col2adata_obs,
     df2adata_uns,
@@ -13,4 +14,3 @@ from .io import (
 from .iters import pbar_iter
 from .log import log_print, pretty_time
 from .parallel import create_remote, run_ray
-from .error import NeighborsNotFoundError

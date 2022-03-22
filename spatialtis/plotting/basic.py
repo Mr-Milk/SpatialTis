@@ -1,12 +1,11 @@
 from typing import Optional, List
 
-import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
-from anndata import AnnData
 import seaborn as sns
+from anndata import AnnData
 from milkviz import stacked_bar, dot, anno_clustermap
 from milkviz.utils import mask_triu
+
 from spatialtis import Config
 from spatialtis.utils import doc, get_result
 from .utils import pairs_to_adj

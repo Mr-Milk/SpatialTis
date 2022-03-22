@@ -11,23 +11,22 @@ from scipy.sparse import issparse
 
 from spatialtis import Config
 from spatialtis.utils import doc, read_neighbors, read_points, read_shapes
-
 from .utils import COLOR_POOL
 
 
 @doc
 def cell_map(
-    data: AnnData,
-    roi: str,
-    use_shape: bool = False,
-    selected_types: Optional[List] = None,
-    masked_type_name: str = "Other",
-    masked_type_color: str = "#d3d3d3",
-    cell_type_key: Optional[str] = None,
-    shape_key: Optional[str] = None,
-    centroid_key: Optional[str] = None,
-    roi_key: Optional[str] = None,
-    **plot_options,
+        data: AnnData,
+        roi: str,
+        use_shape: bool = False,
+        selected_types: Optional[List] = None,
+        masked_type_name: str = "Other",
+        masked_type_color: str = "#d3d3d3",
+        cell_type_key: Optional[str] = None,
+        shape_key: Optional[str] = None,
+        centroid_key: Optional[str] = None,
+        roi_key: Optional[str] = None,
+        **plot_options,
 ):
     """Visualize cells in ROI
 
@@ -82,17 +81,17 @@ def cell_map(
 
 @doc
 def expression_map(
-    data: AnnData,
-    roi: str,
-    marker: str,
-    use_shape: bool = False,
-    selected_types: Optional[List] = None,
-    cell_type_key: Optional[str] = None,
-    marker_key: Optional[str] = None,
-    shape_key: Optional[str] = None,
-    centroid_key: Optional[str] = None,
-    roi_key: Optional[str] = None,
-    **plot_options,
+        data: AnnData,
+        roi: str,
+        marker: str,
+        use_shape: bool = False,
+        selected_types: Optional[List] = None,
+        cell_type_key: Optional[str] = None,
+        marker_key: Optional[str] = None,
+        shape_key: Optional[str] = None,
+        centroid_key: Optional[str] = None,
+        roi_key: Optional[str] = None,
+        **plot_options,
 ):
     """
 
@@ -156,12 +155,12 @@ def expression_map(
 
 @doc
 def neighbors_map(
-    data: AnnData,
-    roi: str,
-    cell_type_key: Optional[str] = None,
-    centroid_key: Optional[str] = None,
-    roi_key: Optional[str] = None,
-    **plot_options,
+        data: AnnData,
+        roi: str,
+        cell_type_key: Optional[str] = None,
+        centroid_key: Optional[str] = None,
+        roi_key: Optional[str] = None,
+        **plot_options,
 ):
     """
 

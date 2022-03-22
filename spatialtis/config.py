@@ -85,6 +85,7 @@ class _Config(object):
 
 
     """
+
     def __init__(self):
         self._exp_obs: Optional[List[str]] = None
         self._cell_type_key: Optional[str] = None

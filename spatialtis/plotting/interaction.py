@@ -5,13 +5,12 @@ from typing import List, Optional
 import numpy as np
 import pandas as pd
 from anndata import AnnData
-from milkviz import anno_clustermap, dot, dot_heatmap
+from milkviz import anno_clustermap, dot_heatmap
 from milkviz.utils import mask_triu
 from scipy.stats import pearsonr
 
 from spatialtis import Config, get_result
 from spatialtis.utils import doc, log_print
-
 from .utils import pairs_to_adj
 
 
@@ -38,13 +37,13 @@ def count_size_side(rdata, type_order):
 
 @doc
 def cell_interaction(
-    data: AnnData,
-    use: str = "dot",
-    groupby: Optional[List] = None,
-    key: str = "cell_interaction",
-    type_order: Optional[List[str]] = None,
-    order: bool = True,
-    **plot_options,
+        data: AnnData,
+        use: str = "dot",
+        groupby: Optional[List] = None,
+        key: str = "cell_interaction",
+        type_order: Optional[List[str]] = None,
+        order: bool = True,
+        **plot_options,
 ):
     rdata = get_result(data, key)
     if use == "heatmap":
@@ -126,11 +125,11 @@ def cell_interaction(
 
 @doc
 def spatial_enrichment(
-    data: AnnData,
-    key: str = "spatial_enrichment",
-    type_order: Optional[List[str]] = None,
-    order: bool = True,
-    **plot_options,
+        data: AnnData,
+        key: str = "spatial_enrichment",
+        type_order: Optional[List[str]] = None,
+        order: bool = True,
+        **plot_options,
 ):
     rdata = get_result(data, key)
     dot_size, dot_hue = count_size_side(rdata, type_order)

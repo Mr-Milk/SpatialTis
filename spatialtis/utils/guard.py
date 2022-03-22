@@ -1,28 +1,8 @@
+from importlib import import_module
 from types import ModuleType
 from typing import List
-from importlib import import_module
 
 from thefuzz import process
-
-from spatialtis.abc import AnalysisBase
-
-
-class NeighborsNotFoundError(Exception):
-    pass
-
-
-class CellTypeNotFoundError(Exception):
-    pass
-
-
-def check_neighbors(ab: AnalysisBase):
-    if not ab.neighbors_exists:
-        raise NeighborsNotFoundError("Neighbors not found! Run `spatialtis.find_neighbors` first.")
-
-
-def check_cell_type(ab: AnalysisBase):
-    if not ab.has_cell_type:
-        raise CellTypeNotFoundError("Cell Type not found! Please set `cell_type_key`")
 
 
 def options_guard(select: str, options: List[str]):

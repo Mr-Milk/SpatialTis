@@ -1,9 +1,6 @@
-from itertools import cycle
-from typing import List, Optional, Union
+from typing import List, Optional
 
 import pandas as pd
-from matplotlib import cm
-from matplotlib.colors import Colormap, to_hex
 
 COLOR_POOL = [
     "#1f77b4ff",

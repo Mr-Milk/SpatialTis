@@ -4,19 +4,19 @@ from typing import Optional, Sequence, Union
 import anndata as ad
 import numpy as np
 import pandas as pd
-from spatialtis_core import dumps_wkt_points, dumps_wkt_polygons, points_shapes
+from spatialtis_core import dumps_points_wkt, dumps_polygons_wkt, points_shapes
 
 from spatialtis.config import Config
 from spatialtis.utils import create_remote, doc, pbar_iter, run_ray
 
 
 def get_roi(
-    exp_img,
-    mask_img,
-    bg: Optional[int] = 0,
-    method: str = "mean",
-    polygonize: str = "convex",
-    alpha: Optional[float] = None,
+        exp_img,
+        mask_img,
+        bg: Optional[int] = 0,
+        method: str = "mean",
+        polygonize: str = "convex",
+        alpha: Optional[float] = None,
 ):
     # From skimage doc: The different color bands/channels are stored in the third dimension
     # so we need to transpose it
@@ -100,12 +100,12 @@ class read_ROIs:
     """
 
     def __init__(
-        self,
-        entry: Union[Path, str],
-        obs_names: Sequence,
-        var: pd.DataFrame,
-        mask_pattern: Optional[str] = None,
-        img_pattern: Optional[str] = None,
+            self,
+            entry: Union[Path, str],
+            obs_names: Sequence,
+            var: pd.DataFrame,
+            mask_pattern: Optional[str] = None,
+            img_pattern: Optional[str] = None,
     ):
         self._obs_names = obs_names
         self._tree = []
@@ -154,8 +154,8 @@ class read_ROIs:
 
     # walk through the directory, until there is no directory
     def _exhaust_dir(
-        self,
-        path: Union[Path, str],
+            self,
+            path: Union[Path, str],
     ):
         d = [f for f in Path(path).iterdir() if f.is_dir()]
         for f in d:
@@ -166,12 +166,12 @@ class read_ROIs:
 
     @doc
     def to_anndata(
-        self,
-        bg: Optional[int] = 0,
-        method: str = "mean",
-        polygonize: str = "convex",
-        alpha: Optional[float] = None,
-        mp: Optional[bool] = None,
+            self,
+            bg: Optional[int] = 0,
+            method: str = "mean",
+            polygonize: str = "convex",
+            alpha: Optional[float] = None,
+            mp: Optional[bool] = None,
     ):
         """Get anndata object
 
@@ -215,7 +215,7 @@ class read_ROIs:
             mp_results = run_ray(jobs, desc="Process images")
 
             for (exp, borders, centroids_), obs in zip(
-                mp_results, self.obs
+                    mp_results, self.obs
             ):
                 X += exp
                 cell_count = len(exp)
@@ -225,9 +225,9 @@ class read_ROIs:
 
         else:
             for exp_img, mask_img, obs in pbar_iter(
-                zip(self._exp_img, self._mask_img, self.obs),
-                desc="Process images",
-                total=len(self._exp_img),
+                    zip(self._exp_img, self._mask_img, self.obs),
+                    desc="Process images",
+                    total=len(self._exp_img),
             ):
                 exp, borders, centroids_ = get_roi(
                     exp_img,
@@ -250,8 +250,8 @@ class read_ROIs:
             index=[str(i) for i in range(0, len(ann_obs))],
         )
 
-        ann_obs["cell_shape"] = dumps_wkt_polygons(shapes)
-        ann_obs["centroid"] = dumps_wkt_points(centroids)
+        ann_obs["cell_shape"] = dumps_polygons_wkt(shapes)
+        ann_obs["centroid"] = dumps_points_wkt(centroids)
 
         X = np.asarray(X, dtype=float)
         self.anndata = ad.AnnData(X, obs=ann_obs, var=self.var, dtype="float")

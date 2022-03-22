@@ -1,6 +1,3 @@
-import functools
-from time import time
-
 from spatialtis.config import Config, console
 
 

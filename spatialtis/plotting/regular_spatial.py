@@ -13,10 +13,10 @@ from spatialtis.utils import doc
 
 @doc
 def spatial_heterogeneity(
-    data: AnnData,
-    groupby: Optional[str] = None,
-    key: str = "spatial_heterogeneity",
-    **plot_options,
+        data: AnnData,
+        groupby: Optional[str] = None,
+        key: str = "spatial_heterogeneity",
+        **plot_options,
 ):
     pdata = get_result(data, key).reset_index()
     exp_obs = pdata.columns[0:-1].tolist()
@@ -31,9 +31,9 @@ def spatial_heterogeneity(
 
 @doc
 def cell_dispersion(
-    data: AnnData,
-    key: str = "cell_dispersion",
-    **plot_options,
+        data: AnnData,
+        key: str = "cell_dispersion",
+        **plot_options,
 ):
     pdata, param = get_result(data, key, params=True)
     pdata = pd.pivot(
