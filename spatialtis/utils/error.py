@@ -1,2 +1,0 @@
-class NeighborsNotFoundError(Exception):
-    pass

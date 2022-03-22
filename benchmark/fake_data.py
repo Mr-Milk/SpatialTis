@@ -62,7 +62,7 @@ class FakeSpatialData:
         data.write(self.p / "data.h5ad")
 
 
-cell_num = [1000, 2000, 5000, 10000, 50000]
+cell_num = [1000]
 gene_num = 100
 type_num = 30
 

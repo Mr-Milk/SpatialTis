@@ -1,4 +1,3 @@
-FROM rayproject/ray
+FROM python:3
 WORKDIR /usr/src/app
-COPY ./SpatialTis/ .
-RUN pip install -e . && pip install memory_profiler
+RUN pip install --no-cache-dir numpy && pip install --no-cache-dir spatialtis memory_profiler

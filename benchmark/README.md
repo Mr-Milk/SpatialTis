@@ -1,7 +1,32 @@
 # Benchmark
 
 This folder contains scripts to compare the running time of Neighbor search and
-cell-cell interaction between SpatialTis and Giotto.
+cell-cell interaction between SpatialTis/Squidpy/Giotto.
+
+Docker is used to test different hardware spec.
+
+## Test Data
+
+- One ROI data: Stero-seq, Mouse Embryo with 120K Cells and 23k Genes
+
+- Multiple ROI data: IMC, Breast-Cancer, with 300 ROIs, each ROI is ~ 5k Cells and 40 Protein
+
+## Test Hardware spec
+
+I'm running it on a Windows 11 PC
+- CPU: Intel Xeon W-2195, 18 Cores
+- RAM: 64GB (8 * 8GB), 2666MHz
+- GPU: RTX 2080 super
+- Disk: SSD
+
+
+Each test will be allocated with following resources to compare the performance
+in terms of different CPU and RAM
+
+- 1Core + 8G RAM
+- 4Cores + 16G RAM
+- 8Cores + 32G RAM
+
 
 Latest result:
 
@@ -16,7 +41,13 @@ Latest result:
 ### SpatialTis
 
 ```shell
-docker build -f time-spatialtis.Dockerfile
+docker build -t time_spatialtis -f time-spatialtis.Dockerfile .
+```
+
+### Squidpy
+
+```shell
+docker build -t time_squidpy -f time-squidpy.Dockerfile .
 ```
 
 ### Giotto
