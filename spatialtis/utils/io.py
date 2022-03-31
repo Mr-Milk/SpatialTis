@@ -129,7 +129,7 @@ def get_result(
 
 def transform_points(
         data: AnnData,
-        centroid_keys: Union[str, Tuple[str, str]],
+        centroid_keys: Union[str, Sequence[str]],
         export_key: str = "centroid",
 ):
     """Transform normal coordination in `AnnData.obs` to wkt-format
@@ -181,7 +181,7 @@ def transform_shapes(data: AnnData, shape_key: str, export_key: str = "cell_shap
 def read_points(data: pd.DataFrame, centroid_key: str) -> List[List[float]]:
     if centroid_key is None:
         raise KeyError("centroid_key is None")
-    wkt_strings = data[centroid_key].tolist()
+    wkt_strings = data[centroid_key].to_numpy().tolist()
     try:
         points = reads_wkt_points(wkt_strings)
     except Exception:

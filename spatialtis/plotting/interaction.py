@@ -5,6 +5,7 @@ from typing import List, Optional
 import numpy as np
 import pandas as pd
 from anndata import AnnData
+from natsort import natsorted
 from milkviz import anno_clustermap, dot_heatmap
 from milkviz.utils import mask_triu
 from scipy.stats import pearsonr
@@ -14,10 +15,10 @@ from spatialtis.utils import doc, log_print
 from .utils import pairs_to_adj
 
 
-def count_size_side(rdata, type_order):
+def count_size_side(pdata, type_order):
     dot_size, dot_hue = {}, {}
-    for comb, arr in rdata.iteritems():
-        count = {1: 0, 0: 0, -1: 0, **Counter(arr)}
+    for comb, df in pdata.groupby(['type1', 'type2']):
+        count = {1: 0, 0: 0, -1: 0, **Counter(df['relationship'])}
         v = [1, -1]
         arr = [count[i] for i in v]
         sig_count = np.sum(arr)
@@ -43,39 +44,49 @@ def cell_interaction(
         key: str = "cell_interaction",
         type_order: Optional[List[str]] = None,
         order: bool = True,
+        plot_value: str = "relationship",
         **plot_options,
 ):
-    rdata = get_result(data, key)
+    pdata = get_result(data, key)
+    uni_types = pd.unique(pdata[['type1', 'type2']].to_numpy().flatten())
+    if type_order is None:
+        type_order = natsorted(uni_types)
     if use == "heatmap":
-        groupby = [Config.exp_obs[0]] if groupby is None else groupby
-        if not order:
-            uni_types = (
-                np.unique(rdata.columns.to_frame().to_numpy())
-                if type_order is None
-                else type_order
+        # the index of [1::] is to remove the index columns
+        pdata = pdata.pivot_table(columns=['type1', 'type2'],
+                                  values=plot_value,
+                                  index=pdata.index.names[1::],
+                                  fill_value=0)
+        pdata = pdata[[tuple(c) for c in product(type_order, repeat=2)]]
+        if plot_value == "relationship":
+            options = dict(
+                categorical_cbar=["Avoidance", "Association"],
+                col_legend_split=False,
+                col_legend_title="Cell type",
+                cbar_title="Interaction",
+                col_cluster=False,
+                method="ward",
+                vmin=-1,
+                vmax=1,
             )
-            rdata = rdata[
-                [tuple(c) for c in combinations_with_replacement(uni_types, 2)]
-            ]
+            options = {**options, **plot_options}
+            return anno_clustermap(
+                pdata, col_colors=["type1", "type2"], row_colors=groupby, **options
+            )
         else:
-            if type_order is not None:
-                rdata = rdata[[tuple(c) for c in product(type_order, repeat=2)]]
-        options = dict(
-            categorical_cbar=["Avoidance", "Association"],
-            col_legend_split=False,
-            col_legend_title="Cell type",
-            cbar_title="Interaction",
-            col_cluster=False,
-            method="ward",
-            vmin=-1,
-            vmax=1,
-        )
-        options = {**options, **plot_options}
-        return anno_clustermap(
-            rdata, col_colors=["type1", "type2"], row_colors=groupby, **options
-        )
+            options = dict(
+                col_legend_split=False,
+                col_legend_title="Cell type",
+                cbar_title="Interaction",
+                col_cluster=False,
+                method="ward",
+            )
+            options = {**options, **plot_options}
+            return anno_clustermap(
+                pdata, col_colors=["type1", "type2"], row_colors=groupby, **options
+            )
     else:
-        dot_size, dot_hue = count_size_side(rdata, type_order)
+        dot_size, dot_hue = count_size_side(pdata, type_order)
         try:
             matrix = get_result(data, "cell_components")
             combs = {}
@@ -103,14 +114,13 @@ def cell_interaction(
             matrix_hue = mask_triu(matrix_hue) if matrix is not None else None
             xticklabels = xticklabels[::-1]
         options = dict(
-            size_legend_title="Sign' ROI",
+            legend_title="Sign' ROI",
             hue_cbar_title="Interaction",
             matrix_cbar_title="Pearson-R",
             hue_cbar_ticklabels=[" - ", "+"],
-            matrix_cbar_ticklabels=["-1", "1"],
-            sizes=(0, 500),
-            dot_cmap="RdBu_r",
-            matrix_cmap="PiYG_r",
+            matrix_cbar_ticklabels=["-1", " 1"],
+            sizes=(0, 250),
+            dot_cmap="RdYlBu_r",
         )
         options = {**options, **plot_options}
         return dot_heatmap(

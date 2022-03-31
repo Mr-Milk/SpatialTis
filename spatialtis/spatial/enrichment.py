@@ -19,6 +19,7 @@ def spatial_enrichment(data: AnnData,
                        selected_markers: Optional[Array] = None,
                        resample: int = 500,
                        pval: float = 0.01,
+                        export_key: str = "spatial_enrichment",
                        **kwargs, ):
     """`Profiling markers spatial enrichment <about/implementation.html#profiling-of-markers-co-expression>`_
     using permutation test
@@ -33,13 +34,17 @@ def spatial_enrichment(data: AnnData,
         selected_markers: {selected_markers}
         resample: Number of times to perform resample
         pval: {pval}
+        export_key: {export_key}
         **kwargs: {analysis_kwargs}
 
     .. seealso:: :class:`spatialtis.cell_interaction`
 
     """
 
-    ab = AnalysisBase(data, **kwargs)
+    ab = AnalysisBase(data,
+                      display_name="Spatial enrichment",
+                      export_key=export_key,
+                      **kwargs)
     ab.check_neighbors()
 
     if (threshold is not None) & (layer_key is None):

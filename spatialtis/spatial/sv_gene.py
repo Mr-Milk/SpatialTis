@@ -16,6 +16,7 @@ def somde(data: AnnData,
           epoch: int = 100,
           pval: float = 0.05,
           qval: float = 0.05,
+          export_key: str = "sv_gene",
           **kwargs, ):
     """This is a wrapper around somde
 
@@ -26,10 +27,11 @@ def somde(data: AnnData,
         epoch: Number of epoch
         qval: Threshold for qval
         pval: Threshold for pval
+        export_key: {export_key}
         **kwargs: {analysis_kwargs}
 
     """
-    ab = AnalysisBase(data, display_name="SOMDE", **kwargs)
+    ab = AnalysisBase(data, display_name="SOMDE", export_key=export_key, **kwargs)
     track_ix = []
     results_data = []
     for roi_name, roi_data, markers, exp, points in ab.roi_exp_iter_with_points(

@@ -17,6 +17,7 @@ def NMD_marker(data: AnnData,
                importance_cutoff: Number = 0.5,
                layer_key: Optional[str] = None,
                tree_kwargs: Optional[Dict] = None,
+export_key: str = "nmd_marker",
                **kwargs, ):
     """Identify neighbor markers dependent marker
 
@@ -29,6 +30,7 @@ def NMD_marker(data: AnnData,
         selected_markers: {selected_markers}
         layer_key: {layers_key}
         tree_kwargs: {tree_kwargs}
+        export_key: {export_key}
         **kwargs: {analysis_kwargs}
 
     """
@@ -36,7 +38,7 @@ def NMD_marker(data: AnnData,
         from lightgbm import LGBMRegressor
     except ImportError:
         raise ImportError("lightgbm is not installed, please try `pip install lightgbm`.")
-    ab = AnalysisBase(data, display_name="NMD marker", **kwargs)
+    ab = AnalysisBase(data, display_name="NMD marker", export_key=export_key, **kwargs)
     ab.check_neighbors()
 
     tree_kwargs_ = {"n_jobs": -1, "random_state": 0, "importance_type": "gain"}

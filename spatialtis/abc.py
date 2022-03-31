@@ -102,6 +102,7 @@ class AnalysisBase(Timer):
     _result: Optional[pd.DataFrame] = None
     method: Optional[str] = None
     params: Optional[Dict] = None
+    verbose: bool = True
 
     roi_key: str
     cell_type_key: str
@@ -128,9 +129,11 @@ class AnalysisBase(Timer):
             marker_key: Optional[str] = None,
             mp: Optional[bool] = None,
             display_name: Optional[str] = None,
+            verbose: bool = True
     ):
         self.data = data
         self.dimension = 2
+        self.verbose = verbose
         self.task_name = self.__class__.__name__
         if display_name is not None:
             self.display_name = display_name
@@ -176,8 +179,8 @@ class AnalysisBase(Timer):
             self.export_key = self.task_name
         else:
             self.export_key = export_key
-
-        self.start_timer()
+        if verbose:
+            self.start_timer()
 
     @cached_property
     def markers(self):
@@ -226,18 +229,22 @@ class AnalysisBase(Timer):
                 raise ValueError(
                     "Spatial information not found, please set `Config.centroid_key` or pass `centroid_key=`.")
 
-        if len(ckey) == 1:
+        if isinstance(ckey, str):
             if ckey in self.data.obs_keys():
                 return self._get_wkt_points(ckey)
             if ckey in self.data.obsm_keys():
                 return self.data.obsm['spatial'].tolist()
             else:
-                raise ValueError(f"The centroid key {ckey} not found in either `.obsm` or `.obs`")
+                raise ValueError(f"The centroid key `{ckey}` not found in either `.obsm` or `.obs`")
         else:
-            if ckey in self.data.obs_keys():
-                return self.data.obs[ckey]
+            check = True
+            for c in ckey:
+                if c not in self.data.obs_keys():
+                    check = False
+            if check:
+                return self.data.obs[ckey].to_numpy().tolist()
             else:
-                raise ValueError(f"The centroid keys {ckey} not found in `.obs`")
+                raise ValueError(f"The centroid keys `{ckey}` not found in `.obs`")
 
     def roi_iter(
             self,
@@ -286,7 +293,7 @@ class AnalysisBase(Timer):
         ):
             if len(self.exp_obs) == 1:
                 roi_name = [roi_name]
-            yield roi_name, roi_data, roi_data['__spatial_centroid']
+            yield roi_name, roi_data, roi_data['__spatial_centroid'].values.tolist()
 
     def roi_exp_iter(
             self,
@@ -349,6 +356,7 @@ class AnalysisBase(Timer):
             yield roi_name, roi_data, markers, exp, roi_data['__spatial_centroid']
 
     def type_counter(self) -> pd.DataFrame:
+        self.check_cell_type()
         matrix = []
         meta = []
         for roi_name, roi_data in self.roi_iter(disable_pbar=True):

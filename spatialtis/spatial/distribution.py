@@ -19,6 +19,7 @@ def cell_dispersion(
         resample: int = 1000,
         quad: Optional[Tuple[int, int]] = None,
         rect_size: Optional[Number] = None,
+        export_key: str = "cell_dispersion",
         **kwargs,
 ):
     """Cell distribution pattern
@@ -57,6 +58,7 @@ def cell_dispersion(
         resample: :code:`method="id"`, the number of random permutations to perform
         quad: :code:`method="morisita"`, {quad}
         rect_size: :code:`method="morisita"`, {rect_size}
+        export_key: {export_key}
         **kwargs: {analysis_kwargs}
 
     "quad" is quadratic statistic, it cuts a ROI into few rectangles, quad=(10,10) means the ROI will have 10*10 grid.
@@ -68,7 +70,10 @@ def cell_dispersion(
         "morisita": "Morisita index",
         "clark_evans": "Clark evans index",
     }
-    ab = AnalysisBase(data, method=display_method[method], **kwargs)
+    ab = AnalysisBase(data, display_name="Cell dispersion",
+                      export_key=export_key,
+                      method=display_method[method], **kwargs)
+    ab.check_cell_type()
 
     results_data = []
     for roi_name, roi_data, points in ab.roi_iter_with_points(desc="Cell dispersion"):
@@ -98,6 +103,6 @@ def cell_dispersion(
     results_data = pd.DataFrame(
         data=results_data,
         columns=ab.exp_obs + ["cell_type", "index_value", "pval", "pattern"],
-    )
+    ).reset_index().set_index(["index"] + ab.exp_obs)
     ab.params = dict(exp_obs=ab.exp_obs)
     ab.result = results_data

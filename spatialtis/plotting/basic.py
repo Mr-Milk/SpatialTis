@@ -26,6 +26,7 @@ def cell_components(data: AnnData,
         groupby:
         key:
         orient:
+        type_order:
         **plot_options:
 
     Returns:
@@ -37,19 +38,20 @@ def cell_components(data: AnnData,
     data = get_result(data, key)
     if type_order is not None:
         data = data.loc[:, type_order]
-    data = pd.melt(data, ignore_index=False, value_name="count").reset_index()
+    data = data.groupby(groupby).sum().melt(ignore_index=False, value_name="Count").reset_index()
+    data = data.rename_axis(columns={'cell type': 'Cell Type'})
     if orient == "v":
         return stacked_bar(data,
                            x=groupby,
-                           y="count",
-                           stacked="cell type",
+                           y="Count",
+                           stacked="Cell Type",
                            orient=orient,
                            **plot_options)
     else:
         return stacked_bar(data,
                            y=groupby,
-                           x="count",
-                           stacked="cell type",
+                           x="Count",
+                           stacked="Cell Type",
                            orientat=orient,
                            **plot_options)
 

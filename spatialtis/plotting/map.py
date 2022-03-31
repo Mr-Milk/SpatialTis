@@ -5,11 +5,12 @@ import numpy as np
 from anndata import AnnData
 from matplotlib import pyplot as plt
 from matplotlib.colors import to_hex
-from milkviz import point_map, polygon_map
+from milkviz import point_map, point_map3d, polygon_map
 from natsort import natsorted
 from scipy.sparse import issparse
 
 from spatialtis import Config
+from spatialtis.abc import AnalysisBase
 from spatialtis.utils import doc, read_neighbors, read_points, read_shapes
 from .utils import COLOR_POOL
 
@@ -45,20 +46,32 @@ def cell_map(
             :class:`spatialtis._plotting.base.cell_map_interactive`
 
     """
-    cell_type_key = Config.cell_type_key if cell_type_key is None else cell_type_key
-    shape_key = Config.shape_key if shape_key is None else shape_key
-    centroid_key = Config.centroid_key if centroid_key is None else centroid_key
-    roi_key = Config.roi_key if roi_key is None else roi_key
+    ab = AnalysisBase(data,
+                      cell_type_key=cell_type_key,
+                      shape_key=shape_key,
+                      centroid_key=centroid_key,
+                      roi_key=roi_key,
+                      verbose=False)
+    # cell_type_key = Config.cell_type_key if cell_type_key is None else cell_type_key
+    # shape_key = Config.shape_key if shape_key is None else shape_key
+    # centroid_key = Config.centroid_key if centroid_key is None else centroid_key
+    # roi_key = Config.roi_key if roi_key is None else roi_key
     masked_type_color = to_hex(masked_type_color, keep_alpha=True)
 
-    all_cell_types = natsorted(data.obs[cell_type_key].unique())
+    all_cell_types = ab.cell_types
     color_mapper = dict(zip(all_cell_types, cycle(COLOR_POOL)))
     color_mapper[masked_type_name] = masked_type_color
 
-    roi_info = data.obs[data.obs[roi_key] == roi]
+    iter_data = data.obs.copy()
+    points = ab.get_points()
+    if len(points[0]) == 3:
+        ab.dimension = 3
+    iter_data['__spatial_centroid'] = points
+    roi_info = iter_data[iter_data[ab.roi_key] == roi]
+
     if len(roi_info) == 0:
         raise ValueError(f"ROI not exist, roi = {roi}")
-    cell_types = roi_info[cell_type_key]
+    cell_types = roi_info[ab.cell_type_key]
 
     internal_kwargs = dict(legend_title="Cell type")
 
@@ -71,12 +84,16 @@ def cell_map(
 
     internal_kwargs = {**internal_kwargs, **plot_options}
     if use_shape:
-        polygons = read_shapes(roi_info, shape_key)
+        polygons = read_shapes(roi_info, ab.shape_key)
         return polygon_map(polygons, types=cell_types, **internal_kwargs)
     else:
-        cells = np.array(read_points(roi_info, centroid_key))
-        x, y = cells[:, 0], cells[:, 1]
-        return point_map(x, y, types=cell_types, **internal_kwargs)
+        cells = np.array(roi_info['__spatial_centroid'].to_list())
+        if ab.dimension == 2:
+            x, y = cells[:, 0], cells[:, 1]
+            return point_map(x, y, types=cell_types, **internal_kwargs)
+        else:
+            x, y, z = cells[:, 0], cells[:, 1], cells[:, 2]
+            return point_map3d(x, y, z, types=cell_types, **internal_kwargs)
 
 
 @doc
@@ -109,21 +126,35 @@ def expression_map(
     Returns:
 
     """
-    marker_key = Config.marker_key if marker_key is None else marker_key
-    shape_key = Config.shape_key if shape_key is None else shape_key
-    centroid_key = Config.centroid_key if centroid_key is None else centroid_key
-    roi_key = Config.roi_key if roi_key is None else roi_key
+    ab = AnalysisBase(data,
+                      # cell_type_key=cell_type_key,
+                      shape_key=shape_key,
+                      centroid_key=centroid_key,
+                      roi_key=roi_key,
+                      marker_key=marker_key,
+                      verbose=False)
+    # marker_key = Config.marker_key if marker_key is None else marker_key
+    # shape_key = Config.shape_key if shape_key is None else shape_key
+    # centroid_key = Config.centroid_key if centroid_key is None else centroid_key
+    # roi_key = Config.roi_key if roi_key is None else roi_key
 
     internal_kwargs = dict(legend_title="expression")
 
-    roi_selector = data.obs[roi_key] == roi
-    roi_info = data.obs[roi_selector]
+    iter_data = data.obs.copy()
+    points = ab.get_points()
+    if len(points[0]) == 3:
+        ab.dimension = 3
+    iter_data['__spatial_centroid'] = points
+    roi_info = iter_data[iter_data[ab.roi_key] == roi]
+
+    roi_selector = data.obs[ab.roi_key] == roi
+
     if len(roi_info) == 0:
         raise ValueError(f"ROI not exist, roi = {roi}")
-    if marker_key is None:
+    if ab.marker_key is None:
         marker_v = data[roi_selector, data.var.index == marker].X
     else:
-        marker_v = data[roi_selector, data.var[marker_key] == marker].X
+        marker_v = data[roi_selector, data.var[ab.marker_key] == marker].X
     if issparse(marker_v):
         marker_v = marker_v.A
     marker_v = marker_v.flatten()
@@ -143,12 +174,17 @@ def expression_map(
             marker_v = marker_v[cell_mask]
         ax = polygon_map(polygons, values=marker_v, **internal_kwargs)
     else:
-        cells = np.array(read_points(roi_info, centroid_key))
+        cells = np.array(roi_info['__spatial_centroid'].to_list())
         if cell_mask is not None:
             cells = cells[cell_mask]
             marker_v = marker_v[cell_mask]
-        x, y = cells[:, 0], cells[:, 1]
-        ax = point_map(x, y, values=marker_v, **internal_kwargs)
+        if ab.dimension == 2:
+            x, y = cells[:, 0], cells[:, 1]
+            ax = point_map(x, y, values=marker_v, **internal_kwargs)
+        else:
+            print(marker_v)
+            x, y, z = cells[:, 0], cells[:, 1], cells[:, 2]
+            ax = point_map3d(x, y, z, values=marker_v, **internal_kwargs)
     plt.title(f"{marker}")
     return ax
 

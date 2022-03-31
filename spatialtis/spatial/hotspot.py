@@ -16,6 +16,7 @@ def hotspot(data: AnnData,
             quad: Optional[Tuple[int, int]] = None,
             rect_side: Optional[Tuple[float, float]] = None,
             pval: float = 0.01,
+            export_key: str = "hotspot",
             **kwargs, ):
     """`Getis-ord hotspot detection <../about/implementation.html#hotspot-detection>`_
 
@@ -28,11 +29,13 @@ def hotspot(data: AnnData,
         quad: {quad}
         rect_side: {rect_size}
         pval: {pval}
+        export_key: {export_key}
         **kwargs: {analysis_kwargs}
 
     """
 
-    ab = AnalysisBase(data, export_key="hotspot_all", **kwargs)
+    ab = AnalysisBase(data, display_name="Hotspot", export_key="hotspot_all", **kwargs)
+    ab.check_cell_type()
     if selected_types is not None:
         ab.export_key = f"hotspot_{'_'.join(selected_types)}"
     else:
@@ -55,13 +58,13 @@ def hotspot(data: AnnData,
                 )
                 hotcells.append(pd.Series(hots, index=g.index))
 
-        result = pd.concat(hotcells)
-        data.obs[ab.export_key] = result
-        # Cell map will leave blank if fill with None value
-        data.obs[ab.export_key].fillna("other", inplace=True)
-        arr = data.obs[ab.export_key].astype("category")
-        arr = arr.cat.rename_categories({True: "hot", False: "cold", "other": "other"})
-        data.obs[ab.export_key] = arr
-        # Call this to invoke the print
-        col2adata_obs(data.obs[ab.export_key], data, ab.export_key)
-        ab.stop_timer()
+    result = pd.concat(hotcells)
+    data.obs[ab.export_key] = result
+    # Cell map will leave blank if fill with None value
+    data.obs[ab.export_key].fillna("other", inplace=True)
+    arr = data.obs[ab.export_key].astype("category")
+    arr = arr.cat.rename_categories({True: "hot", False: "cold", "other": "other"})
+    data.obs[ab.export_key] = arr
+    # Call this to invoke the print
+    col2adata_obs(data.obs[ab.export_key], data, ab.export_key)
+    ab.stop_timer()

@@ -16,6 +16,7 @@ def spatial_autocorr(
         pval: float = 0.05,
         two_tailed: bool = True,
         layer_key: Optional[str] = None,
+        export_key: str = "spatial_autocorr",
         **kwargs,
 ):
     """Spatial auto-correlation for every markers
@@ -31,13 +32,18 @@ def spatial_autocorr(
         pval: {pval}
         two_tailed: Whether to use two tailed for p-value
         layer_key: {layer_key}
+        export_key: {export_key}
         **kwargs: {analysis_kwargs}
 
     .. seealso:: :class:`spatialtis.somde`
 
     """
     method = options_guard(method, ['moran_i', 'geary_c'])
-    ab = AnalysisBase(data, method=method, display_name="Spatial auto-correlation", **kwargs)
+    ab = AnalysisBase(data,
+                      method=method,
+                      display_name="Spatial auto-correlation",
+                      export_key=export_key,
+                      **kwargs)
     track_ix = []
     results_data = []
     for roi_name, roi_data, markers, exp in ab.roi_exp_iter(

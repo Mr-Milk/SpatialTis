@@ -20,7 +20,8 @@ def spatial_coexp(data: AnnData,
                   use_cell_type: bool = False,
                   selected_markers: Optional[List[str]] = None,
                   layer_key: Optional[str] = None,
-                  corr_thresh: Number = 0.5,
+                  corr_thresh: Optional[Number] = 0.5,
+                  export_key: str = "spatial_coexp",
                   **kwargs, ):
     """Identifying spatial co-expression markers using correlation
 
@@ -31,15 +32,20 @@ def spatial_coexp(data: AnnData,
         method: "spearman" or "pearson" (Default: "spearman")
         use_cell_type: Whether to use cell type information
         selected_markers: {selected_markers}
-        layer_key: {layer_key}
         corr_thresh: The minimum correlation value to store the result,
+        layer_key: {layer_key}
+        export_key: {export_key}
         **kwargs: {analysis_kwargs}
 
     """
     method = options_guard(method, ['spearman', 'pearson'])
     display_method = {"spearman": "spearman correlation",
                       "pearson": "pearson correlation"}
-    ab = AnalysisBase(data, method=display_method[method], display_name="Spatial Co-expression", **kwargs)
+    ab = AnalysisBase(data,
+                      method=display_method[method],
+                      display_name="Spatial co-expression",
+                      export_key=export_key,
+                      **kwargs)
     ab.check_neighbors()
 
     if use_cell_type:
@@ -100,6 +106,6 @@ def spatial_coexp(data: AnnData,
         r = fast_corr(exp1, exp2, method=method)
         d = pd.DataFrame(markers_combs, columns=['marker1', 'marker2'])
         d['corr'] = r
-        ab.result = d[(d['corr'] > corr_thresh) | (d['corr'] < -corr_thresh)] \
-            .sort_values('corr', ascending=False) \
-            .reset_index(drop=True)
+        if corr_thresh is not None:
+            d = d[(d['corr'] > corr_thresh) | (d['corr'] < -corr_thresh)]
+        ab.result = d.sort_values('corr', ascending=False).reset_index(drop=True)

@@ -20,12 +20,13 @@ def NCD_marker(data: AnnData,
                tree_kwargs: Optional[Dict] = None,
                test_method: str = "mannwhitneyu",
                pval: Number = 0.01,
+export_key: str = "ncd_marker",
                **kwargs, ):
     """Identify neighbor cells dependent marker
 
     This method tells you the dependency between markers and its neighbor cell type.
     The dependency is calculated by building a gradiant boosting tree (in here lightgbm) to determine
-    the feature importance. A statistic test and fold change will be calculate for importance markers and its
+    the feature importance. A statistic test and fold change will be calculated for importance markers and its
     neighbor cells, the fold change is between marker with cell type at / not at the neighborhood.
 
     Args:
@@ -36,6 +37,7 @@ def NCD_marker(data: AnnData,
         tree_kwargs: {tree_kwargs}
         test_method: which test method to use, anything from :code:`scipy.stats`
         pval: {pval}
+        export_key: {export_key}
         **kwargs: {analysis_kwargs}
 
     """
@@ -44,7 +46,10 @@ def NCD_marker(data: AnnData,
         from lightgbm import LGBMRegressor
     except ImportError:
         raise ImportError("lightgbm is not installed, please try `pip install lightgbm`.")
-    ab = AnalysisBase(data, display_name="NCD Markers", **kwargs)
+    ab = AnalysisBase(data,
+                      display_name="NCD Markers",
+                      export_key=export_key,
+                      **kwargs)
     ab.check_neighbors()
     ab.check_cell_type()
 

@@ -14,7 +14,7 @@ from .utils import bbox_eccentricity
 @doc
 def cell_components(
         data: AnnData,
-        export_key: Optional[str] = None,
+        export_key: str = "cell_components",
         **kwargs,
 ):
     """Count the proportion of each types of cells in each group
@@ -25,7 +25,7 @@ def cell_components(
         **kwargs: {analysis_kwargs}
 
     """
-    ab = AnalysisBase(data, export_key=export_key, **kwargs)
+    ab = AnalysisBase(data, display_name="Cell Components", export_key=export_key, **kwargs)
     result = ab.type_counter()
     result.columns.name = 'cell type'
     ab.result = result
@@ -34,7 +34,7 @@ def cell_components(
 @doc
 def cell_density(data: AnnData,
                  ratio: float = 1.0,
-                 export_key: Optional[str] = None,
+                 export_key: str = "cell_density",
                  **kwargs):
     """Calculating cell density in each ROI
 
@@ -50,12 +50,11 @@ def cell_density(data: AnnData,
         **kwargs: {analysis_kwargs}
 
     """
-    ab = AnalysisBase(data, export_key=export_key, **kwargs)
+    ab = AnalysisBase(data, display_name="Cell density", export_key=export_key, **kwargs)
     result = ab.type_counter()
 
     area = []
-    for roi_name, roi_data in ab.roi_iter():
-        points = read_points(roi_data, ab.centroid_key)
+    for roi_name, roi_data, points in ab.roi_iter_with_points():
         area.append(polygons_area(points))
 
     area = np.asarray(area) * (ratio * ratio)
@@ -83,7 +82,7 @@ def cell_morphology(data: AnnData,
         **kwargs: {analysis_kwargs}
 
     """
-    ab = AnalysisBase(data, **kwargs)
+    ab = AnalysisBase(data, display_name="Cell morphology", **kwargs)
     shapes = read_shapes(data.obs, ab.shape_key)
     areas = multipolygons_area(shapes)
     eccentricity = [bbox_eccentricity(bbox) for bbox in multipoints_bbox(shapes)]
@@ -96,7 +95,7 @@ def cell_morphology(data: AnnData,
 
 @doc
 def cell_co_occurrence(data: AnnData,
-                       export_key: Optional[str] = None,
+                       export_key: str = "cell_co_occurrence",
                        **kwargs):
     """The likelihood of two type of cells occur simultaneously in a ROI
 
@@ -107,7 +106,7 @@ def cell_co_occurrence(data: AnnData,
 
     """
 
-    ab = AnalysisBase(data, export_key=export_key, **kwargs)
+    ab = AnalysisBase(data, display_name="Cell co-occurrence", export_key=export_key, **kwargs)
     df = ab.type_counter()
     df = df.T
     # normalize it using mean, greater than mean suggest it's occurrence

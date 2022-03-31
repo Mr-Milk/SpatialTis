@@ -3,6 +3,7 @@ from typing import Optional
 import pandas as pd
 from anndata import AnnData
 from spatialtis_core import bbox_neighbors, multipoints_bbox, points_neighbors, spatial_weight
+from spatialtis_core.neighbors import bbox_neighbors_parallel, points_neighbors_parallel
 
 from spatialtis.abc import AnalysisBase
 from spatialtis.typing import Number
@@ -42,22 +43,27 @@ def find_neighbors(data: AnnData,
 
     """
 
-    ab = AnalysisBase(data, method=method, export_key=export_key, **kwargs)
+    ab = AnalysisBase(data, method=method,
+                      display_name="Find neighbors",
+                      export_key=export_key, **kwargs)
 
     if method == "kdtree":
         if (r is None) & (k is None):
             k = 5
-        if (k is not None) & (k < 0):
-            raise ValueError("`k` must be greater than 0")
+        if k is not None:
+            if k < 0:
+                raise ValueError("`k` must be greater than 0")
 
     elif method == "rtree":
         if (r is None) & (scale is None):
             scale = 1.4
-        if (scale is not None) & (scale < 1):
-            raise ValueError("Can't shrink cell, 'scale' must >= 1")
+        if scale is not None:
+            if scale < 1:
+                raise ValueError("Can't shrink cell, 'scale' must >= 1")
 
-    if (r is not None) & (r < 0):
-        raise ValueError("`r` must be greater than 0")
+    if r is not None:
+        if r < 0:
+            raise ValueError("`r` must be greater than 0")
 
     # assign unique id to each cell, in case of someone cut the data afterwards
     # this ensure the analysis still work with non-integrated AnnData
@@ -69,19 +75,35 @@ def find_neighbors(data: AnnData,
     if method == "rtree":
         if ab.dimension == 3:
             raise NotImplementedError("Don't support RTree with 3D data")
+
+        bbox_collections = []
+        labels_collections = []
         for roi_name, roi_data in ab.roi_iter(desc="Find neighbors"):
             shapes = read_shapes(roi_data, ab.shape_key)
             bbox = multipoints_bbox(shapes)
-            labels = roi_data[ab.cell_id_key]
-            neighbors = bbox_neighbors(bbox, labels, expand=r, scale=scale)
-            neighbors_data += neighbors
+            labels = roi_data[ab.cell_id_key].values.tolist()
+            bbox_collections.append(bbox)
+            labels_collections.append(labels)
+            # neighbors = bbox_neighbors(bbox, labels, expand=r, scale=scale)
+            # neighbors_data += neighbors
             track_ix += list(roi_data.index)
+        neighbors = bbox_neighbors_parallel(bbox_collections, labels_collections, expand=r, scale=scale)
+        for n in neighbors:
+            neighbors_data += n
     else:
+
+        points_collections = []
+        labels_collections = []
         for roi_name, roi_data, points in ab.roi_iter_with_points(desc="Find neighbors"):
-            labels = roi_data[ab.cell_id_key]
-            neighbors = points_neighbors(points, labels, r=r, k=k, method=method)
-            neighbors_data += neighbors
+            labels = roi_data[ab.cell_id_key].values.tolist()
+            points_collections.append(points)
+            labels_collections.append(labels)
             track_ix += list(roi_data.index)
+
+        neighbors = points_neighbors_parallel(points_collections, labels_collections, r=r, k=k, method=method)
+        for n in neighbors:
+            neighbors_data += n
+
     counts = [len(i) for i in neighbors_data]
     neighbors_data = [str(i) for i in neighbors_data]
     neighbors_data = pd.Series(neighbors_data, index=track_ix)

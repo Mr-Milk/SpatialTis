@@ -15,7 +15,8 @@ from spatialtis.utils import doc, options_guard
 def spatial_heterogeneity(data: AnnData,
                           method: str = "leibovici",
                           d: Optional[int] = None,
-                          cut: Union[int, Array, None] = None,
+                          cut: int = 3,
+export_key: str = "heterogeneity",
                           **kwargs, ):
     """Evaluate tissue heterogeneity based on entropy
 
@@ -34,13 +35,19 @@ def spatial_heterogeneity(data: AnnData,
             method: "shannon", "leibovici" and "altieri" (Default: "leibovici")
             d: :code:`method="leibovici"`, The distance threshold to determine co-occurrence events
             cut: :code:`method="altieri"`, Distance interval
+            export_key: {export_key}
             **kwargs: {analysis_kwargs}
 
     """
 
     method = options_guard(method, ["shannon", "altieri", "leibovici"])
 
-    ab = AnalysisBase(data, method=f"{method.capitalize()} entropy", **kwargs)
+    ab = AnalysisBase(data,
+                      method=f"{method.capitalize()} entropy",
+                      display_name="Spatial heterogeneity",
+                      export_key=export_key,
+                      **kwargs)
+    ab.check_cell_type()
 
     if method == "shannon":
         df = ab.type_counter()
@@ -68,6 +75,7 @@ def spatial_heterogeneity(data: AnnData,
             method=method,
             d=d,
             cut=cut,
+            dims=ab.dimension
         )
         ab.result = pd.DataFrame(
             {"heterogeneity": ent},

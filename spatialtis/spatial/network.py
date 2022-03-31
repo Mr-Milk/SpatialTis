@@ -14,6 +14,7 @@ def cell_community(data: AnnData,
                    resolution: float = 0.05,
                    partition_type: Optional[Any] = None,
                    partition_kwargs: Optional[Dict] = None,
+                    export_key: str = "community_id",
                    **kwargs, ):
     """Spatial communities detection
 
@@ -24,11 +25,15 @@ def cell_community(data: AnnData,
         resolution:
         partition_type: The leidenalg partition type
         partition_kwargs: Pass to leidenalg.find_partition
+        export_key: {export_key}
         **kwargs: {analysis_kwargs}
 
     """
 
-    ab = AnalysisBase(data, **kwargs)
+    ab = AnalysisBase(data,
+                      display_name="Cell community",
+                      export_key=export_key,
+                      **kwargs)
 
     # import leidenalg
     # import igraph as ig

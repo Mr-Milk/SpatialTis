@@ -1,11 +1,13 @@
 from collections import Counter
-from typing import Optional
+from typing import Optional, List
 
 import numpy as np
 import pandas as pd
 import seaborn as sns
 from anndata import AnnData
-from milkviz import dot
+from matplotlib.colors import ListedColormap
+from milkviz import dot, anno_clustermap
+from natsort import natsorted
 
 from spatialtis import get_result
 from spatialtis.utils import doc
@@ -32,24 +34,47 @@ def spatial_heterogeneity(
 @doc
 def cell_dispersion(
         data: AnnData,
+        use: str = "dot",
+        groupby: Optional[List[str]] = None,
+        type_order: Optional[List[str]] = None,
         key: str = "cell_dispersion",
         **plot_options,
 ):
-    pdata, param = get_result(data, key, params=True)
-    pdata = pd.pivot(
-        pdata, columns="cell_type", index=param["exp_obs"], values="pattern"
+    pdata = get_result(data, key)
+    pdata = pd.pivot_table(
+        pdata, columns="cell_type", index=pdata.index.names[1::], values="pattern"
     )
-    pattern = {}
-    for t, arr in pdata.iteritems():
-        pattern[t] = {0: 0, 1: 0, 2: 0, 3: 0, **Counter(arr)}
-    pdata = pd.DataFrame(pattern).T[[0, 1, 2, 3]]
-    colors = np.repeat(
-        [["#FFC408", "#c54a52", "#4a89b9", "#5a539d"]], len(pdata), axis=0
-    )
-    return dot(
-        dot_size=pdata.to_numpy(dtype=int),
-        dot_hue=colors,
-        legend_title="ROI",
-        xticklabels=["No Cell", "Random", "Regular", "Cluster"],
-        yticklabels=pdata.index,
-    )
+    if type_order is None:
+        type_order = natsorted(pdata.columns)
+    pdata = pdata[type_order]
+
+    if use == "dot":
+        pattern = {}
+        for t, arr in pdata.iteritems():
+            pattern[t] = {0: 0, 1: 0, 2: 0, 3: 0, **Counter(arr)}
+        pdata = pd.DataFrame(pattern).T[[0, 1, 2, 3]]
+        colors = np.repeat(
+            [["#FFC408", "#c54a52", "#4a89b9", "#5a539d"]], len(pdata), axis=0
+        )
+        return dot(
+            dot_size=pdata.to_numpy(dtype=int),
+            dot_hue=colors,
+            legend_title="ROI",
+            xticklabels=["No Cell", "Random", "Regular", "Cluster"],
+            yticklabels=pdata.index,
+            **plot_options,
+        )
+    else:
+        pdata = pdata.rename_axis(columns={"cell_type": "Cell Type"})
+        return anno_clustermap(
+            pdata,
+            col_colors="Cell Type",
+            row_colors=groupby,
+            categorical_cbar=["No Cell", "Random", "Regular", "Cluster"],
+            heat_cmap=ListedColormap(["#FFC408", "#c54a52", "#4a89b9", "#5a539d"]),
+            col_legend_split=False,
+            cbar_title="Pattern",
+            vmin=0,
+            vmax=3,
+            col_cluster=False,
+        )

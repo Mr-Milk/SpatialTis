@@ -13,6 +13,7 @@ def cell_interaction(data: AnnData,
                      method: str = "pval",
                      resample: int = 1000,
                      pval: float = 0.01,
+                     export_key: str = "cell_interaction",
                      **kwargs, ):
     """`Profiling cell-cell interaction <about/implementation.html#profiling-of-cell-cell-interaction>`_
     using permutation test
@@ -28,7 +29,7 @@ def cell_interaction(data: AnnData,
         method: "pval" and "zscore" (Default: "pval")
         resample: Number of times to perform resample
         pval: {pval}
-        order: If False, (Cell_A, Cell_B) and (Cell_B, Cell_A) are the same interaction (Default: False)
+        export_key: {export_key}
         **kwargs: {analysis_kwargs}
 
     .. seealso:: :class:`spatialtis.spatial_enrichment`
@@ -36,7 +37,10 @@ def cell_interaction(data: AnnData,
     """
     method = options_guard(method, ["pval", "zscore"])
     display_method = {"pval": "pseudo p-value", "zscore": "z-score"}
-    ab = AnalysisBase(data, method=display_method[method], **kwargs)
+    ab = AnalysisBase(data, method=display_method[method],
+                      display_name="Cell interaction",
+                      export_key=export_key,
+                      **kwargs)
 
     cc = CellCombs(ab.cell_types)
 
@@ -56,11 +60,12 @@ def cell_interaction(data: AnnData,
             method=method,
         )
         results_data += result
-        roi_tracker += [roi_name]
         repeat_time = len(result)
-    df = pd.DataFrame(data=results_data, columns=["type1", "type2", "value"])
-    ix = pd.DataFrame(data=np.repeat(roi_tracker, repeat_time, axis=0), columns=ab.exp_obs)
-    df = pd.concat([ix, df], axis=1)
-    df = df.pivot_table(values="value", index=ab.exp_obs, columns=["type1", "type2"])
+        roi_tracker += [roi_name for _ in range(repeat_time)]
+
+    df = pd.DataFrame(data=results_data, columns=["type1", "type2", "value", "relationship"])
+    ix = pd.DataFrame(data=roi_tracker, columns=ab.exp_obs).reset_index()
+    df = df.set_index(pd.MultiIndex.from_frame(ix))
+    # df = df.pivot_table(values="value", index=ab.exp_obs, columns=["type1", "type2"])
 
     ab.result = df
