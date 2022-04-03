@@ -58,6 +58,22 @@ Install the current development version
 pip install git+https://github.com/Mr-Milk/SpatialTis.git
 ```
 
+### Docker
+
+The quickest way to run is to use a docker image, it contains all you need to start from cell type identification.
+
+```shell
+docker pull spatialtis/spatialtis
+```
+To run a jupyter notebook from the docker image and mount your data folder to it:
+```shell
+cd your/data/
+docker run -it [--rm] -p 8888:8888
+  --mount type=bind,source="$PWD",target=/work \
+  spatialtis/spatialtis
+# if port 8888 is taken, try `-p 9999:8888` and change to 9999
+```
+
 ## Low level API
 
 If you are interested in using low level algorithms yourself,
