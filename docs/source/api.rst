@@ -1,33 +1,58 @@
-.. automodule:: spatialtis
-
 API Reference
 ========================
+
+.. module:: spatialtis.config
+
+.. currentmodule:: spatialtis
 
 Config
 -------
 .. autosummary::
-    :toctree: api
+    :toctree: API
     :template: autosummary/config_class.rst
 
     config._Config
 
 
-IO/Preprocessing
------------------
+.. module:: spatialtis.preprocessing
+
+.. currentmodule:: spatialtis
+
+Cell quantification from Images
+--------------------------------
 .. autosummary::
-    :toctree: api
+    :toctree: API
     :nosignatures:
 
     read_ROIs
-    get_result
+
+
+WKT Format helper
+--------------------------------
+.. autosummary::
+    :toctree: API
+    :nosignatures:
+
     transform_points
     transform_shapes
+
+IO
+--------------------------------
+.. autosummary::
+    :toctree: API
+    :nosignatures:
+
+    get_result
+
+.. module:: spatialtis.basic
+
+.. currentmodule:: spatialtis
 
 
 Basic analysis
 ----------------
 .. autosummary::
-    :toctree: api
+    :toctree: API
     :nosignatures:
 
     cell_components
@@ -36,10 +61,14 @@ Basic analysis
     cell_co_occurrence
 
 
+.. module:: spatialtis.spatial
+
+.. currentmodule:: spatialtis
+
 Spatial analysis
 -------------------
 .. autosummary::
-    :toctree: api
+    :toctree: API
     :nosignatures:
 
     find_neighbors
@@ -56,20 +85,54 @@ Spatial analysis
     somde
     GCNG
 
+.. module:: spatialtis.abc
 
+.. currentmodule:: spatialtis
 
 Base class
 -------------
 
 .. autosummary::
-    :toctree:
+    :toctree: API
     :nosignatures:
 
     abc.AnalysisBase
 
 
-.. currentmodule:: spatialtis.plotting
+.. module:: spatialtis.plotting
 
-Plotting
----------
+.. currentmodule:: spatialtis
+
+To use plotting, import it in following schema:
+
+>>> import spatialtis.plotting as sp
+
+
+ROI Visualization
+------------------
+
+.. autosummary::
+    :toctree: API
+    :nosignatures:
+
+    plotting.cell_map
+    plotting.expression_map
+    plotting.neighbors_map
+
+
+Analysis Visualization
+-----------------------
+
+.. autosummary::
+    :toctree: API
+    :nosignatures:
+
+    plotting.cell_components
+    plotting.cell_density
+    plotting.cell_morphology
+    plotting.cell_co_occurrence
+    plotting.cell_dispersion
+    plotting.spatial_heterogeneity
+    plotting.cell_interaction
+    plotting.spatial_enrichment
 

@@ -48,7 +48,7 @@ For a quick view of what it's does, check our the tutorial part.
    usage/low_level
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :caption: About
 
    api

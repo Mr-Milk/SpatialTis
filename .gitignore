@@ -3,6 +3,7 @@ data/
 benchmark/data*
 spatialtis-result/
 spatialtis/_version.py
+docs/source/API
 
 # ignore IDE stuff
 .vscode/
