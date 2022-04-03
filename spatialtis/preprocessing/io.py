@@ -27,7 +27,7 @@ def get_roi(
     try:
         from tifffile import TiffFile
         from skimage.io import imread
-        from skimage.measure import label, regionprops
+        from skimage.measure import label, regionprops, regionprops_table
     except ImportError:
         raise ImportError("Required scikit-image, try `pip install scikit-image`.")
 

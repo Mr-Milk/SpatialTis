@@ -26,6 +26,7 @@ def cell_components(
 
     """
     ab = AnalysisBase(data, display_name="Cell Components", export_key=export_key, **kwargs)
+    ab.check_cell_type()
     result = ab.type_counter()
     result.columns.name = 'cell type'
     ab.result = result
@@ -51,6 +52,7 @@ def cell_density(data: AnnData,
 
     """
     ab = AnalysisBase(data, display_name="Cell density", export_key=export_key, **kwargs)
+    ab.check_cell_type()
     result = ab.type_counter()
 
     area = []
@@ -107,6 +109,7 @@ def cell_co_occurrence(data: AnnData,
     """
 
     ab = AnalysisBase(data, display_name="Cell co-occurrence", export_key=export_key, **kwargs)
+    ab.check_cell_type()
     df = ab.type_counter()
     df = df.T
     # normalize it using mean, greater than mean suggest it's occurrence

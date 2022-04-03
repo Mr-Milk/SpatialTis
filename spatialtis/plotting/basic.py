@@ -6,9 +6,9 @@ from anndata import AnnData
 from milkviz import stacked_bar, dot, anno_clustermap
 from milkviz.utils import mask_triu
 
-from spatialtis import Config
 from spatialtis.utils import doc, get_result
 from .utils import pairs_to_adj
+from .. import Config
 
 
 @doc
@@ -19,7 +19,7 @@ def cell_components(data: AnnData,
                     type_order: Optional[List[str]] = None,
                     **plot_options,
                     ):
-    """
+    """Visualize cell components result
 
     Args:
         data:
@@ -33,13 +33,12 @@ def cell_components(data: AnnData,
 
     """
 
-    groupby = Config.exp_obs[0] if groupby is None else groupby
-
     data = get_result(data, key)
+    groupby = data.index.names[0] if groupby is None else groupby
     if type_order is not None:
         data = data.loc[:, type_order]
     data = data.groupby(groupby).sum().melt(ignore_index=False, value_name="Count").reset_index()
-    data = data.rename_axis(columns={'cell type': 'Cell Type'})
+    data = data.rename(columns={'cell type': 'Cell Type'})
     if orient == "v":
         return stacked_bar(data,
                            x=groupby,
@@ -52,7 +51,7 @@ def cell_components(data: AnnData,
                            y=groupby,
                            x="Count",
                            stacked="Cell Type",
-                           orientat=orient,
+                           orient=orient,
                            **plot_options)
 
 
@@ -122,6 +121,6 @@ def cell_co_occurrence(data: AnnData,
                    legend_title="ROI",
                    sizes=(0, 500))
     else:
-        groupby = Config.exp_obs[0] if groupby is None else groupby
+        groupby = data.index.names[0] if groupby is None else groupby
         return anno_clustermap(data, col_colors=['type1', 'type2'], row_colors=groupby,
                                categorical_cbar=['Non-Occur', 'Co-occur'])

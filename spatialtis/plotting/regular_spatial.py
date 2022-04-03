@@ -17,12 +17,12 @@ from spatialtis.utils import doc
 def spatial_heterogeneity(
         data: AnnData,
         groupby: Optional[str] = None,
-        key: str = "spatial_heterogeneity",
+        key: str = "heterogeneity",
         **plot_options,
 ):
     pdata = get_result(data, key).reset_index()
     exp_obs = pdata.columns[0:-1].tolist()
-    if (len(exp_obs) == 1) | (groupby == exp_obs[-1]):
+    if (len(exp_obs) == 1) | (groupby == exp_obs[0]):
         options = dict(color="#5DAC81", **plot_options)
         ax = sns.barplot(data=pdata, y="heterogeneity", x=exp_obs[-1], **options)
     else:

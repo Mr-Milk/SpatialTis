@@ -6,6 +6,7 @@ from .preprocessing import read_ROIs
 from .spatial import (
     cell_dispersion,
     cell_interaction,
+    cell_community,
     find_neighbors,
     GCNG,
     NCD_marker,

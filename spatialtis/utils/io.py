@@ -131,6 +131,7 @@ def transform_points(
         data: AnnData,
         centroid_keys: Union[str, Sequence[str]],
         export_key: str = "centroid",
+        write_config: bool = True,
 ):
     """Transform normal coordination in `AnnData.obs` to wkt-format
 
@@ -156,10 +157,11 @@ def transform_points(
         raise TypeError("centroid_keys can either be str or (str, str)")
 
     data.obs[export_key] = dumps_points_wkt(points)
-    Config.centroid_key = export_key
+    if write_config:
+        Config.centroid_key = export_key
 
 
-def transform_shapes(data: AnnData, shape_key: str, export_key: str = "cell_shape"):
+def transform_shapes(data: AnnData, shape_key: str, export_key: str = "cell_shape", write_config: bool = True):
     """Transform normal coordination in `AnnData.obs` to wkt-format
 
     >>> import spatialtis as st
@@ -175,7 +177,8 @@ def transform_shapes(data: AnnData, shape_key: str, export_key: str = "cell_shap
     if isinstance(shapes[0], str):
         shapes = [literal_eval(s) for s in shapes]
     data.obs[export_key] = dumps_polygons_wkt(shapes)
-    Config.shape_key = export_key
+    if write_config:
+        Config.shape_key = export_key
 
 
 def read_points(data: pd.DataFrame, centroid_key: str) -> List[List[float]]:

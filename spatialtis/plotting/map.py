@@ -42,8 +42,7 @@ def cell_map(
         shape_key: {shape_key}
         centroid_key: {centroid_key}
         roi_key: {roi_key}
-        **plot_options: Pass to :class:`spatialtis._plotting.base.cell_map_static` or
-            :class:`spatialtis._plotting.base.cell_map_interactive`
+        **plot_options: Pass to `milkviz.point_map` or `milkviz.point_map3d` or `milkviz.polygon_map`
 
     """
     ab = AnalysisBase(data,
@@ -58,9 +57,10 @@ def cell_map(
     # roi_key = Config.roi_key if roi_key is None else roi_key
     masked_type_color = to_hex(masked_type_color, keep_alpha=True)
 
-    all_cell_types = ab.cell_types
-    color_mapper = dict(zip(all_cell_types, cycle(COLOR_POOL)))
-    color_mapper[masked_type_name] = masked_type_color
+    if ab.has_cell_type:
+        all_cell_types = ab.cell_types
+        color_mapper = dict(zip(all_cell_types, cycle(COLOR_POOL)))
+        color_mapper[masked_type_name] = masked_type_color
 
     iter_data = data.obs.copy()
     points = ab.get_points()
@@ -71,7 +71,7 @@ def cell_map(
 
     if len(roi_info) == 0:
         raise ValueError(f"ROI not exist, roi = {roi}")
-    cell_types = roi_info[ab.cell_type_key]
+    cell_types = roi_info[ab.cell_type_key] if ab.has_cell_type else None
 
     internal_kwargs = dict(legend_title="Cell type")
 
@@ -110,11 +110,11 @@ def expression_map(
         roi_key: Optional[str] = None,
         **plot_options,
 ):
-    """
+    """Visualize marker expression in ROI
 
     Args:
-        data:
-        roi:
+        data: {adata_plotting}
+        roi: {roi}
         marker:
         use_shape:
         marker_key:
@@ -152,9 +152,9 @@ def expression_map(
     if len(roi_info) == 0:
         raise ValueError(f"ROI not exist, roi = {roi}")
     if ab.marker_key is None:
-        marker_v = data[roi_selector, data.var.index == marker].X
+        marker_v = data[roi_selector, data.var.index == marker].X.copy()
     else:
-        marker_v = data[roi_selector, data.var[ab.marker_key] == marker].X
+        marker_v = data[roi_selector, data.var[ab.marker_key] == marker].X.copy()
     if issparse(marker_v):
         marker_v = marker_v.A
     marker_v = marker_v.flatten()
@@ -182,7 +182,6 @@ def expression_map(
             x, y = cells[:, 0], cells[:, 1]
             ax = point_map(x, y, values=marker_v, **internal_kwargs)
         else:
-            print(marker_v)
             x, y, z = cells[:, 0], cells[:, 1], cells[:, 2]
             ax = point_map3d(x, y, z, values=marker_v, **internal_kwargs)
     plt.title(f"{marker}")
@@ -198,31 +197,38 @@ def neighbors_map(
         roi_key: Optional[str] = None,
         **plot_options,
 ):
-    """
+    """Visualize neighbors network built in a ROI
 
     Args:
-        data:
-        roi:
-        cell_type_key:
-        centroid_key:
-        roi_key:
+        data: {adata_plotting}
+        roi: {roi}
+        cell_type_key: {cell_type_key}
+        centroid_key: {centroid_key}
+        roi_key: {roi_key}
         **plot_options:
 
     Returns:
 
     """
-    cell_type_key = Config.cell_type_key if cell_type_key is None else cell_type_key
-    centroid_key = Config.centroid_key if centroid_key is None else centroid_key
-    roi_key = Config.roi_key if roi_key is None else roi_key
+    # cell_type_key = Config.cell_type_key if cell_type_key is None else cell_type_key
+    # centroid_key = Config.centroid_key if centroid_key is None else centroid_key
+    # roi_key = Config.roi_key if roi_key is None else roi_key
+    ab = AnalysisBase(data, cell_type_key=cell_type_key, centroid_key=centroid_key, roi_key=roi_key)
 
-    roi_info = data.obs[data.obs[roi_key] == roi]
+    iter_data = data.obs.copy()
+    points = ab.get_points()
+    if len(points[0]) == 3:
+        raise NotImplementedError("Does not support 3D neighbor map")
+    iter_data['__spatial_centroid'] = points
+    roi_info = iter_data[iter_data[ab.roi_key] == roi]
+
     if len(roi_info) == 0:
         raise ValueError(f"ROI not exist, roi = {roi}")
-    cell_types = roi_info[cell_type_key]
+    cell_types = roi_info[ab.cell_type_key] if ab.has_cell_type else None
 
     internal_kwargs = dict(legend_title="Cell type", **plot_options)
 
-    cells = np.array(read_points(roi_info, centroid_key))
+    cells = np.array(roi_info['__spatial_centroid'].to_list())
     x, y = cells[:, 0], cells[:, 1]
     neighbors = read_neighbors(roi_info, "cell_neighbors")
     labels = roi_info["cell_id"].astype(int)

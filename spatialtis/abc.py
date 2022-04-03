@@ -1,7 +1,7 @@
 from collections import Counter
 from functools import cached_property
 from time import time
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, Sequence
 
 import numpy as np
 import pandas as pd
@@ -124,7 +124,7 @@ class AnalysisBase(Timer):
             roi_key: Optional[str] = None,
             export_key: Optional[str] = None,
             cell_type_key: Optional[str] = None,
-            centroid_key: Optional[str] = None,
+            centroid_key: Union[str, Sequence[str], None] = None,
             shape_key: Optional[str] = None,
             marker_key: Optional[str] = None,
             mp: Optional[bool] = None,
@@ -156,7 +156,10 @@ class AnalysisBase(Timer):
         if exp_obs is None:
             self.exp_obs = Config.exp_obs
             if self.exp_obs is None:
-                raise ValueError("Please set `Config.exp_obs` or pass `exp_obs=`")
+                if roi_key is None:
+                    raise ValueError("Please set `Config.exp_obs`/`Config.roi_key` or pass `exp_obs=`/`roi_key=`")
+                else:
+                    self.exp_obs = [roi_key]
         elif isinstance(exp_obs, (str, int, float)):
             self.exp_obs = [exp_obs]
         else:
@@ -233,7 +236,7 @@ class AnalysisBase(Timer):
             if ckey in self.data.obs_keys():
                 return self._get_wkt_points(ckey)
             if ckey in self.data.obsm_keys():
-                return self.data.obsm['spatial'].tolist()
+                return self.data.obsm[ckey].tolist()
             else:
                 raise ValueError(f"The centroid key `{ckey}` not found in either `.obsm` or `.obs`")
         else:
@@ -242,7 +245,7 @@ class AnalysisBase(Timer):
                 if c not in self.data.obs_keys():
                     check = False
             if check:
-                return self.data.obs[ckey].to_numpy().tolist()
+                return self.data.obs[list(ckey)].to_numpy().tolist()
             else:
                 raise ValueError(f"The centroid keys `{ckey}` not found in `.obs`")
 

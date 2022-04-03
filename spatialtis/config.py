@@ -116,7 +116,8 @@ class _Config(object):
             "auto_save",
             str(self.save_path) if self.auto_save else str(self.auto_save),
         )
-        table.add_row("Experiment observations", "exp_obs", str(self.exp_obs))
+        render_exp_obs = "" if self.exp_obs is None else str(self.exp_obs)
+        table.add_row("Experiment observations", "exp_obs", render_exp_obs)
         table.add_row("ROI key", "roi_key", self.roi_key)
         table.add_row("Cell type key", "cell_type_key", self.cell_type_key)
         table.add_row("Marker key", "marker_key", self.marker_key)
@@ -152,7 +153,7 @@ class _Config(object):
         if self.exp_obs is None:
             self.exp_obs = [key]
         if key not in self.exp_obs:
-            raise ValueError("The `roi_key` is not in your `exp_obs`")
+            raise ValueError(f"The `roi_key` is not in your `exp_obs`: {self.exp_obs}")
         else:
             if self.exp_obs[-1] != key:
                 exp_obs = self.exp_obs

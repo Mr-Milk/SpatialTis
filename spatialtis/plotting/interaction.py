@@ -15,10 +15,31 @@ from spatialtis.utils import doc, log_print
 from .utils import pairs_to_adj
 
 
-def count_size_side(pdata, type_order):
+def count_size_side(pdata, type_order, groupby_keys, value_key):
     dot_size, dot_hue = {}, {}
-    for comb, df in pdata.groupby(['type1', 'type2']):
-        count = {1: 0, 0: 0, -1: 0, **Counter(df['relationship'])}
+    for comb, df in pdata.groupby(groupby_keys):
+        count = {1: 0, 0: 0, -1: 0, **Counter(df[value_key])}
+        v = [1, -1]
+        arr = [count[i] for i in v]
+        sig_count = np.sum(arr)
+        if sig_count == 0:
+            sig_num = 0
+        else:
+            norm = arr / sig_count
+            sig_num = v[np.argmax(norm)] * np.amax(norm)
+        dot_size[comb] = sig_count
+        dot_hue[comb] = sig_num
+    dot_size = pairs_to_adj(
+        pd.DataFrame(dot_size, index=[0]).T.reset_index(), type_order
+    )
+    dot_hue = pairs_to_adj(pd.DataFrame(dot_hue, index=[0]).T.reset_index(), type_order)
+    return dot_size, dot_hue
+
+
+def count_size_side_for_enrichment(pdata, type_order):
+    dot_size, dot_hue = {}, {}
+    for comb, arr in pdata.iteritems():
+        count = {1: 0, 0: 0, -1: 0, **Counter(arr)}
         v = [1, -1]
         arr = [count[i] for i in v]
         sig_count = np.sum(arr)
@@ -47,6 +68,21 @@ def cell_interaction(
         plot_value: str = "relationship",
         **plot_options,
 ):
+    """Visualize cell interaction results
+
+    Args:
+        data:
+        use:
+        groupby:
+        key:
+        type_order:
+        order:
+        plot_value:
+        **plot_options:
+
+    Returns:
+
+    """
     pdata = get_result(data, key)
     uni_types = pd.unique(pdata[['type1', 'type2']].to_numpy().flatten())
     if type_order is None:
@@ -86,7 +122,8 @@ def cell_interaction(
                 pdata, col_colors=["type1", "type2"], row_colors=groupby, **options
             )
     else:
-        dot_size, dot_hue = count_size_side(pdata, type_order)
+        dot_size, dot_hue = count_size_side(pdata, type_order,
+                                            groupby_keys=['type1', 'type2'], value_key="relationship")
         try:
             matrix = get_result(data, "cell_components")
             combs = {}
@@ -138,22 +175,32 @@ def spatial_enrichment(
         data: AnnData,
         key: str = "spatial_enrichment",
         type_order: Optional[List[str]] = None,
-        order: bool = True,
         **plot_options,
 ):
+    """Visualize spatial enrichment result
+
+    Args:
+        data:
+        key:
+        type_order:
+        **plot_options:
+
+    Returns:
+
+    """
     rdata = get_result(data, key)
-    dot_size, dot_hue = count_size_side(rdata, type_order)
+    dot_size, dot_hue = count_size_side_for_enrichment(rdata, type_order)
     dot_size_data = dot_size.to_numpy(dtype=int)
     dot_hue_data = dot_hue.to_numpy()
     xticklabels = dot_size.columns
     yticklabels = dot_size.index
 
-    if not order:
-        dot_size_data = mask_triu(dot_size_data)
-        dot_hue_data = mask_triu(dot_hue_data)
-        xticklabels = xticklabels[::-1]
+    # if not order:
+    #     dot_size_data = mask_triu(dot_size_data)
+    #     dot_hue_data = mask_triu(dot_hue_data)
+    #     xticklabels = xticklabels[::-1]
     options = dict(
-        size_legend_title="Sign' ROI",
+        legend_title="Sign' ROI",
         hue_cbar_title="Interaction",
         hue_cbar_ticklabels=[" - ", "+"],
         sizes=(0, 500),
