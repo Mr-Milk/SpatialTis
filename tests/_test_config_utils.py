@@ -20,21 +20,23 @@ def test_read_config_property():
 
 
 def test_read_set_roi_key():
+    Config.reset()
+    Config.exp_obs = ["Patient", "Part", "ROI_ID"]
     Config.roi_key = "Part"
     assert Config.exp_obs == ["Patient", "ROI_ID", "Part"]
     Config.exp_obs = ["Patient", "Part", "ROI_ID"]
     assert Config.roi_key == "ROI_ID"
 
 
-def test_config_dumps_loads(data):
-    Config.dumps(data)
-    Config.loads(data)
+def test_config_dumps_loads(data_shape):
+    Config.dumps(data_shape)
+    Config.loads(data_shape)
     Config.reset()
 
 
 @pytest.mark.xfail
 def test_set_roi_key_failed():
-    Config.exp_obs = None
+    Config.reset()
     Config.exp_obs = ["Patient", "Part", "ROI"]
     Config.roi_key = "ttt"
 
@@ -85,19 +87,3 @@ Config.cell_type_key = "leiden"
 Config.MARKER_KEY = "Markers"
 Config.env = None
 
-
-def test_data2adata(data):
-    df = pd.DataFrame(
-        {
-            "a": [1, 2, 3, 4, 5, 5, 6],
-            "b": [4, 5, 6, 7, 8, 9, 2],
-        }
-    )
-
-    col = [0 for _ in range(len(data.obs))]
-    Config.verbose = True
-    df2adata_uns(df, data, "test_df")
-    col2adata_obs(col, data, "test_col")
-    Config.env = "jupyter_notebook"
-    df2adata_uns(df, data, "test_df")
-    col2adata_obs(col, data, "test_col")
