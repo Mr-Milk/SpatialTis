@@ -2,7 +2,7 @@ from ._version import version_tuple
 from .basic import cell_co_occurrence, cell_components, cell_density, cell_morphology
 from .config import Config
 from .ext import prepare_svca
-from .preprocessing import read_ROIs
+from .preprocessing import read_ROIs, read_visium
 from .spatial import (
     cell_dispersion,
     cell_interaction,
