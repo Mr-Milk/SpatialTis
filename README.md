@@ -74,21 +74,6 @@ docker run -it [--rm] -p 8888:8888
 # if port 8888 is taken, try `-p 9999:8888` and change to 9999
 ```
 
-## UI (Not Available)
-
-SpatialTis comes with a web UI interface.
-
-Install it with
-
-```shell
-pip install spatialtis-ui
-```
-
-Launch it with
-
-```shell
-spatialtis-ui start
-```
 
 ## Low level API
 
