@@ -154,3 +154,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# lignt
+
+lightning_logs/
