@@ -58,7 +58,7 @@ Install the current development version
 pip install git+https://github.com/Mr-Milk/SpatialTis.git
 ```
 
-### Docker
+### Docker (Not Available)
 
 The quickest way to run is to use a docker image, it contains all you need to start from cell type identification.
 
@@ -74,14 +74,24 @@ docker run -it [--rm] -p 8888:8888
 # if port 8888 is taken, try `-p 9999:8888` and change to 9999
 ```
 
+## UI (Not Available)
+
+SpatialTis comes with a web UI interface.
+
+Install it with
+
+```shell
+pip install spatialtis-ui
+```
+
+Launch it with
+
+```shell
+spatialtis-ui start
+```
+
 ## Low level API
 
 If you are interested in using low level algorithms yourself,
 Please refer to [spatialtis_core](https://github.com/Mr-Milk/SpatialTis-core)
 It provides clear document for all exposed API.
-
-## Examples: IMC 1.8 millions cells
-
-Easily run SpatialTis with large dataset in minutes.
-
-<img src="https://github.com/Mr-Milk/SpatialTis/raw/master/img/showcase.png" width="500"/>
