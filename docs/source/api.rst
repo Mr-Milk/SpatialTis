@@ -24,7 +24,16 @@ Cell quantification from Images
     :toctree: API
     :nosignatures:
 
-    read_ROIs
+    read_images
+
+
+Read from 10x visium
+--------------------------------
+.. autosummary::
+    :toctree: API
+    :nosignatures:
+
+    read_visium
 
 
 WKT Format helper
@@ -33,8 +42,8 @@ WKT Format helper
     :toctree: API
     :nosignatures:
 
-    transform_points
-    transform_shapes
+    wkt_points
+    wkt_shapes
 
 IO
 --------------------------------
@@ -117,7 +126,6 @@ ROI Visualization
 
     plotting.cell_map
     plotting.expression_map
-    plotting.neighbors_map
 
 
 Analysis Visualization

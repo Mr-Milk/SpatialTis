@@ -1,0 +1,5 @@
+Stage,Patient,Tissue,ROI,Cell_Type
+Stage_1,Patient_1,Lung,ROI1,B Cell
+Stage_1,Patient_1,Lung,ROI2,T Cell
+Stage_2,Patient_3,Breast,ROI3,Tumor
+...,...,...,...,...

@@ -42,10 +42,17 @@ For a quick view of what it's does, check our the tutorial part.
    :maxdepth: 1
    :caption: Usage
 
-   usage/get_started
-   usage/read_image
    usage/installation
+   usage/get_started
+   usage/input_data
+   usage/read_image
    usage/low_level
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Example
+
+   examples/imc.nblink
 
 .. toctree::
    :maxdepth: 2
