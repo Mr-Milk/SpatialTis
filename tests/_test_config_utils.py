@@ -2,7 +2,7 @@ import pandas as pd
 import pytest
 
 from spatialtis import Config
-from spatialtis.utils import col2adata_obs, df2adata_uns
+from spatialtis.utils import col2adata, df2adata_uns
 from spatialtis.utils.log import pretty_time
 
 

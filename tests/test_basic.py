@@ -2,15 +2,12 @@ import spatialtis as st
 import spatialtis.plotting as sp
 from spatialtis import Config
 
-
-Config.exp_obs = ["ROI"]
-Config.cell_type_key = "cell_type"
-Config.verbose = False
 type_order = ["a", "b", "c"]
 
 
 # Basic analysis
 def test_2d(data2d, data2d_keys, data_wkt):
+    Config.loads(data2d)
     st.cell_components(data2d)
     st.cell_density(data2d)
     st.cell_co_occurrence(data2d)
@@ -25,6 +22,7 @@ def test_2d(data2d, data2d_keys, data_wkt):
 
 
 def test_basic_plot(data2d):
+    Config.loads(data2d)
     sp.cell_components(data2d)
     sp.cell_components(data2d, orient="h", type_order=type_order)
 
@@ -36,4 +34,5 @@ def test_basic_plot(data2d):
 
 
 def test_morphology(data_shape):
-    st.cell_morphology(data_shape, exp_obs=["Patient", "Part", "ROI_ID"], shape_key="cell_shape")
+    Config.loads(data_shape)
+    st.cell_morphology(data_shape)

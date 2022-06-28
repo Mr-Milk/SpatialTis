@@ -5,26 +5,27 @@ from spatialtis import Config
 
 
 # Spatial analysis
-def test_cell_dispersion(data_2d):
-    st.cell_dispersion(data_2d, r=50, method="id")
-    st.cell_dispersion(data_2d, quad=(10, 10), method="morisita")
-    st.cell_dispersion(data_2d, method="clark_evans")
+@pytest.mark.parametrize("method,kw", [
+    ("id", dict(r=50)),
+    ("morisita", dict(quad=(10, 10))),
+    ("clark_evans", dict())
+])
+def test_cell_dispersion(data_2d, method, kw):
+    st.cell_dispersion(data_2d, method=method, **kw)
 
 
 def test_cell_dispersion_3d(data_3d):
     st.cell_dispersion(data_3d, r=50, method="id")
 
 
-def test_spatial_hetero(data_2d):
-    st.spatial_heterogeneity(data_2d, method="shannon")
-    st.spatial_heterogeneity(data_2d, method="leibovici", d=10)
-    st.spatial_heterogeneity(data_2d, method="altieri", cut=3)
-
-
-def test_spatial_hetero_3d(data_3d):
-    st.spatial_heterogeneity(data_3d, method="shannon")
-    st.spatial_heterogeneity(data_3d, method="leibovici", d=10)
-    st.spatial_heterogeneity(data_3d, method="altieri", cut=3)
+@pytest.mark.parametrize("method,kw", [
+    ("leibovici", dict(d=10)),
+    ("altieri", dict(cut=3)),
+    ("shannon", dict())
+])
+def test_spatial_hetero(data_2d, data_3d, method, kw):
+    st.spatial_heterogeneity(data_2d, method=method, **kw)
+    st.spatial_heterogeneity(data_3d, method=method, **kw)
 
 
 def test_hotspot(data_2d):
@@ -32,27 +33,30 @@ def test_hotspot(data_2d):
 
 
 # find neighbors
-def test_find_neighbors(data_2d):
-    st.find_neighbors(data_2d, method="delaunay")
-    st.find_neighbors(data_2d, r=30, k=5, method="kdtree")
+@pytest.mark.parametrize("method,kw", [
+    ("kdtree", dict(r=30)),
+    ("kdtree", dict(k=5)),
+    ("kdtree", dict(k=5, r=30)),
+    ("delaunay", dict())
+])
+def test_find_neighbors(data_2d, method, kw):
+    st.find_neighbors(data_2d, method=method, **kw)
     # st.find_neighbors(data_2d, scale=1.2, method="rtree")
 
 
-def test_find_neighbors_3d(data_3d):
-    st.find_neighbors(data_3d, r=30, k=5, method="kdtree")
+@pytest.mark.parametrize("method,kw", [
+    ("kdtree", dict(r=30)),
+    ("kdtree", dict(k=5)),
+    ("kdtree", dict(k=5, r=30)),
+])
+def test_find_neighbors_3d(data_3d, method, kw):
+    st.find_neighbors(data_3d, method=method, **kw)
 
 
-def test_spatial_autocorr(data_2d):
-    st.spatial_autocorr(data_2d, method="moran_i")
-    st.spatial_autocorr(data_2d, method="geary_c")
-
-
-def test_spatial_autocorr_3d(data_3d):
-    st.spatial_autocorr(data_3d, method="moran_i")
-    st.spatial_autocorr(data_3d, method="geary_c")
-
-
-
+@pytest.mark.parametrize("method", ["moran_i", "geary_c"])
+def test_spatial_autocorr(data_2d, data_3d, method):
+    st.spatial_autocorr(data_2d, method=method)
+    st.spatial_autocorr(data_3d, method=method)
 
 
 def test_neighborhood(data_2d):
