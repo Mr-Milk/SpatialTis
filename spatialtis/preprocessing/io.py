@@ -79,7 +79,7 @@ class read_ROIs:
 
     >>> var = pd.read_csv("panel_markers.csv")
 
-    >>> reader = st.read_ROIs(entry="IMC_images",
+    >>> reader = st.read_images(entry="IMC_images",
                               obs_names=['ROI'],
                               var=var,
                               mask_pattern="mask",

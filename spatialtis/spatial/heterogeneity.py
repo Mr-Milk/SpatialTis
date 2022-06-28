@@ -1,5 +1,5 @@
 import warnings
-from typing import Optional, Union
+from typing import Optional
 
 import pandas as pd
 from anndata import AnnData
@@ -7,7 +7,6 @@ from scipy.stats import entropy
 from spatialtis_core import spatial_entropy
 
 from spatialtis.abc import AnalysisBase
-from spatialtis.typing import Array
 from spatialtis.utils import doc, options_guard
 
 
@@ -16,7 +15,7 @@ def spatial_heterogeneity(data: AnnData,
                           method: str = "leibovici",
                           d: Optional[int] = None,
                           cut: int = 3,
-export_key: str = "heterogeneity",
+                          export_key: str = "heterogeneity",
                           **kwargs, ):
     """Evaluate tissue heterogeneity based on entropy
 
@@ -64,9 +63,9 @@ export_key: str = "heterogeneity",
         types_collections = []
         track_ix = []
         # type_mapper = {t: i for i, t in enumerate(self.cell_types)}
-        for roi_name, roi_data, points in ab.roi_iter_with_points(desc="Spatial heterogeneity"):
+        for roi_name, cell_types, points in ab.iter_roi(fields=['cell_type', 'centroid']):
             points_collections.append(points)
-            types_collections.append(roi_data[ab.cell_type_key])
+            types_collections.append(cell_types)
             track_ix.append(roi_name)
 
         ent = spatial_entropy(

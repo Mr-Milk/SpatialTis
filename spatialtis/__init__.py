@@ -1,8 +1,9 @@
 from ._version import version_tuple
 from .basic import cell_co_occurrence, cell_components, cell_density, cell_morphology
 from .config import Config
+from .data_info import list_roi, make_roi_unique
 from .ext import prepare_svca
-from .preprocessing import read_ROIs, read_visium
+from .preprocessing import read_images, read_visium
 from .spatial import (
     cell_dispersion,
     cell_interaction,
@@ -19,7 +20,7 @@ from .spatial import (
     spatial_heterogeneity,
     spatial_weights,
 )
-from .utils import get_result, transform_points, transform_shapes
+from .utils import get_result, wkt_points, wkt_shapes
 
 __version__ = ".".join([str(i) for i in version_tuple[:3]])
 

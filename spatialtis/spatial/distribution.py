@@ -76,10 +76,10 @@ def cell_dispersion(
     ab.check_cell_type()
 
     results_data = []
-    for roi_name, roi_data, points in ab.roi_iter_with_points(desc="Cell dispersion"):
-        bbox = points_bbox(points)
+    for roi_name, cell_types, centroids in ab.iter_roi(fields=['cell_type', 'centroid']):
+        bbox = points_bbox(centroids)
         new_df = pd.DataFrame(
-            dict(points=points, cell_types=roi_data[ab.cell_type_key])
+            dict(points=centroids, cell_types=cell_types)
         )
         points_collections = []
         cell_types = []

@@ -1,3 +1,4 @@
+from ast import literal_eval
 from typing import Dict, Optional
 
 import numpy as np
@@ -7,7 +8,7 @@ from scipy.stats import spearmanr
 
 from spatialtis.abc import AnalysisBase
 from spatialtis.typing import Number, Array
-from spatialtis.utils import doc, pbar_iter, read_exp, read_neighbors
+from spatialtis.utils import doc, pbar_iter, read_exp
 
 
 @doc
@@ -17,7 +18,7 @@ def NMD_marker(data: AnnData,
                importance_cutoff: Number = 0.5,
                layer_key: Optional[str] = None,
                tree_kwargs: Optional[Dict] = None,
-export_key: str = "nmd_marker",
+               export_key: str = "nmd_marker",
                **kwargs, ):
     """Identify neighbor markers dependent marker
 
@@ -48,7 +49,7 @@ export_key: str = "nmd_marker",
 
     markers = ab.selected_markers(selected_markers)
     markers_mask = ab.markers_col.isin(markers)
-    neighbors = read_neighbors(data.obs, ab.neighbors_key)
+    neighbors = [literal_eval(n) for n in data.obsm[ab.neighbors_key]]
     cent_exp = read_exp(data[:, markers_mask], layer_key)
     # treat the neighbors as single cell
     # sum the expression

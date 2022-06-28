@@ -14,6 +14,13 @@ def options_guard(select: str, options: List[str]):
         return select
 
 
+def default_args(arg, default=None):
+    if arg is None:
+        return default
+    else:
+        return arg
+
+
 def try_import(module_name: str, install_name=None) -> ModuleType:
     if install_name is None:
         install_name = module_name

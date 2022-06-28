@@ -2,15 +2,13 @@ import warnings
 from pathlib import Path
 from typing import List, Optional
 
+import numpy as np
 import pandas as pd
 from anndata import AnnData
 from scipy.sparse import csr_matrix
-
-from spatialtis.typing import File
 from spatialtis_core import dumps_points_wkt, dumps_polygons_wkt, points_shapes
 
-import numpy as np
-
+from spatialtis.typing import File
 from spatialtis.utils import options_guard
 
 
@@ -81,12 +79,12 @@ def check_exists(files):
     non_exist = []
     for f in files:
         if not Path(f).exists():
-            non_exist.append(f)
+            non_exist.append(str(f))
     if len(non_exist) > 0:
         raise FileNotFoundError(f"{', '.join(non_exist)} not found.")
 
 
-def read_ROIs(
+def read_images(
         images: List[File],
         masks: List[File],
         markers: Optional[pd.DataFrame] = None,
@@ -99,7 +97,31 @@ def read_ROIs(
         is3d: bool = False,
         sparse: bool = False,
 ) -> AnnData:
+    """Read single cell data from images and masks
 
+    Args:
+        images: images files
+        masks: masks files, should be one to one match to image
+        markers: The name of markers, could be a dataframe
+            that annotate markers name, target, tag etc.
+        annotations: The annotations to your image ROI, if you have two images,
+            you can annotate it with `pd.DataFrame({"ROI": ["ROI1", "ROI2"])`
+        image_axes: "cyx" or "xyc", how you image organized
+        intensity_measure: The way to measure pixel intensity,
+            available for any numpy method,
+            mostly used are "mean", "sum" or "max"
+        shape_approx: The method to approximate the cell shape,
+            either be "convex" (fast) or "concave" (slow but accurate)
+        concavity: Control the concave result
+        geopandas_compatible: Default True. If True, will convert centroid and shape
+            to wkt format
+        is3d: Default False. Treat input image as 3D stack
+        sparse: Default False. Convert expression matrix to sparse format
+
+    Returns:
+        `AnnData`
+
+    """
     try:
         from skimage.io import imread
         from skimage.measure import regionprops_table
@@ -143,6 +165,8 @@ def read_ROIs(
         for v in measurements['image_intensity']:
             cell_exp = getattr(v, intensity_measure).__call__(axis=(0, 1))
             exp_all.append(cell_exp)
+        if markers is None:
+            markers = [str(i) for i in range(intensities.shape[-1])]
         if len(markers) != len(exp_all[0]):
             raise ValueError(f"{len(markers)} markers doesn't match {len(exp_all[0])} channels in {img}")
         meta = pd.DataFrame({

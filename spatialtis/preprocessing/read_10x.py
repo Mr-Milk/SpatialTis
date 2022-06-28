@@ -72,6 +72,19 @@ def read_visium(
         read_filtered: bool = True,  # "filtered" or "raw"
         annotations: Optional[pd.DataFrame] = None,
 ) -> AnnData:
+    """Read visium data from visium result folders
+
+    Args:
+        paths: One or a list of visium result folders
+        read_filtered: To use filtered matrix or raw matrix
+        annotations: You annotations on the ROI, for example:
+            if you have two ROI, you can create a dataframe with two rows
+            to annotate it `pd.DataFrame({"ROI": ["ROI1", "ROI2"]})`
+
+    Returns:
+        `AnnData`
+
+    """
     if isinstance(paths, (Path, str)):
         paths = [paths]
 
@@ -118,12 +131,3 @@ def read_visium(
                    var=exp_all.columns.to_frame(),
                    X=exp_all.sparse.to_coo().tocsr()
                    )
-
-
-
-
-
-
-
-
-

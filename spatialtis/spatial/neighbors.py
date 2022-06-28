@@ -2,12 +2,12 @@ from typing import Optional
 
 import pandas as pd
 from anndata import AnnData
-from spatialtis_core import bbox_neighbors, multipoints_bbox, points_neighbors, spatial_weight
+from spatialtis_core import multipoints_bbox, spatial_weight
 from spatialtis_core.neighbors import bbox_neighbors_parallel, points_neighbors_parallel
 
 from spatialtis.abc import AnalysisBase
 from spatialtis.typing import Number
-from spatialtis.utils import col2adata_obs, doc, read_shapes, read_neighbors
+from spatialtis.utils import col2adata, doc
 
 
 @doc
@@ -65,11 +65,6 @@ def find_neighbors(data: AnnData,
         if r < 0:
             raise ValueError("`r` must be greater than 0")
 
-    # assign unique id to each cell, in case of someone cut the data afterwards
-    # this ensure the analysis still work with non-integrated AnnData
-
-    data.obs[ab.cell_id_key] = [i for i in range(len(data.obs))]
-
     track_ix = []
     neighbors_data = []
     if method == "rtree":
@@ -78,15 +73,13 @@ def find_neighbors(data: AnnData,
 
         bbox_collections = []
         labels_collections = []
-        for roi_name, roi_data in ab.roi_iter(desc="Find neighbors"):
-            shapes = read_shapes(roi_data, ab.shape_key)
+        for roi_name, shapes, labels, ix in ab.iter_roi(fields=['shape', 'label', 'index']):
             bbox = multipoints_bbox(shapes)
-            labels = roi_data[ab.cell_id_key].values.tolist()
             bbox_collections.append(bbox)
             labels_collections.append(labels)
             # neighbors = bbox_neighbors(bbox, labels, expand=r, scale=scale)
             # neighbors_data += neighbors
-            track_ix += list(roi_data.index)
+            track_ix += list(ix)
         neighbors = bbox_neighbors_parallel(bbox_collections, labels_collections, expand=r, scale=scale)
         for n in neighbors:
             neighbors_data += n
@@ -94,11 +87,10 @@ def find_neighbors(data: AnnData,
 
         points_collections = []
         labels_collections = []
-        for roi_name, roi_data, points in ab.roi_iter_with_points(desc="Find neighbors"):
-            labels = roi_data[ab.cell_id_key].values.tolist()
+        for roi_name, points, labels, ix in ab.iter_roi(fields=['centroid', 'label', 'index']):
             points_collections.append(points)
             labels_collections.append(labels)
-            track_ix += list(roi_data.index)
+            track_ix += list(ix)
 
         neighbors = points_neighbors_parallel(points_collections, labels_collections, r=r, k=k, method=method)
         for n in neighbors:
@@ -109,8 +101,8 @@ def find_neighbors(data: AnnData,
     neighbors_data = pd.Series(neighbors_data, index=track_ix)
     counts = pd.Series(counts, index=track_ix)
     export_key = ab.neighbors_key if export_key is None else export_key
-    col2adata_obs(neighbors_data, data, export_key)
-    col2adata_obs(counts, data, f"{export_key}_count")
+    col2adata(neighbors_data.to_numpy(dtype=str), data, export_key, slot='obsm')
+    col2adata(counts, data, f"{export_key}_count")
     ab.stop_timer()
 
 
@@ -126,12 +118,10 @@ def spatial_weights(
 
     Examples:
         >>> import spatialtis as st
-        >>> weights_matrix_every_roi = [matrix for (roi, matrix) in st.spatial_weights(data)]
+        >>> weights_matrix_every_roi = [matrix for roi_name, matrix in st.spatial_weights(data)]
 
     """
     ab = AnalysisBase(data, **kwargs)
     ab.check_neighbors()
-    for roi_name, roi_data in ab.roi_iter(disable_pbar=True):
-        labels = roi_data[ab.cell_id_key]
-        neighbors = read_neighbors(roi_data, ab.neighbors_key)
+    for roi_name, labels, neighbors in ab.iter_roi(fields=['neighbors'], disable_pbar=True):
         yield roi_name, spatial_weight(neighbors, labels)

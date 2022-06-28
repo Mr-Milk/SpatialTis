@@ -59,17 +59,13 @@ def cell_dispersion(
         return dot(
             dot_size=pdata.to_numpy(dtype=int),
             dot_hue=colors,
-            legend_title="ROI",
             xticklabels=["No Cell", "Random", "Regular", "Cluster"],
             yticklabels=pdata.index,
             **plot_options,
         )
     else:
         pdata = pdata.rename_axis(columns={"cell_type": "Cell Type"})
-        return anno_clustermap(
-            pdata,
-            col_colors="Cell Type",
-            row_colors=groupby,
+        plot_kw = dict(
             categorical_cbar=["No Cell", "Random", "Regular", "Cluster"],
             heat_cmap=ListedColormap(["#FFC408", "#c54a52", "#4a89b9", "#5a539d"]),
             col_legend_split=False,
@@ -77,4 +73,11 @@ def cell_dispersion(
             vmin=0,
             vmax=3,
             col_cluster=False,
+        )
+        plot_kw = {**plot_kw, **plot_options}
+        return anno_clustermap(
+            pdata,
+            col_colors="Cell Type",
+            row_colors=groupby,
+            **plot_kw
         )

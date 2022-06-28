@@ -1,3 +1,4 @@
+from ast import literal_eval
 from itertools import combinations_with_replacement
 from typing import Optional, List
 
@@ -9,7 +10,7 @@ from spatialtis_core import fast_corr
 from spatialtis.abc import AnalysisBase, neighbors_pairs
 from spatialtis.typing import Number
 from spatialtis.utils import doc, pbar_iter, options_guard
-from spatialtis.utils.io import read_exp, read_neighbors
+from spatialtis.utils.io import read_exp
 
 DESCRIPTION = "co-expression"
 
@@ -53,7 +54,7 @@ def spatial_coexp(data: AnnData,
 
     ab.params = {"use_cell_type": use_cell_type}
 
-    neighbors = read_neighbors(data.obs, ab.neighbors_key)
+    neighbors = [literal_eval(n) for n in data.obsm[ab.neighbors_key]]
     labels = data.obs[ab.cell_id_key]
     pairs = neighbors_pairs(labels, neighbors, duplicates=True)
     used_markers = ab.markers

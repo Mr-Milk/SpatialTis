@@ -1,3 +1,5 @@
+import warnings
+from ast import literal_eval
 from collections import Counter
 from functools import cached_property
 from time import time
@@ -11,7 +13,7 @@ from rich.progress import track
 from spatialtis_core import reads_wkt_points
 
 from spatialtis.config import Config, console
-from spatialtis.utils import df2adata_uns, doc, log_print, pretty_time, read_exp
+from spatialtis.utils import df2adata_uns, doc, log_print, pretty_time, read_exp, read_shapes, default_args
 
 
 class NeighborsNotFoundError(Exception):
@@ -139,19 +141,15 @@ class AnalysisBase(Timer):
             self.display_name = display_name
 
         self.method = method
-        self.cell_type_key = (
-            Config.cell_type_key if cell_type_key is None else cell_type_key
-        )
-        self.centroid_key = (
-            Config.centroid_key if centroid_key is None else centroid_key
-        )
-        self.marker_key = Config.marker_key if marker_key is None else marker_key
-        self.shape_key = Config.shape_key if shape_key is None else shape_key
-        self.mp = Config.mp if mp is None else mp
+        self.cell_type_key = default_args(cell_type_key, Config.cell_type_key)
+        self.centroid_key = default_args(centroid_key, Config.centroid_key)
+        self.marker_key = default_args(marker_key, Config.marker_key)
+        self.shape_key = default_args(shape_key, Config.shape_key)
+        self.mp = default_args(mp, Config.mp)
+
         self.has_cell_type = False
-        if self.cell_type_key is not None:
-            if self.cell_type_key in self.data.obs_keys():
-                self.has_cell_type = True
+        if (self.cell_type_key is not None) & (self.cell_type_key in self.data.obs_keys()):
+            self.has_cell_type = True
 
         if exp_obs is None:
             self.exp_obs = Config.exp_obs
@@ -177,6 +175,11 @@ class AnalysisBase(Timer):
                     exp_obs.append(roi_key)
                     self.exp_obs = exp_obs
                 self.roi_key = roi_key
+
+        # assign unique id to each cell, in case of someone cut the data afterwards
+        # this ensures the analysis still work with non-integrated AnnData
+        if self.cell_id_key not in data.obs_keys():
+            data.obs[self.cell_id_key] = [i for i in range(len(data.obs))]
 
         if export_key is None:
             self.export_key = self.task_name
@@ -219,7 +222,7 @@ class AnalysisBase(Timer):
                           "try `spatialtis.transform_points`")
         return points
 
-    def get_points(self) -> Union[object, list[list[float, float]]]:
+    def get_centroids(self) -> Union[object, list[list[float, float]]]:
         ckey = self.centroid_key
         # determine the type of centroid
         # by default, read 'spatial' from .obsm
@@ -249,121 +252,206 @@ class AnalysisBase(Timer):
             else:
                 raise ValueError(f"The centroid keys `{ckey}` not found in `.obs`")
 
-    def roi_iter(
-            self,
-            sort: bool = False,
-            desc: Optional[str] = None,
-            disable_pbar: bool = False,
-    ):
-        """Iterate through ROI with [roi_name, roi_data]
+    # def roi_iter(
+    #         self,
+    #         sort: bool = False,
+    #         desc: Optional[str] = None,
+    #         disable_pbar: bool = False,
+    # ):
+    #     """Iterate through ROI with [roi_name, roi_data]
+    #
+    #     Args:
+    #         sort: whether to sort the ROI
+    #         desc: the pbar description
+    #         disable_pbar: to disable pbar
+    #
+    #     """
+    #     disable = disable_pbar if disable_pbar else not Config.progress_bar
+    #
+    #     for roi_name, roi_data in track(
+    #             self.data.obs.groupby(self.exp_obs, sort=sort),
+    #             description=f"[green]{desc}",
+    #             disable=disable,
+    #             console=console,
+    #     ):
+    #         if len(self.exp_obs) == 1:
+    #             roi_name = [roi_name]
+    #         yield roi_name, roi_data
 
-        Args:
-            sort: whether to sort the ROI
-            desc: the pbar description
-            disable_pbar: to disable pbar
-
-        """
-        disable = disable_pbar if disable_pbar else not Config.progress_bar
-
-        for roi_name, roi_data in track(
-                self.data.obs.groupby(self.exp_obs, sort=sort),
-                description=f"[green]{desc}",
-                disable=disable,
-                console=console,
-        ):
-            if len(self.exp_obs) == 1:
-                roi_name = [roi_name]
-            yield roi_name, roi_data
-
-    def roi_iter_with_points(self,
-                             sort: bool = False,
-                             desc: Optional[str] = None,
-                             disable_pbar: bool = False,
-                             ):
-        disable = disable_pbar if disable_pbar else not Config.progress_bar
-
+    def iter_roi_data(self,
+                      fields: List[str] = None,
+                      ):
         iter_data = self.data.obs.copy()
-        points = self.get_points()
-        if len(points[0]) == 3:
-            self.dimension = 3
-        iter_data['__spatial_centroid'] = points
+        for f in fields:
+            if f == 'centroid':
+                points = self.get_centroids()
+                if len(points[0]) == 3:
+                    self.dimension = 3
+                iter_data['__spatial_centroid'] = points
 
+            if f == 'neighbors':
+                self.check_neighbors()
+                iter_data['__cell_neighbors'] = self.data.obsm[self.neighbors_key]
+
+            if f == 'cell_type':
+                self.check_cell_type()
+
+        return iter_data
+
+    def iter_roi(self,
+                 fields: List[str] = None,
+                 filter_rois: List[str] = None,
+                 sort: bool = False,
+                 desc: Optional[str] = None,
+                 disable_pbar: bool = None,
+                 selected_markers: Optional[List[Any]] = None,
+                 layer_key: Optional[str] = None,
+                 dtype: Any = None,
+                 ):
+        desc = default_args(desc, self.display_name)
+        disable_pbar = default_args(disable_pbar, not Config.progress_bar)
+        fields = default_args(fields, [])
+        iter_data = self.iter_roi_data(fields)
+
+        if 'exp' in fields:
+            selected_markers = default_args(selected_markers, self.markers)
+            markers_mask = self.markers_col.isin(selected_markers)
+            markers = self.markers_col[markers_mask].to_numpy()
+
+        if filter_rois is not None:
+            iter_data = iter_data[iter_data[self.roi_key].isin(filter_rois)].copy()
         for roi_name, roi_data in track(
                 iter_data.groupby(self.exp_obs, sort=sort),
                 description=f"[green]{desc}",
-                disable=disable,
+                disable=disable_pbar,
                 console=console,
         ):
+            # pandas will show all categories in groupby even if there is no value
+            if len(roi_data) == 0:
+                continue
             if len(self.exp_obs) == 1:
                 roi_name = [roi_name]
-            yield roi_name, roi_data, roi_data['__spatial_centroid'].values.tolist()
+            yield_fields = [roi_name]
 
-    def roi_exp_iter(
-            self,
-            selected_markers: Optional[List[Any]] = None,
-            layer_key: Optional[str] = None,
-            dtype: Any = None,
-            sort: bool = False,
-            desc: Optional[str] = None,
-            disable_pbar: bool = False,
-    ) -> (List, pd.DataFrame, List, np.ndarray):
-        disable = disable_pbar if disable_pbar else not Config.progress_bar
-        selected_markers = (
-            self.markers if selected_markers is None else selected_markers
-        )
-        markers_mask = self.markers_col.isin(selected_markers)
-        markers = self.markers_col[markers_mask]
+            for f in fields:
+                if f == 'centroid':
+                    yield_fields.append(roi_data['__spatial_centroid'].values.tolist())
+                elif f == 'exp':
+                    exp = read_exp(self.data[roi_data.index, markers_mask], layer_key=layer_key, dtype=dtype)
+                    yield_fields.append(markers)  # ndarray
+                    yield_fields.append(exp)  # ndarray
+                elif f == 'neighbors':
+                    neighbors = [literal_eval(n) for n in roi_data['__cell_neighbors'].values]
+                    labels = roi_data[self.cell_id_key].tolist()
+                    yield_fields.append(labels)  # list
+                    yield_fields.append(neighbors)  # list
+                elif f == 'cell_type':
+                    if self.has_cell_type:
+                        yield_fields.append(roi_data[self.cell_type_key].to_numpy())
+                    else:
+                        yield_fields.append(None)
+                elif f == 'shape':
+                    if self.shape_key is None:
+                        yield_fields.append(None)
+                    else:
+                        yield_fields.append(read_shapes(roi_data, self.shape_key))
+                elif f == 'label':
+                    labels = roi_data[self.cell_id_key].tolist()
+                    yield_fields.append(labels)
+                elif f == 'index':
+                    yield_fields.append(roi_data.index)
 
-        for roi_name, roi_data in track(
-                self.data.obs.groupby(self.exp_obs, sort=sort),
-                description=f"[green]{desc}",
-                disable=disable,
-                console=console,
-        ):
-            if len(self.exp_obs) == 1:
-                roi_name = [roi_name]
-            exp = read_exp(self.data[roi_data.index, markers_mask], layer_key=layer_key, dtype=dtype)
-            yield roi_name, roi_data, markers, exp
+            yield yield_fields
 
-    def roi_exp_iter_with_points(
-            self,
-            selected_markers: Optional[List[Any]] = None,
-            layer_key: Optional[str] = None,
-            dtype: Any = None,
-            sort: bool = False,
-            desc: Optional[str] = None,
-            disable_pbar: bool = False,
-    ) -> (List, pd.DataFrame, List, np.ndarray):
-        disable = disable_pbar if disable_pbar else not Config.progress_bar
-        selected_markers = (
-            self.markers if selected_markers is None else selected_markers
-        )
-        markers_mask = self.markers_col.isin(selected_markers)
-        markers = self.markers_col[markers_mask]
-
-        iter_data = self.data.obs.copy()
-        points = self.get_points()
-        if len(points[0]) == 3:
-            self.dimension = 3
-        iter_data['__spatial_centroid'] = points
-
-        for roi_name, roi_data in track(
-                self.data.obs.groupby(self.exp_obs, sort=sort),
-                description=f"[green]{desc}",
-                disable=disable,
-                console=console,
-        ):
-            if len(self.exp_obs) == 1:
-                roi_name = [roi_name]
-            exp = read_exp(self.data[roi_data.index, markers_mask], layer_key=layer_key, dtype=dtype)
-            yield roi_name, roi_data, markers, exp, roi_data['__spatial_centroid']
+    # def roi_iter_with_points(self,
+    #                          sort: bool = False,
+    #                          desc: Optional[str] = None,
+    #                          disable_pbar: bool = False,
+    #                          ):
+    #     disable = disable_pbar if disable_pbar else not Config.progress_bar
+    #
+    #     iter_data = self.data.obs.copy()
+    #     points = self.get_centroids()
+    #     if len(points[0]) == 3:
+    #         self.dimension = 3
+    #     iter_data['__spatial_centroid'] = points
+    #
+    #     for roi_name, roi_data in track(
+    #             iter_data.groupby(self.exp_obs, sort=sort),
+    #             description=f"[green]{desc}",
+    #             disable=disable,
+    #             console=console,
+    #     ):
+    #         if len(self.exp_obs) == 1:
+    #             roi_name = [roi_name]
+    #         yield roi_name, roi_data, roi_data['__spatial_centroid'].values.tolist()
+    #
+    # def roi_exp_iter(
+    #         self,
+    #         selected_markers: Optional[List[Any]] = None,
+    #         layer_key: Optional[str] = None,
+    #         dtype: Any = None,
+    #         sort: bool = False,
+    #         desc: Optional[str] = None,
+    #         disable_pbar: bool = False,
+    # ) -> (List, pd.DataFrame, List, np.ndarray):
+    #     disable = disable_pbar if disable_pbar else not Config.progress_bar
+    #     selected_markers = (
+    #         self.markers if selected_markers is None else selected_markers
+    #     )
+    #     markers_mask = self.markers_col.isin(selected_markers)
+    #     markers = self.markers_col[markers_mask]
+    #
+    #     for roi_name, roi_data in track(
+    #             self.data.obs.groupby(self.exp_obs, sort=sort),
+    #             description=f"[green]{desc}",
+    #             disable=disable,
+    #             console=console,
+    #     ):
+    #         if len(self.exp_obs) == 1:
+    #             roi_name = [roi_name]
+    #         exp = read_exp(self.data[roi_data.index, markers_mask], layer_key=layer_key, dtype=dtype)
+    #         yield roi_name, roi_data, markers, exp
+    #
+    # def roi_exp_iter_with_points(
+    #         self,
+    #         selected_markers: Optional[List[Any]] = None,
+    #         layer_key: Optional[str] = None,
+    #         dtype: Any = None,
+    #         sort: bool = False,
+    #         desc: Optional[str] = None,
+    #         disable_pbar: bool = False,
+    # ) -> (List, pd.DataFrame, List, np.ndarray):
+    #     disable = disable_pbar if disable_pbar else not Config.progress_bar
+    #     selected_markers = (
+    #         self.markers if selected_markers is None else selected_markers
+    #     )
+    #     markers_mask = self.markers_col.isin(selected_markers)
+    #     markers = self.markers_col[markers_mask]
+    #
+    #     iter_data = self.data.obs.copy()
+    #     points = self.get_centroids()
+    #     if len(points[0]) == 3:
+    #         self.dimension = 3
+    #     iter_data['__spatial_centroid'] = points
+    #
+    #     for roi_name, roi_data in track(
+    #             self.data.obs.groupby(self.exp_obs, sort=sort),
+    #             description=f"[green]{desc}",
+    #             disable=disable,
+    #             console=console,
+    #     ):
+    #         if len(self.exp_obs) == 1:
+    #             roi_name = [roi_name]
+    #         exp = read_exp(self.data[roi_data.index, markers_mask], layer_key=layer_key, dtype=dtype)
+    #         yield roi_name, roi_data, markers, exp, roi_data['__spatial_centroid']
 
     def type_counter(self) -> pd.DataFrame:
         self.check_cell_type()
         matrix = []
         meta = []
-        for roi_name, roi_data in self.roi_iter(disable_pbar=True):
-            c = Counter(roi_data[self.cell_type_key])
+        for roi_name, cell_types in self.iter_roi(fields=['cell_type'], disable_pbar=True):
+            c = Counter(cell_types)
             matrix.append([c.get(t, 0) for t in self.cell_types])
             if isinstance(roi_name, (str, int, float)):
                 meta.append((roi_name,))
@@ -381,10 +469,7 @@ class AnalysisBase(Timer):
 
     @property
     def neighbors_exists(self) -> bool:
-        if self.neighbors_key in self.data.obs.keys():
-            return True
-        else:
-            return False
+        return self.neighbors_key in self.data.obsm_keys()
 
     def check_neighbors(self):
         if not self.neighbors_exists:
@@ -393,6 +478,18 @@ class AnalysisBase(Timer):
     def check_cell_type(self):
         if not self.has_cell_type:
             raise CellTypeNotFoundError("Cell Type not found! Please set `cell_type_key`")
+
+    def is_rois_name_unique(self, warn=True):
+        key_len = len(self.data.obs[self.roi_key].unique())
+        obs_len = len([_ for _ in self.iter_roi(disable_pbar=True)])
+        compare = key_len < obs_len
+        if compare & warn:
+            msg = "ROI selection may be incorrect, " \
+                  "ROI number determined by roi_keys " \
+                  "is different from exp_obs, " \
+                  "use `spatialtis.make_roi_unique()` to get unique roi"
+            warnings.warn(msg)
+        return not compare
 
     @property
     def result(self):

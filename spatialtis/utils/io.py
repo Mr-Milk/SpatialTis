@@ -65,8 +65,12 @@ def df2adata_uns(
     writer_verbose(key, "uns", verbose=verbose)
 
 
-def col2adata_obs(
-        col: Sequence, adata: AnnData, key: str, verbose: Optional[bool] = None
+def col2adata(
+        col: Sequence,
+        adata: AnnData,
+        key: str,
+        slot: str = 'obs',
+        verbose: Optional[bool] = None
 ):
     """Write an array to `AnnData.obs`
 
@@ -74,11 +78,12 @@ def col2adata_obs(
         col: An array-like object that add to `AnnData.obs`
         adata: The `AnnData` object for storage
         key: Which key in `AnnData.obs` key you want to write
+        slot: Which slot to write, `obs`, `obsm`, `obsp`
         verbose: Control the verbosity
 
     """
-    adata.obs[key] = col
-    writer_verbose(key, "obs", verbose=verbose)
+    getattr(adata, slot)[key] = col
+    writer_verbose(key, slot, verbose=verbose)
 
 
 def get_result(
@@ -127,7 +132,7 @@ def get_result(
 #     return [list(wkt.loads(data).coords) for data in geom]
 
 
-def transform_points(
+def wkt_points(
         data: AnnData,
         centroid_keys: Union[str, Sequence[str]],
         export_key: str = "centroid",
@@ -136,7 +141,7 @@ def transform_points(
     """Transform normal coordination in `AnnData.obs` to wkt-format
 
     >>> import spatialtis as st
-    >>> st.transform_points(data, ('x', 'y'), export_key="centroid_wkt")
+    >>> st.wkt_points(data, ('x', 'y'), export_key="centroid_wkt")
 
     Args:
         data: The `AnnData` object
@@ -161,11 +166,11 @@ def transform_points(
         Config.centroid_key = export_key
 
 
-def transform_shapes(data: AnnData, shape_key: str, export_key: str = "cell_shape", write_config: bool = True):
+def wkt_shapes(data: AnnData, shape_key: str, export_key: str = "cell_shape", write_config: bool = True):
     """Transform normal coordination in `AnnData.obs` to wkt-format
 
     >>> import spatialtis as st
-    >>> st.transform_points(data, 'shape', export_key="shape_wkt")
+    >>> st.wkt_points(data, 'shape', export_key="shape_wkt")
 
     Args:
         data: The `AnnData` object

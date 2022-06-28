@@ -13,7 +13,7 @@ from spatialtis.utils import doc, read_points
 class prepare_svca(AnalysisBase):
     """Prepare data for SVCA analysis
 
-    Spatial Variance Components Analysis: `SVCA <https://github.com/damienArnol/svca>`_
+    Spatial Variance components Analysis: `SVCA <https://github.com/damienArnol/svca>`_
 
     The input format is separated folder for each ROI with `expressions.txt` and `positions.txt`.
 

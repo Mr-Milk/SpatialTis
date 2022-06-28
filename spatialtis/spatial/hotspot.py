@@ -6,7 +6,7 @@ from spatialtis_core import getis_ord, points_bbox
 
 from spatialtis.abc import AnalysisBase
 from spatialtis.typing import Array
-from spatialtis.utils import col2adata_obs, doc
+from spatialtis.utils import col2adata, doc
 
 
 @doc
@@ -34,19 +34,21 @@ def hotspot(data: AnnData,
 
     """
 
-    ab = AnalysisBase(data, display_name="Hotspot", export_key="hotspot_all", **kwargs)
+    ab = AnalysisBase(data, display_name="Hotspot analysis", export_key="hotspot_all", **kwargs)
     ab.check_cell_type()
     if selected_types is not None:
         ab.export_key = f"hotspot_{'_'.join(selected_types)}"
     else:
         selected_types = ab.cell_types
     hotcells = []
-    for roi_name, roi_data, points in ab.roi_iter_with_points(desc="Hotspot analysis"):
+    for roi_name, cell_types, points, ix in ab.iter_roi(fields=['cell_type', 'centroid', 'index']):
         bbox = points_bbox(points)
-        roi_iter = roi_data.copy()
-        roi_iter['__cells'] = points
-        for t, g in roi_iter.groupby(ab.cell_type_key):
-            cells = g['__cells']
+        roi_iter = pd.DataFrame({
+            "cells": points,
+            "types": cell_types
+        }, index=ix)
+        for t, g in roi_iter.groupby("types"):
+            cells = g['cells']
             if t in selected_types:
                 hots = getis_ord(
                     cells,
@@ -66,5 +68,5 @@ def hotspot(data: AnnData,
     arr = arr.cat.rename_categories({True: "hot", False: "cold", "other": "other"})
     data.obs[ab.export_key] = arr
     # Call this to invoke the print
-    col2adata_obs(data.obs[ab.export_key], data, ab.export_key)
+    col2adata(data.obs[ab.export_key], data, ab.export_key)
     ab.stop_timer()

@@ -6,7 +6,7 @@ from anndata import AnnData
 from spatialtis_core import spatial_autocorr as autocorr
 
 from spatialtis.abc import AnalysisBase
-from spatialtis.utils import read_neighbors, doc, options_guard
+from spatialtis.utils import doc, options_guard
 
 
 @doc
@@ -46,11 +46,9 @@ def spatial_autocorr(
                       **kwargs)
     track_ix = []
     results_data = []
-    for roi_name, roi_data, markers, exp in ab.roi_exp_iter(
-            layer_key=layer_key, desc=ab.display_name
+    for roi_name, labels, neighbors, markers, exp in ab.iter_roi(
+            fields=['neighbors', 'exp'], layer_key=layer_key
     ):
-        neighbors = read_neighbors(roi_data, ab.neighbors_key)
-        labels = roi_data[ab.cell_id_key]
         results = autocorr(
             exp.astype(np.float64),
             neighbors,
@@ -59,7 +57,6 @@ def spatial_autocorr(
             pval=pval,
             method=method,
         )
-        markers = markers.to_numpy()
         results = np.hstack([markers.reshape(-1, 1), results])
         track_ix += [roi_name for _ in range(len(markers))]
         results_data.append(results)

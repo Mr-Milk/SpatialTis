@@ -1,11 +1,9 @@
-import numpy as np
 import pandas as pd
 from anndata import AnnData
 from spatialtis_core import CellCombs
 
 from spatialtis.abc import AnalysisBase
 from spatialtis.utils import doc, options_guard
-from spatialtis.utils.io import read_neighbors
 
 
 @doc
@@ -47,10 +45,7 @@ def cell_interaction(data: AnnData,
     results_data = []
     roi_tracker = []
     repeat_time = 0
-    for roi_name, roi_data in ab.roi_iter(desc="Cell interaction"):
-        neighbors = read_neighbors(roi_data, ab.neighbors_key)
-        labels = roi_data[ab.cell_id_key]
-        cell_types = roi_data[ab.cell_type_key]
+    for roi_name, cell_types, labels, neighbors in ab.iter_roi(fields=['cell_type', 'neighbors']):
         result = cc.bootstrap(
             cell_types,
             neighbors,

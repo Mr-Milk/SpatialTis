@@ -9,7 +9,6 @@ from spatialtis_core import comb_bootstrap
 from spatialtis.abc import AnalysisBase
 from spatialtis.typing import Array
 from spatialtis.utils import doc
-from spatialtis.utils.io import read_neighbors
 
 
 @doc
@@ -19,7 +18,7 @@ def spatial_enrichment(data: AnnData,
                        selected_markers: Optional[Array] = None,
                        resample: int = 500,
                        pval: float = 0.01,
-                        export_key: str = "spatial_enrichment",
+                       export_key: str = "spatial_enrichment",
                        **kwargs, ):
     """`Profiling markers spatial enrichment <about/implementation.html#profiling-of-markers-co-expression>`_
     using permutation test
@@ -64,14 +63,12 @@ def spatial_enrichment(data: AnnData,
     markers = ab.selected_markers(selected_markers)
 
     results_data = []
-    for roi_name, roi_data, mks, exp in ab.roi_exp_iter(
+    for roi_name, mks, exp, labels, neighbors in ab.iter_roi(
+            fields=["exp", "neighbors"],
             selected_markers=markers,
             layer_key=layer_key,
             dtype=np.bool,
-            desc="Spatial enrichment",
     ):
-        neighbors = read_neighbors(roi_data, ab.neighbors_key)
-        labels = roi_data[ab.cell_id_key]
         result = comb_bootstrap(
             exp,
             mks,

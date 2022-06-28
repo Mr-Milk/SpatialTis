@@ -97,7 +97,7 @@ class _Config(object):
         self.mp: bool = True
 
         # used key name to store info in anndata
-        self.centroid_key: Optional[str] = None
+        self._centroid_key: Optional[str] = None
         self.shape_key: Optional[str] = None
         self.marker_key: Optional[str] = None
 
@@ -150,18 +150,17 @@ class _Config(object):
 
     @roi_key.setter
     def roi_key(self, key):
+        self._roi_key = key
         if self.exp_obs is None:
             self.exp_obs = [key]
         if key not in self.exp_obs:
-            raise ValueError(f"The `roi_key` is not in your `exp_obs`: {self.exp_obs}")
+            self.exp_obs = [*self._exp_obs, key]
         else:
             if self.exp_obs[-1] != key:
                 exp_obs = self.exp_obs
                 exp_obs.remove(key)
                 exp_obs.append(key)
                 self.exp_obs = exp_obs
-            else:
-                self._roi_key = key
 
     @property
     def exp_obs(self):
@@ -173,8 +172,11 @@ class _Config(object):
             self._exp_obs = [obs]
             self._roi_key = self._exp_obs[-1]
         elif isinstance(obs, Sequence):
-            self._exp_obs = list(obs)
-            self._roi_key = self._exp_obs[-1]
+            if len(obs) == 0:
+                self._exp_obs = None
+            else:
+                self._exp_obs = list(obs)
+                self._roi_key = self._exp_obs[-1]
         elif obs is None:
             self._exp_obs = None
         else:
@@ -191,7 +193,25 @@ class _Config(object):
         elif type_key is None:
             self._cell_type_key = None
         else:
-            raise TypeError(f"Couldn't set CELL_TYPE_KEY with type {type(type_key)}")
+            raise TypeError(f"Couldn't set cell_type_key with type {type(type_key)}")
+
+    @property
+    def centroid_key(self):
+        return self._centroid_key
+
+    @centroid_key.setter
+    def centroid_key(self, key):
+        if isinstance(key, (str, int, float)):
+            self._centroid_key = key
+        elif isinstance(key, Sequence):
+            if len(key) == 0:
+                self._centroid_key = None
+            else:
+                self._centroid_key = key
+        elif key is None:
+            self._centroid_key = None
+        else:
+            raise TypeError(f"Couldn't set centroid_key with type {type(key)}")
 
     @property
     def verbose(self):
@@ -200,7 +220,7 @@ class _Config(object):
     @verbose.setter
     def verbose(self, v):
         if not isinstance(v, bool):
-            raise ValueError("CONFIG.verbose only accept bool value")
+            raise ValueError("Config.verbose only accept bool value")
         self._verbose = v
         self.progress_bar = v
 
@@ -242,6 +262,7 @@ class _Config(object):
             data: The `AnnData` object to load the Config
 
         """
+        self.reset()
         config = literal_eval(data.uns["spatialtis_config"])
         self.mp = config["mp"]
         self.exp_obs = config["exp_obs"]

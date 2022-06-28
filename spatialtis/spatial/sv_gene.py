@@ -34,8 +34,8 @@ def somde(data: AnnData,
     ab = AnalysisBase(data, display_name="SOMDE", export_key=export_key, **kwargs)
     track_ix = []
     results_data = []
-    for roi_name, roi_data, markers, exp, points in ab.roi_exp_iter_with_points(
-            desc="Spatial variable genes: SOMDE"
+    for roi_name, markers, exp, points in ab.iter_roi(
+            fields=['exp', 'centroid'], desc="Spatial variable genes: SOMDE"
     ):
         sv_genes = smode_sv(
             pd.DataFrame(exp, index=markers, dtype=np.float32).fillna(0.0),

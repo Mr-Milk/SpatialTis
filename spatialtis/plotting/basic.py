@@ -73,6 +73,7 @@ def cell_density(data: AnnData,
         ax = sns.boxplot(data=data, x=groupby, y="density", hue="cell type", **options)
         ax.legend(loc="upper left", bbox_to_anchor=(1.05, 0, 1, 1), title="cell type", frameon=False)
     ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
+    ax.set(xlabel="Cell Type", ylabel="Density")
     return ax
 
 
@@ -94,6 +95,7 @@ def cell_morphology(data: AnnData,
         ax = sns.boxplot(data=pdata, x=groupby, y=key, hue=cell_type_key, hue_order=type_order, **options)
         ax.legend(loc="upper left", bbox_to_anchor=(1.05, 0, 1, 1), title="cell type", frameon=False)
     ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
+    ax.set(xlabel="Cell Type", ylabel=key.capitalize())
     return ax
 
 
@@ -104,6 +106,7 @@ def cell_co_occurrence(data: AnnData,
                        key: str = "cell_co_occurrence",
                        type_order: Optional[List[str]] = None,
                        order: bool = True,
+                       **plot_options,
                        ):
     data = get_result(data, key)
     if use == "dot":
@@ -115,12 +118,21 @@ def cell_co_occurrence(data: AnnData,
         if not order:
             plot_data = mask_triu(plot_data)
             xticklabels = xticklabels[::-1]
+        plot_options = {"dot_patch": "pie", **plot_options}
         return dot(plot_data,
                    xticklabels=xticklabels,
                    yticklabels=yticklabels,
-                   legend_title="ROI",
-                   sizes=(0, 500))
+                   **plot_options
+                   )
     else:
         groupby = data.index.names[0] if groupby is None else groupby
-        return anno_clustermap(data, col_colors=['type1', 'type2'], row_colors=groupby,
-                               categorical_cbar=['Non-Occur', 'Co-occur'])
+        plot_options = {"categorical_cbar": ['Non-Occur', 'Co-occur'],
+                        "col_legend_split": False,
+                        "col_legend_title": "Cell Type",
+                        "cbar_title": "Occurrence",
+                        **plot_options}
+        return anno_clustermap(data,
+                               col_colors=['type1', 'type2'],
+                               row_colors=groupby,
+                               **plot_options
+                               )

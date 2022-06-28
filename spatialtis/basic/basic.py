@@ -7,8 +7,7 @@ from anndata import AnnData
 from spatialtis_core import multipoints_bbox, multipolygons_area, polygons_area
 
 from spatialtis.abc import AnalysisBase
-from spatialtis.utils import col2adata_obs, doc, read_points, read_shapes
-from .utils import bbox_eccentricity
+from spatialtis.utils import col2adata, doc, read_shapes
 
 
 @doc
@@ -25,7 +24,7 @@ def cell_components(
         **kwargs: {analysis_kwargs}
 
     """
-    ab = AnalysisBase(data, display_name="Cell Components", export_key=export_key, **kwargs)
+    ab = AnalysisBase(data, display_name="Cell components", export_key=export_key, **kwargs)
     ab.check_cell_type()
     result = ab.type_counter()
     result.columns.name = 'cell type'
@@ -56,13 +55,21 @@ def cell_density(data: AnnData,
     result = ab.type_counter()
 
     area = []
-    for roi_name, roi_data, points in ab.roi_iter_with_points():
+    for roi_name, points in ab.iter_roi(fields=['centroid']):
         area.append(polygons_area(points))
 
     area = np.asarray(area) * (ratio * ratio)
     result = result.div(area, axis=0)
     result.columns.name = 'cell type'
     ab.result = result
+
+
+def _bbox_eccentricity(bbox) -> float:
+    x = (bbox[2] - bbox[0]) / 2.0
+    y = (bbox[3] - bbox[1]) / 2.0
+    if x < y:
+        x, y = y, x
+    return np.sqrt(1.0 - y ** 2 / x ** 2)
 
 
 @doc
@@ -74,7 +81,7 @@ def cell_morphology(data: AnnData,
 
     This function only works for data with cell shape information.
     The area is calculated using shoelace formula
-    The eccentricity is assume that the cell is close to ellipse, the semi-minor and semi-major axis
+    The eccentricity is assumed that the cell is close to ellipse, the semi-minor and semi-major axis
     is get from the bbox side.
 
     Args:
@@ -87,11 +94,11 @@ def cell_morphology(data: AnnData,
     ab = AnalysisBase(data, display_name="Cell morphology", **kwargs)
     shapes = read_shapes(data.obs, ab.shape_key)
     areas = multipolygons_area(shapes)
-    eccentricity = [bbox_eccentricity(bbox) for bbox in multipoints_bbox(shapes)]
+    eccentricity = [_bbox_eccentricity(bbox) for bbox in multipoints_bbox(shapes)]
     area_key = ab.area_key if area_key is None else area_key
     eccentricity_key = ab.eccentricity_key if eccentricity_key is None else eccentricity_key
-    col2adata_obs(areas, data, area_key)
-    col2adata_obs(eccentricity, data, eccentricity_key)
+    col2adata(areas, data, area_key)
+    col2adata(eccentricity, data, eccentricity_key)
     ab.stop_timer()  # write to obs, stop timer manually
 
 

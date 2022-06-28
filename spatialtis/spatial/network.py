@@ -5,8 +5,8 @@ from anndata import AnnData
 from scipy.spatial.distance import euclidean
 
 from spatialtis.abc import AnalysisBase
-from spatialtis.utils import col2adata_obs, doc
-from spatialtis.utils import try_import, read_neighbors
+from spatialtis.utils import col2adata, doc
+from spatialtis.utils import try_import
 
 
 @doc
@@ -14,7 +14,7 @@ def cell_community(data: AnnData,
                    resolution: float = 0.05,
                    partition_type: Optional[Any] = None,
                    partition_kwargs: Optional[Dict] = None,
-                    export_key: str = "community_id",
+                   export_key: str = "community_id",
                    **kwargs, ):
     """Spatial communities detection
 
@@ -52,9 +52,7 @@ def cell_community(data: AnnData,
     graphs = []
     track_ix = []
     sub_comm = []
-    for roi_name, roi_data, points in ab.roi_iter_with_points():
-        labels = roi_data[ab.cell_id_key]
-        neighbors = read_neighbors(roi_data, ab.neighbors_key)
+    for roi_name, labels, neighbors, points in ab.iter_roi(fields=['neighbors', 'centroid']):
         vertices = []
         edge_mapper = {}
         for i, (x, y) in zip(labels, points):
@@ -77,5 +75,5 @@ def cell_community(data: AnnData,
         track_ix.append(roi_name)
 
     sub_comm = pd.Series(sub_comm, index=data.obs.index)
-    col2adata_obs(sub_comm, data, ab.export_key)
+    col2adata(sub_comm, data, ab.export_key)
     ab.stop_timer()
