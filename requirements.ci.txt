@@ -4,7 +4,7 @@ anndata
 matplotlib
 seaborn
 milkviz
-ray; python_version < '3.10'
+legendkit
 scikit-image
 scipy
 rich[jupyter]
