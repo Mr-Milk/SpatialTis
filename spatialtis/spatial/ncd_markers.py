@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from ast import literal_eval
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
 import numpy as np
 import pandas as pd
@@ -9,18 +11,17 @@ from scipy.stats import mannwhitneyu
 from spatialtis_core import neighbor_components
 
 from spatialtis.abc import AnalysisBase
-from spatialtis.typing import Number, Array
 from spatialtis.utils import doc, read_exp
 
 
 @doc
 def NCD_marker(data: AnnData,
-               selected_markers: Optional[Array] = None,
-               importance_cutoff: Number = 0.5,
-               layer_key: Optional[str] = None,
-               tree_kwargs: Optional[Dict] = None,
+               selected_markers: List[str] | np.ndarray = None,
+               importance_cutoff: float = 0.5,
+               layer_key: str = None,
+               tree_kwargs: Dict = None,
                test_method: str = "mannwhitneyu",
-               pval: Number = 0.01,
+               pval: float = 0.01,
                export_key: str = "ncd_marker",
                **kwargs, ):
     """Identify neighbor cells dependent marker

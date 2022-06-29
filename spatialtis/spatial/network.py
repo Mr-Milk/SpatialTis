@@ -12,8 +12,8 @@ from spatialtis.utils import try_import
 @doc
 def cell_community(data: AnnData,
                    resolution: float = 0.05,
-                   partition_type: Optional[Any] = None,
-                   partition_kwargs: Optional[Dict] = None,
+                   partition_type: Any = None,
+                   partition_kwargs: Dict = None,
                    export_key: str = "community_id",
                    **kwargs, ):
     """Spatial communities detection

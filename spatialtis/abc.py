@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 import warnings
 from ast import literal_eval
 from collections import Counter
-from functools import cached_property
 from time import time
 from typing import Any, Dict, List, Optional, Union, Sequence
 
@@ -14,6 +15,16 @@ from spatialtis_core import reads_wkt_points
 
 from spatialtis.config import Config, console
 from spatialtis.utils import df2adata_uns, doc, log_print, pretty_time, read_exp, read_shapes, default_args
+
+
+# cached_property is only for py3.8+
+# create a dummy one to be compatible with py3.7+
+# TODO: Remove after deprecation of py3.7
+try:
+    from functools import cached_property
+except ImportError:
+    def cached_property(obj):
+        return obj
 
 
 class NeighborsNotFoundError(Exception):
@@ -222,7 +233,7 @@ class AnalysisBase(Timer):
                           "try `spatialtis.transform_points`")
         return points
 
-    def get_centroids(self) -> Union[object, list[list[float, float]]]:
+    def get_centroids(self) -> object | List:
         ckey = self.centroid_key
         # determine the type of centroid
         # by default, read 'spatial' from .obsm

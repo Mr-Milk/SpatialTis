@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from ast import literal_eval
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
 import numpy as np
 import pandas as pd
@@ -7,17 +9,16 @@ from anndata import AnnData
 from scipy.stats import spearmanr
 
 from spatialtis.abc import AnalysisBase
-from spatialtis.typing import Number, Array
 from spatialtis.utils import doc, pbar_iter, read_exp
 
 
 @doc
 def NMD_marker(data: AnnData,
                pval: float = 0.01,
-               selected_markers: Optional[Array] = None,
-               importance_cutoff: Number = 0.5,
-               layer_key: Optional[str] = None,
-               tree_kwargs: Optional[Dict] = None,
+               selected_markers: List[str] | np.ndarray = None,
+               importance_cutoff: float = 0.5,
+               layer_key: str = None,
+               tree_kwargs: Dict = None,
                export_key: str = "nmd_marker",
                **kwargs, ):
     """Identify neighbor markers dependent marker
@@ -26,7 +27,7 @@ def NMD_marker(data: AnnData,
 
     Args:
         data: {adata}
-        exp_std_cutoff: Standard deviation, threshold to filter out markers that are not variant enough
+        importance_cutoff: Standard deviation, threshold to filter out markers that are not variant enough
         pval: {pval}
         selected_markers: {selected_markers}
         layer_key: {layers_key}

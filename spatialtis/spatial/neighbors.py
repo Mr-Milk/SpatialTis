@@ -6,17 +6,16 @@ from spatialtis_core import multipoints_bbox, spatial_weight
 from spatialtis_core.neighbors import bbox_neighbors_parallel, points_neighbors_parallel
 
 from spatialtis.abc import AnalysisBase
-from spatialtis.typing import Number
 from spatialtis.utils import col2adata, doc
 
 
 @doc
 def find_neighbors(data: AnnData,
-                   method: Optional[str] = "kdtree",  # kdtree, delaunay, rtree,
-                   r: Optional[float] = None,
-                   k: Optional[int] = None,
-                   scale: Optional[Number] = None,
-                   export_key: Optional[str] = None,
+                   method: str = "kdtree",  # kdtree, delaunay, rtree,
+                   r: float = None,
+                   k: int = None,
+                   scale: float = None,
+                   export_key: str = None,
                    **kwargs, ):
     """To `find the neighbors <../about/implementation.html#find-cell-neighbors>`_ of each cell
 

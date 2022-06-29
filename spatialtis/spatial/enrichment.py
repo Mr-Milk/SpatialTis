@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import warnings
-from typing import Optional
+from typing import Optional, List
 
 import numpy as np
 import pandas as pd
@@ -7,15 +9,14 @@ from anndata import AnnData
 from spatialtis_core import comb_bootstrap
 
 from spatialtis.abc import AnalysisBase
-from spatialtis.typing import Array
 from spatialtis.utils import doc
 
 
 @doc
 def spatial_enrichment(data: AnnData,
-                       threshold: Optional[float] = None,
-                       layer_key: Optional[str] = None,
-                       selected_markers: Optional[Array] = None,
+                       threshold: float = None,
+                       layer_key: str = None,
+                       selected_markers: List[str] | np.ndarray = None,
                        resample: int = 500,
                        pval: float = 0.01,
                        export_key: str = "spatial_enrichment",

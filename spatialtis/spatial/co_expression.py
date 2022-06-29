@@ -8,7 +8,6 @@ from anndata import AnnData
 from spatialtis_core import fast_corr
 
 from spatialtis.abc import AnalysisBase, neighbors_pairs
-from spatialtis.typing import Number
 from spatialtis.utils import doc, pbar_iter, options_guard
 from spatialtis.utils.io import read_exp
 
@@ -19,9 +18,9 @@ DESCRIPTION = "co-expression"
 def spatial_coexp(data: AnnData,
                   method: str = "spearman",
                   use_cell_type: bool = False,
-                  selected_markers: Optional[List[str]] = None,
-                  layer_key: Optional[str] = None,
-                  corr_thresh: Optional[Number] = 0.5,
+                  selected_markers: List[str] = None,
+                  layer_key: str = None,
+                  corr_thresh: float = 0.5,
                   export_key: str = "spatial_coexp",
                   **kwargs, ):
     """Identifying spatial co-expression markers using correlation

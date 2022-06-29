@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import warnings
 from pathlib import Path
 from typing import List, Optional
@@ -7,8 +9,6 @@ import pandas as pd
 from anndata import AnnData
 from scipy.io import mmread
 from scipy.sparse import csr_matrix
-
-from spatialtis.typing import File
 
 
 def read_10x_h5(h5file):
@@ -68,7 +68,7 @@ def read_10x_spatial(stlist):
 
 
 def read_visium(
-        paths: List[File],
+        paths: List[str | Path],
         read_filtered: bool = True,  # "filtered" or "raw"
         annotations: Optional[pd.DataFrame] = None,
 ) -> AnnData:

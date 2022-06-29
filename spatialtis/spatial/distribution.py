@@ -1,11 +1,10 @@
-from typing import Optional
+from typing import Optional, Tuple
 
 import pandas as pd
 from anndata import AnnData
 from spatialtis_core import points_bbox, spatial_distribution_pattern
 
 from spatialtis.abc import AnalysisBase
-from spatialtis.typing import Number, Tuple
 from spatialtis.utils import doc, options_guard
 
 
@@ -15,10 +14,10 @@ def cell_dispersion(
         method: str = "id",
         min_cells: int = 10,
         pval: float = 0.01,
-        r: Optional[Number] = None,
+        r: float = None,
         resample: int = 1000,
-        quad: Optional[Tuple[int, int]] = None,
-        rect_size: Optional[Number] = None,
+        quad: Tuple[int, int] = None,
+        rect_size: float = None,
         export_key: str = "cell_dispersion",
         **kwargs,
 ):

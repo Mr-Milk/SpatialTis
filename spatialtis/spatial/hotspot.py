@@ -1,17 +1,19 @@
-from typing import Optional, Tuple
+from __future__ import annotations
 
+from typing import Optional, Tuple, List
+
+import numpy as np
 import pandas as pd
 from anndata import AnnData
 from spatialtis_core import getis_ord, points_bbox
 
 from spatialtis.abc import AnalysisBase
-from spatialtis.typing import Array
 from spatialtis.utils import col2adata, doc
 
 
 @doc
 def hotspot(data: AnnData,
-            selected_types: Optional[Array] = None,
+            selected_types: List[str] | np.ndarray = None,
             search_level: int = 3,
             quad: Optional[Tuple[int, int]] = None,
             rect_side: Optional[Tuple[float, float]] = None,

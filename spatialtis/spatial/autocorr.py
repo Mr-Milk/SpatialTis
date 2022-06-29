@@ -15,7 +15,7 @@ def spatial_autocorr(
         method: str = "moran_i",
         pval: float = 0.05,
         two_tailed: bool = True,
-        layer_key: Optional[str] = None,
+        layer_key: str = None,
         export_key: str = "spatial_autocorr",
         **kwargs,
 ):

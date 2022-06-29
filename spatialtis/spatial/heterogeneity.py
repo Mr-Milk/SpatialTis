@@ -1,5 +1,4 @@
 import warnings
-from typing import Optional
 
 import pandas as pd
 from anndata import AnnData
@@ -13,7 +12,7 @@ from spatialtis.utils import doc, options_guard
 @doc
 def spatial_heterogeneity(data: AnnData,
                           method: str = "leibovici",
-                          d: Optional[int] = None,
+                          d: int = None,
                           cut: int = 3,
                           export_key: str = "heterogeneity",
                           **kwargs, ):

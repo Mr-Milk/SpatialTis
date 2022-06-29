@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import warnings
 from pathlib import Path
 from typing import List, Optional
@@ -8,12 +10,11 @@ from anndata import AnnData
 from scipy.sparse import csr_matrix
 from spatialtis_core import dumps_points_wkt, dumps_polygons_wkt, points_shapes
 
-from spatialtis.typing import File
 from spatialtis.utils import options_guard
 
 
-def stacked_channels(c_imgs: List[File],
-                     export: File = "stacked.tiff"
+def stacked_channels(c_imgs: List[str | Path],
+                     export: str | Path = "stacked.tiff"
                      ):
     """
     A helper functions to stack single channel images to multi-channels
@@ -85,8 +86,8 @@ def check_exists(files):
 
 
 def read_images(
-        images: List[File],
-        masks: List[File],
+        images: List[str | Path],
+        masks: List[str | Path],
         markers: Optional[pd.DataFrame] = None,
         annotations: Optional[pd.DataFrame] = None,
         image_axes: str = "cyx",
