@@ -1,6 +1,7 @@
 """
 Setting Global config for whole processing level
 """
+import warnings
 from ast import literal_eval
 from pathlib import Path
 from typing import List, Optional, Sequence
@@ -263,18 +264,22 @@ class _Config(object):
 
         """
         self.reset()
-        config = literal_eval(data.uns["spatialtis_config"])
-        self.mp = config["mp"]
-        self.exp_obs = config["exp_obs"]
-        self.roi_key = config["roi_key"]
-        self.verbose = config["verbose"]
-        self.progress_bar = config["progress_bar"]
-        self.save_path = config["save_path"]
-        self.roi_key = config["roi_key"]
-        self.cell_type_key = config["cell_type_key"]
-        self.marker_key = config["marker_key"]
-        self.centroid_key = config["centroid_key"]
-        self.shape_key = config["shape_key"]
+        store_key = "spatialtis_config"
+        if store_key in data.uns_keys():
+            config = literal_eval(data.uns[store_key])
+            self.mp = config["mp"]
+            self.exp_obs = config["exp_obs"]
+            self.roi_key = config["roi_key"]
+            self.verbose = config["verbose"]
+            self.progress_bar = config["progress_bar"]
+            self.save_path = config["save_path"]
+            self.roi_key = config["roi_key"]
+            self.cell_type_key = config["cell_type_key"]
+            self.marker_key = config["marker_key"]
+            self.centroid_key = config["centroid_key"]
+            self.shape_key = config["shape_key"]
+        else:
+            warnings.warn("No config is found")
 
     def reset(self):
         """Reset to default"""
