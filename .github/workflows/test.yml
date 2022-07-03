@@ -1,6 +1,22 @@
 name: CI
 
-on: [push, pull_request]
+on:
+  push:
+    paths:
+      - 'spatialtis/**'
+      - 'tests/**'
+      - 'setup.cfg'
+      - 'setup.py'
+      - 'pyproject.toml'
+      - 'requirements.ci.txt'
+  pull_request:
+    paths:
+      - 'spatialtis/**'
+      - 'tests/**'
+      - 'setup.cfg'
+      - 'setup.py'
+      - 'pyproject.toml'
+      - 'requirements.ci.txt'
 
 jobs:
   Test:
