@@ -21,6 +21,6 @@ jobs:
       run:
         docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag mrmilk/spatialtis:jupyter
+      run: docker build . --file Dockerfile --tag mrmilk/spatialtis:jupyter --tag mrmilk/spatialtis:latest
     - name: Docker Publish
-      run: docker push ${{secrets.DOCKER_USER}}/spatialtis:jupyter
+      run: docker push ${{secrets.DOCKER_USER}}/spatialtis
