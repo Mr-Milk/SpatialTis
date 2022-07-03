@@ -1,7 +1,6 @@
-FROM pytorchlightning/pytorch_lightning
-WORKDIR /work
-RUN pip install --no-cache-dir scanpy spatialtis[all]
-RUN pip install --no-cache-dir jupyter jupyterlab jupyter_http_over_ws dask-labextension
-RUN jupyter serverextension enable --py jupyter_http_over_ws dask_labextension && ipcluster nbextension disable
+FROM python:3.10
+RUN pip install --no-cache-dir scanpy spatialtis==0.5.0rc0 lightgbm scikit-image leidenalg \
+    jupyter jupyterlab jupyter_http_over_ws ipywidgets
 WORKDIR /analysis
+EXPOSE 8888
 CMD ["jupyter", "lab", "--notebook-dir=/analysis", "--port=8888", "--ip=0.0.0.0", "--allow-root", "--no-browser"]
