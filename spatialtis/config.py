@@ -263,10 +263,10 @@ class _Config(object):
             data: The `AnnData` object to load the Config
 
         """
-        self.reset()
         store_key = "spatialtis_config"
         if store_key in data.uns_keys():
             config = literal_eval(data.uns[store_key])
+            self.reset()
             self.mp = config["mp"]
             self.exp_obs = config["exp_obs"]
             self.roi_key = config["roi_key"]
