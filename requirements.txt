@@ -21,8 +21,8 @@ pytest-cov
 
 # doc
 sphinx
-sphinx-book-theme
-sphinx-autodoc-typehints
+pydata-sphinx-theme
 setuptools
 nbsphinx
 nbsphinx_link
+numpydoc
