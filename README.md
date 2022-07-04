@@ -38,19 +38,14 @@ SpatialTis is an ultra-fast spatial analysis toolkit for large-scale spatial sin
 
 ## Installation
 
-SpatialTis requires python version >= 3.8
-
 ### pypi
 
-Install the basics
+![Version Support](https://img.shields.io/pypi/pyversions/spatialtis?style=flat-square)
 
 ```shell
 pip install spatialtis
-```
 
-For the full features
-
-```shell
+# For full features
 pip install 'spatialtis[all]'
 ```
 
@@ -60,21 +55,23 @@ Install the current development version
 pip install git+https://github.com/Mr-Milk/SpatialTis.git
 ```
 
-### Docker (Not Available)
-
-The quickest way to run is to use a docker image, it contains all you need to start from cell type identification.
+### Docker
 
 ```shell
-docker pull spatialtis/spatialtis
+docker pull mrmilk/spatialtis
 ```
-To run a jupyter notebook from the docker image and mount your data folder to it:
+
+To start a docker container:
 ```shell
 cd your/data/
-docker run -it [--rm] -p 8888:8888
-  --mount type=bind,source="$PWD",target=/work \
-  spatialtis/spatialtis
-# if port 8888 is taken, try `-p 9999:8888` and change to 9999
+docker run -it --rm -p 8888:8888 -v "${PWD}:/analysis" spatialtis
 ```
+- `-it`: Run the container in interactive mode
+- `-rm`: Clean file system in container after shutting down
+- If local port 8888 is taken, try `-p 9999:8888` and change to 9999. 
+- `-v`: Mount your data directory to the working directory `/analysis` 
+  in the container. `${PWD}` is the directory where you run this command. 
+  All changes made in this directory will be saved.
 
 
 ## Low level API
