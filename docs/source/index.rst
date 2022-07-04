@@ -1,5 +1,7 @@
+
+======================================
 Welcome to SpatialTis's documentation!
-==========================================
+======================================
 
 .. image:: img/Logo.svg
    :align: center
@@ -39,28 +41,23 @@ SpatialTis is an ultra-fast spatial analysis toolkit for large-scale spatial sin
 For a quick view of what it's does, check our the tutorial part.
 
 .. toctree::
-   :maxdepth: 1
-   :caption: Usage
+   :maxdepth: 2
 
-   usage/installation
-   usage/get_started
-   usage/input_data
-   usage/read_image
-   usage/low_level
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Example
-
-   examples/imc.nblink
+   usage/index
 
 .. toctree::
    :maxdepth: 2
-   :caption: About
 
    api
-   about/implementation
-   about/development_guide
-   about/QA
+
+.. toctree::
+   :maxdepth: 2
+
+   examples/index
+
+.. toctree::
+   :maxdepth: 2
+
+   about/index
 
 

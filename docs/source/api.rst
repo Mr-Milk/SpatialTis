@@ -81,6 +81,7 @@ Spatial analysis
     :nosignatures:
 
     find_neighbors
+    spatial_weights
     hotspot
     cell_dispersion
     cell_interaction
@@ -102,8 +103,8 @@ Base class
 -------------
 
 .. autosummary::
-    :toctree: API
-    :nosignatures:
+   :toctree: API
+   :template: autosummary/abc.rst
 
     abc.AnalysisBase
 

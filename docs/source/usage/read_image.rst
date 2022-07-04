@@ -35,4 +35,4 @@ expression matrix from the images.
 >>> data
     AnnData object with n_obs × n_vars = 2037 × 4
         obs: 'Tissue', 'ROI', 'area', 'cell_shape', 'centroid', 'eccentricity', ...
-
+        obsm: 'spatial'

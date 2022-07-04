@@ -38,7 +38,7 @@ Continuous Integration:
 - `Github Actions <https://github.com/features/actions>`_
 
 And here are some requirements:
-.
+
 - Every exposed API should have type annotation.
-- Docstring is google style
+- Docstring is numpy style
 

@@ -24,13 +24,11 @@ The quickest way to run is to use a docker image.
 
 .. code-block:: bash
 
-    docker pull spatialtis/spatialtis
+    docker pull mr-milk/spatialtis
 
 To run a jupyter notebook from the docker image and mount your data folder to it:
 
 .. code-block:: bash
 
     cd your/data/
-    docker run -it [--rm] -p 8888:8888
-      --mount type=bind,source="$PWD",target=/work \
-      spatialtis/spatialtis
+    docker run -it --rm -p 8888:8888 -v "${PWD}:/analysis" spatialtis
