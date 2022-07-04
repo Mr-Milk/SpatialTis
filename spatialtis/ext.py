@@ -1,9 +1,8 @@
+import pandas as pd
 import shutil
+from anndata import AnnData
 from pathlib import Path
 from typing import Union
-
-import pandas as pd
-from anndata import AnnData
 
 from spatialtis.abc import AnalysisBase
 from spatialtis.utils import doc, read_points

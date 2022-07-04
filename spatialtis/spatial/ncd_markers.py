@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-from ast import literal_eval
-from typing import Dict, Optional, List
-
 import numpy as np
 import pandas as pd
 import scipy
 from anndata import AnnData
+from ast import literal_eval
 from scipy.stats import mannwhitneyu
 from spatialtis_core import neighbor_components
+from typing import Dict, List
 
 from spatialtis.abc import AnalysisBase
 from spatialtis.utils import doc, read_exp
@@ -31,16 +30,19 @@ def NCD_marker(data: AnnData,
     the feature importance. A statistic test and fold change will be calculated for importance markers and its
     neighbor cells, the fold change is between marker with cell type at / not at the neighborhood.
 
-    Args:
-        data: {adata}
-        importance_cutoff: Threshold to determine the feature markers
-        selected_markers: {selected_markers}
-        layer_key: {layer_key}
-        tree_kwargs: {tree_kwargs}
-        test_method: which test method to use, anything from :code:`scipy.stats`
-        pval: {pval}
-        export_key: {export_key}
-        **kwargs: {analysis_kwargs}
+    Parameters
+    ----------
+    data : {adata}
+    importance_cutoff : float, default: 0.5
+        Threshold to determine the feature markers
+    selected_markers : {selected_markers}
+    layer_key : {layer_key}
+    tree_kwargs : {tree_kwargs}
+    test_method : str, default: 'mannwhitneyu'
+        which test method to use, anything from `scipy.stats <https://docs.scipy.org/doc/scipy/reference/stats.html>`_
+    pval : {pval}
+    export_key : {export_key}
+    **kwargs : {analysis_kwargs}
 
     """
 

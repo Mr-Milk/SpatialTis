@@ -1,18 +1,18 @@
 from __future__ import annotations
 
-import warnings
-from ast import literal_eval
 from collections import Counter
-from time import time
-from functools import cached_property
-from typing import Any, Dict, List, Optional, Union, Sequence
 
 import numpy as np
 import pandas as pd
+import warnings
 from anndata import AnnData
+from ast import literal_eval
+from functools import cached_property
 from natsort import natsorted
 from rich.progress import track
 from spatialtis_core import reads_wkt_points
+from time import time
+from typing import Any, Dict, List, Optional, Union, Sequence
 
 from spatialtis.config import Config, console
 from spatialtis.utils import df2adata_uns, doc, log_print, pretty_time, read_exp, read_shapes, default_args
@@ -83,18 +83,22 @@ class AnalysisBase(Timer):
 
     All parameters apply in this class can be used in analysis
 
-    Args:
-        data: {adata}
-        method: The method used in the run of the analysis
-        export_key: {export_key}
-        display_name: The name use to display the name of analysis
-        mp: bool, Enable parallel processing (Default: :code:`spatialtis.Config.mp`), not apply to most of the analysis
-        exp_obs: {exp_obs}
-        roi_key: {roi_key}
-        cell_type_key: {cell_type_key}
-        centroid_key: {centroid_key}
-        shape_key: {shape_key}
-        marker_key: {marker_key}
+    Parameters
+    ----------
+    data : {adata}
+    method : str, default: None
+        The method used in the run of the analysis
+    export_key : {export_key}
+    display_name : str, default: None
+        The name use to display the name of analysis
+    mp : bool, default: Config.mp
+        Enable parallel processing, no effect since v0.5.0
+    exp_obs : {exp_obs}
+    roi_key : {roi_key}
+    cell_type_key : {cell_type_key}
+    centroid_key : {centroid_key}
+    shape_key : {shape_key}
+    marker_key : {marker_key}
 
     """
 
@@ -364,89 +368,6 @@ class AnalysisBase(Timer):
                     yield_fields.append(roi_data.index)
 
             yield yield_fields
-
-    # def roi_iter_with_points(self,
-    #                          sort: bool = False,
-    #                          desc: Optional[str] = None,
-    #                          disable_pbar: bool = False,
-    #                          ):
-    #     disable = disable_pbar if disable_pbar else not Config.progress_bar
-    #
-    #     iter_data = self.data.obs.copy()
-    #     points = self.get_centroids()
-    #     if len(points[0]) == 3:
-    #         self.dimension = 3
-    #     iter_data['__spatial_centroid'] = points
-    #
-    #     for roi_name, roi_data in track(
-    #             iter_data.groupby(self.exp_obs, sort=sort),
-    #             description=f"[green]{desc}",
-    #             disable=disable,
-    #             console=console,
-    #     ):
-    #         if len(self.exp_obs) == 1:
-    #             roi_name = [roi_name]
-    #         yield roi_name, roi_data, roi_data['__spatial_centroid'].values.tolist()
-    #
-    # def roi_exp_iter(
-    #         self,
-    #         selected_markers: Optional[List[Any]] = None,
-    #         layer_key: Optional[str] = None,
-    #         dtype: Any = None,
-    #         sort: bool = False,
-    #         desc: Optional[str] = None,
-    #         disable_pbar: bool = False,
-    # ) -> (List, pd.DataFrame, List, np.ndarray):
-    #     disable = disable_pbar if disable_pbar else not Config.progress_bar
-    #     selected_markers = (
-    #         self.markers if selected_markers is None else selected_markers
-    #     )
-    #     markers_mask = self.markers_col.isin(selected_markers)
-    #     markers = self.markers_col[markers_mask]
-    #
-    #     for roi_name, roi_data in track(
-    #             self.data.obs.groupby(self.exp_obs, sort=sort),
-    #             description=f"[green]{desc}",
-    #             disable=disable,
-    #             console=console,
-    #     ):
-    #         if len(self.exp_obs) == 1:
-    #             roi_name = [roi_name]
-    #         exp = read_exp(self.data[roi_data.index, markers_mask], layer_key=layer_key, dtype=dtype)
-    #         yield roi_name, roi_data, markers, exp
-    #
-    # def roi_exp_iter_with_points(
-    #         self,
-    #         selected_markers: Optional[List[Any]] = None,
-    #         layer_key: Optional[str] = None,
-    #         dtype: Any = None,
-    #         sort: bool = False,
-    #         desc: Optional[str] = None,
-    #         disable_pbar: bool = False,
-    # ) -> (List, pd.DataFrame, List, np.ndarray):
-    #     disable = disable_pbar if disable_pbar else not Config.progress_bar
-    #     selected_markers = (
-    #         self.markers if selected_markers is None else selected_markers
-    #     )
-    #     markers_mask = self.markers_col.isin(selected_markers)
-    #     markers = self.markers_col[markers_mask]
-    #
-    #     iter_data = self.data.obs.copy()
-    #     points = self.get_centroids()
-    #     if len(points[0]) == 3:
-    #         self.dimension = 3
-    #     iter_data['__spatial_centroid'] = points
-    #
-    #     for roi_name, roi_data in track(
-    #             self.data.obs.groupby(self.exp_obs, sort=sort),
-    #             description=f"[green]{desc}",
-    #             disable=disable,
-    #             console=console,
-    #     ):
-    #         if len(self.exp_obs) == 1:
-    #             roi_name = [roi_name]
-    #         exp = read_exp(self.data[roi_data.index, markers_mask], layer_key=layer_key, dtype=dtype)
-    #         yield roi_name, roi_data, markers, exp, roi_data['__spatial_centroid']
 
     def type_counter(self) -> pd.DataFrame:
         self.check_cell_type()

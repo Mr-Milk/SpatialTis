@@ -1,9 +1,7 @@
-from itertools import combinations_with_replacement
-from typing import Optional
-
 import numpy as np
 import pandas as pd
 from anndata import AnnData
+from itertools import combinations_with_replacement
 from spatialtis_core import multipoints_bbox, multipolygons_area, polygons_area
 
 from spatialtis.abc import AnalysisBase
@@ -16,12 +14,13 @@ def cell_components(
         export_key: str = "cell_components",
         **kwargs,
 ):
-    """Count the proportion of each types of cells in each group
+    """Count the proportion of each types of cells in each group.
 
-    Args:
-        data: {adata}
-        export_key: {export_key}
-        **kwargs: {analysis_kwargs}
+    Parameters
+    ----------
+    data : {adata}
+    export_key : {export_key}
+    **kwargs : {analysis_kwargs}
 
     """
     ab = AnalysisBase(data, display_name="Cell components", export_key=export_key, **kwargs)
@@ -36,18 +35,20 @@ def cell_density(data: AnnData,
                  ratio: float = 1.0,
                  export_key: str = "cell_density",
                  **kwargs):
-    """Calculating cell density in each ROI
+    """Calculating cell density in each ROI.
 
-    The size of each ROI will be auto-computed, it's the area of convex hull of all the cells in a ROI
+    The size of each ROI will be auto-computed as convex hull of all the cells in a ROI.
 
-    Args:
-        data: {adata}
-        ratio: The ratio between the unit used in your dataset and real length unit, default is 1.0;
-               ratio = Dataset unit / real length unit;
-               For example, if the resolution of your dataset is 1μm, but you want to use 1mm as unit,
-               then you should set the ratio as 0.001, 1 pixels represent 0.001mm length.
-        export_key: {export_key}
-        **kwargs: {analysis_kwargs}
+    Parameters
+    ----------
+    data : {adata}
+    ratio : float, default: 1.0
+        The ratio between the unit used in your dataset and real length unit.
+        ratio = Dataset unit / real length unit.
+        For example, if the resolution of your dataset is 1μm, but you want to use 1mm as unit,
+        then you should set the ratio as 0.001, 1 pixel = 0.001mm.
+    export_key : {export_key}
+    **kwargs : {analysis_kwargs}
 
     """
     ab = AnalysisBase(data, display_name="Cell density", export_key=export_key, **kwargs)
@@ -74,21 +75,25 @@ def _bbox_eccentricity(bbox) -> float:
 
 @doc
 def cell_morphology(data: AnnData,
-                    area_key: Optional[str] = None,
-                    eccentricity_key: Optional[str] = None,
+                    area_key: str = None,
+                    eccentricity_key: str = None,
                     **kwargs):
-    """Cell morphology variation between different groups
+    """Cell morphology variation between different groups.
 
     This function only works for data with cell shape information.
     The area is calculated using shoelace formula
-    The eccentricity is assumed that the cell is close to ellipse, the semi-minor and semi-major axis
+    The eccentricity is assumed that the cell is close to ellipse,
+    the semi-minor and semi-major axis
     is get from the bbox side.
 
-    Args:
-        data: {adata}
-        area_key: The key to store cell area, Default: 'area'
-        eccentricity_key: The key to store cell eccentricity, Default: 'eccentricity'
-        **kwargs: {analysis_kwargs}
+    Parameters
+    ----------
+    data : {adata}
+    area_key : str
+        The `obs` key to store cell area value.
+    eccentricity_key : str
+        The `obs` key to store cell eccentricity.
+    **kwargs : {analysis_kwargs}
 
     """
     ab = AnalysisBase(data, display_name="Cell morphology", **kwargs)
@@ -106,12 +111,13 @@ def cell_morphology(data: AnnData,
 def cell_co_occurrence(data: AnnData,
                        export_key: str = "cell_co_occurrence",
                        **kwargs):
-    """The likelihood of two type of cells occur simultaneously in a ROI
+    """The likelihood of two type of cells occur simultaneously in a ROI.
 
-    Args:
-        data: {adata}
-        export_key: {export_key}
-        **kwargs: {analysis_kwargs}
+    Parameters
+    ----------
+    data : {adata}
+    export_key : {export_key}
+    **kwargs : {analysis_kwargs}
 
     """
 

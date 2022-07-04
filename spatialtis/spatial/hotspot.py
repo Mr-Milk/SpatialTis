@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from typing import Optional, Tuple, List
-
 import numpy as np
 import pandas as pd
 from anndata import AnnData
 from spatialtis_core import getis_ord, points_bbox
+from typing import Tuple, List
 
 from spatialtis.abc import AnalysisBase
 from spatialtis.utils import col2adata, doc
@@ -15,28 +14,32 @@ from spatialtis.utils import col2adata, doc
 def hotspot(data: AnnData,
             selected_types: List[str] | np.ndarray = None,
             search_level: int = 3,
-            quad: Optional[Tuple[int, int]] = None,
-            rect_side: Optional[Tuple[float, float]] = None,
+            quad: Tuple[int, int] = None,
+            rect_side: Tuple[float, float] = None,
             pval: float = 0.01,
-            export_key: str = "hotspot",
-            **kwargs, ):
+            **kwargs,
+            ):
     """`Getis-ord hotspot detection <../about/implementation.html#hotspot-detection>`_
 
     Used to identify cells that cluster together.
 
-    Args:
-        data: {adata}
-        selected_types: {selected_types}
-        search_level: How deep the search level to reach
-        quad: {quad}
-        rect_side: {rect_size}
-        pval: {pval}
-        export_key: {export_key}
-        **kwargs: {analysis_kwargs}
+    Parameters
+    ----------
+    data : {adata}
+    selected_types : {selected_types}
+    search_level : int, default: 3
+        How deep the search level to reach
+    quad : tuple of int, default: (10, 10)
+        A tuple (X, Y), Use a grid that is X * Y to tessellation your ROI
+    rect_side : tuple of float
+        A tuple (X, Y), Use many rectangles with X * Y side to tessellation your ROI
+    pval : {pval}
+    export_key : {export_key}
+    **kwargs : {analysis_kwargs}
 
     """
 
-    ab = AnalysisBase(data, display_name="Hotspot analysis", export_key="hotspot_all", **kwargs)
+    ab = AnalysisBase(data, display_name="Hotspot analysis", **kwargs)
     ab.check_cell_type()
     if selected_types is not None:
         ab.export_key = f"hotspot_{'_'.join(selected_types)}"

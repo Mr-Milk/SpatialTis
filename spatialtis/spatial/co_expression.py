@@ -1,11 +1,10 @@
-from ast import literal_eval
-from itertools import combinations_with_replacement
-from typing import Optional, List
-
 import numpy as np
 import pandas as pd
 from anndata import AnnData
+from ast import literal_eval
+from itertools import combinations_with_replacement
 from spatialtis_core import fast_corr
+from typing import List, Literal
 
 from spatialtis.abc import AnalysisBase, neighbors_pairs
 from spatialtis.utils import doc, pbar_iter, options_guard
@@ -16,7 +15,7 @@ DESCRIPTION = "co-expression"
 
 @doc
 def spatial_coexp(data: AnnData,
-                  method: str = "spearman",
+                  method: Literal["pearson", "spearman"] = "spearman",
                   use_cell_type: bool = False,
                   selected_markers: List[str] = None,
                   layer_key: str = None,
@@ -27,15 +26,18 @@ def spatial_coexp(data: AnnData,
 
     The correlation is calculated within pairs of neighbor cells
 
-    Args:
-        data: {adata}
-        method: "spearman" or "pearson" (Default: "spearman")
-        use_cell_type: Whether to use cell type information
-        selected_markers: {selected_markers}
-        corr_thresh: The minimum correlation value to store the result,
-        layer_key: {layer_key}
-        export_key: {export_key}
-        **kwargs: {analysis_kwargs}
+    Parameters
+    ----------
+    data : {adata}
+    method : {'spearman', 'pearson'}, default: 'spearman'
+    use_cell_type : bool
+        Whether to use cell type information
+    selected_markers : {selected_markers}
+    corr_thresh : float, default: 0.5
+        The minimum correlation value to store the result,
+    layer_key : {layer_key}
+    export_key : {export_key}
+    **kwargs : {analysis_kwargs}
 
     """
     method = options_guard(method, ['spearman', 'pearson'])

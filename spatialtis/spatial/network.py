@@ -1,8 +1,7 @@
-from typing import Any, Dict, Optional
-
 import pandas as pd
 from anndata import AnnData
 from scipy.spatial.distance import euclidean
+from typing import Any, Dict
 
 from spatialtis.abc import AnalysisBase
 from spatialtis.utils import col2adata, doc
@@ -20,13 +19,17 @@ def cell_community(data: AnnData,
 
     Here we use Leiden graph cluster algorithm
 
-    Args:
-        data: {adata}
-        resolution:
-        partition_type: The leidenalg partition type
-        partition_kwargs: Pass to leidenalg.find_partition
-        export_key: {export_key}
-        **kwargs: {analysis_kwargs}
+    Parameters
+    ----------
+    data : {adata}
+    resolution : float, default: 0.05
+        Control the process of partition
+    partition_type :
+        The leidenalg partition type
+    partition_kwargs :
+        Pass to leidenalg.find_partition
+    export_key : {export_key}
+    **kwargs : {analysis_kwargs}
 
     """
 

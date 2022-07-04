@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-import warnings
-from pathlib import Path
-from typing import List, Optional
-
 import numpy as np
 import pandas as pd
+import warnings
 from anndata import AnnData
+from pathlib import Path
 from scipy.sparse import csr_matrix
 from spatialtis_core import dumps_points_wkt, dumps_polygons_wkt, points_shapes
+from typing import List, Literal
 
+from spatialtis.config import _Config
 from spatialtis.utils import options_guard
 
 
@@ -88,39 +88,47 @@ def check_exists(files):
 def read_images(
         images: List[str | Path],
         masks: List[str | Path],
-        markers: Optional[pd.DataFrame] = None,
-        annotations: Optional[pd.DataFrame] = None,
-        image_axes: str = "cyx",
+        markers: pd.DataFrame = None,
+        annotations: pd.DataFrame = None,
+        image_axes: Literal["cyx", "xyc"] = "cyx",
         intensity_measure: str = "mean",
-        shape_approx: str = "convex",
+        shape_approx: Literal["convex", "concave"] = "convex",
         concavity: float = 1.5,
         geopandas_compatible: bool = True,
         is3d: bool = False,
         sparse: bool = False,
 ) -> AnnData:
-    """Read single cell data from images and masks
+    """Read single cell data from images and masks.
 
-    Args:
-        images: images files
-        masks: masks files, should be one to one match to image
-        markers: The name of markers, could be a dataframe
-            that annotate markers name, target, tag etc.
-        annotations: The annotations to your image ROI, if you have two images,
-            you can annotate it with `pd.DataFrame({"ROI": ["ROI1", "ROI2"])`
-        image_axes: "cyx" or "xyc", how you image organized
-        intensity_measure: The way to measure pixel intensity,
-            available for any numpy method,
-            mostly used are "mean", "sum" or "max"
-        shape_approx: The method to approximate the cell shape,
-            either be "convex" (fast) or "concave" (slow but accurate)
-        concavity: Control the concave result
-        geopandas_compatible: Default True. If True, will convert centroid and shape
-            to wkt format
-        is3d: Default False. Treat input image as 3D stack
-        sparse: Default False. Convert expression matrix to sparse format
-
-    Returns:
-        `AnnData`
+    Parameters
+    ----------
+    images : list of str or path
+        Images files.
+    masks : list of str or path
+        Masks files, should be one to one match to image.
+    markers : pd.DataFrame
+        The name of markers.
+        A dataframe that annotate markers' name, target, tag etc.
+    annotations : pd.DataFrame
+        The annotations to your image ROI, for example:
+        if you have two images, you can annotate it with `pd.DataFrame({'ROI': ['ROI1', 'ROI2'])`.
+    image_axes : {'cyx', 'xyc'}, default: 'cyx'.
+        The layout order of your input images.
+    intensity_measure : str, default: 'mean'
+        The way to measure pixel intensity,
+        available for any numpy method,
+        mostly used are 'mean', 'sum' or 'max'.
+    shape_approx : {'convex', 'concave'}, default: 'convex'
+        The method to approximate the cell shape.
+        'convex' is fast, 'concave' is slow but accurate.
+    concavity : float, default: 1.5
+        Control the concave result.
+    geopandas_compatible : bool, default: True
+        Convert centroid and shape to wkt format if True.
+    is3d : bool, default: False.
+        Treat input image as 3D stack.
+    sparse : bool, default: False.
+        Convert expression matrix to sparse format.
 
     """
     try:
@@ -208,5 +216,11 @@ def read_images(
     # add spatial coord to obsm
     centroid_cols = ['centroid_x', 'centroid_y', 'centroid_z'] if is3d else ['centroid_x', 'centroid_y']
     data.obsm['spatial'] = data.obs[centroid_cols].to_numpy()
+
+    config = _Config()
+    config.exp_obs = annotations.columns
+    config.centroid_key = 'spatial'
+    config.marker_key = 'name'
+    config.dumps(data)
 
     return data

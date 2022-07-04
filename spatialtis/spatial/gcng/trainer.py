@@ -1,11 +1,10 @@
-from ast import literal_eval
-from typing import Optional, List, Tuple
-
 import pandas as pd
 from anndata import AnnData
+from ast import literal_eval
+from typing import List, Tuple
 
 from spatialtis.abc import AnalysisBase
-from spatialtis.utils import read_neighbors, log_print, doc, pbar_iter
+from spatialtis.utils import log_print, doc, pbar_iter
 from .preprocess import overlap_genes, train_test_split, neighbors_pairs, \
     graph_data_loader, predict_data_loader
 
@@ -14,10 +13,10 @@ MODEL_SAVE_KEY = "SpatialTis-GCNG-Model-State"
 
 @doc
 def GCNG(data: AnnData,
-         known_pairs: Optional[pd.DataFrame] = None,
-         predict_pairs: Optional[List[Tuple]] = None,
+         known_pairs: pd.DataFrame = None,
+         predict_pairs: List[Tuple] = None,
          train_partition: float = 0.9,
-         gpus: Optional[int] = None,
+         gpus: int = None,
          max_epochs: int = 10,
          lr: float = 1e-4,
          batch_size: int = 32,
@@ -26,30 +25,48 @@ def GCNG(data: AnnData,
          **kwargs, ):
     """A pytorch reimplementation of GCNG
 
-    Use to identify directional gene-gene interactions. The trained model will be automatically save to anndata.
+    Use to identify directional gene-gene interactions.
+    The trained model will be automatically save to anndata.
 
     .. note::
         To perform this analysis, you need `pytorch <https://pytorch.org/get-started/locally/#start-locally>`_,
-        `pytorch-geometry <https://pytorch-geometric.readthedocs.io/en/latest/notes/installation.html>`_ and
-        `pytorch-lightning <https://www.pytorchlightning.ai/>`_ installed. If you have GPU, make sure you install
-        pytorch with GPU support, it would be way faster than CPU.
+        `PyG <https://pytorch-geometric.readthedocs.io/en/latest/notes/installation.html>`_ and
+        `pytorch-lightning <https://www.pytorchlightning.ai/>`_ installed.
 
-    Args:
-        data: {adata}
-        known_pairs: The input data for training, should be a dataframe with three columns,
-            ligand, receptor, relationship; 0 means not interact, 1 means interact.
-        predict_pairs: The pairs that you interested
-        train_partition: The ratio to split the dataset for training
-        gpus: Number of gpu to use, can be auto-detected
-        max_epochs: Number of epoch
-        lr: Learning rate
-        batch_size: The batch size
-        random_seed: The random seed
-        load_model: To load a pretrained model from anndata
-        **kwargs: {analysis_kwargs}
+    .. warning::
+        It's suggested that you run this analysis with multiple GPU with high RAM if you want to run it on real dataset.
+        I only tested this on a small dataset on a GTX2080Super, and it barely make it.
 
-    Returns:
-        (Model, Trainer)
+    Parameters
+    ----------
+    data : {adata}
+    known_pairs : pd.DataFrame
+        The input data for training, should be a dataframe with three columns,
+        ligand, receptor, relationship; 0 means not interact, 1 means interact.
+    predict_pairs : tuple of str
+        The pairs that you interested
+    train_partition : float, default: 0.9
+        The ratio to split the dataset for training
+    gpus : int
+        Number of gpu to use, can be auto-detected
+    max_epochs : int, default: 10
+        Number of epoch
+    lr : float, default: 1e-4
+        Learning rate
+    batch_size : float, default: 32
+        The batch size
+    random_seed : int
+        The random seed
+    load_model : bool, default: False
+        To load a pretrained model from anndata
+    **kwargs: {analysis_kwargs}
+
+    Returns
+    -------
+    Model :
+        Trained model
+    Trainer:
+        The lightning trainer
 
     """
     try:

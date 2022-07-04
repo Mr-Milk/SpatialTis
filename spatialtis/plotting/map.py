@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-from itertools import cycle
-from typing import List, Optional, Tuple, Dict
-
 import numpy as np
 from anndata import AnnData
+from itertools import cycle
 from legendkit import CatLegend
 from matplotlib import pyplot as plt
 from matplotlib.colors import to_hex
 from milkviz import point_map, point_map3d, polygon_map
+from typing import List, Optional, Tuple, Dict
 
 from spatialtis.abc import AnalysisBase
 from spatialtis.utils import doc
@@ -91,30 +90,49 @@ def cell_map(
         selected_types: Optional[List] = None,
         masked_type_name: str = "Other",
         masked_type_color: str = "#d3d3d3",
-        figsize: Tuple = None,
+        figsize: Tuple[float, float] = None,
         wspace: float = 0,
         hspace: float = 0.1,
         types_colors: Dict = None,
-        cell_type_key: Optional[str] = None,
-        shape_key: Optional[str] = None,
-        centroid_key: Optional[str] = None,
-        roi_key: Optional[str] = None,
+        cell_type_key: str = None,
+        shape_key: str = None,
+        centroid_key: str = None,
+        roi_key: str = None,
         **plot_options,
 ):
-    """Visualize cells in ROI
+    """Visualize cells and neighbors relationship in ROI
 
-    Args:
-        data: {adata_plotting}
-        rois: {roi}
-        use_shape: Plot cell in polygon when shape data is available
-        selected_types: {selected_types}
-        masked_type_name: The name of the cell types not in selected_types
-        masked_type_color: The color of the cell types not in selected_types
-        cell_type_key: {cell_type_key}
-        shape_key: {shape_key}
-        centroid_key: {centroid_key}
-        roi_key: {roi_key}
-        **plot_options: Pass to `milkviz.point_map` or `milkviz.point_map3d` or `milkviz.polygon_map`
+    Parameters
+    ----------
+    data : {adata_plotting}
+    rois : list of str
+        A list of ROI name that you want to plot.
+    ncol : int
+        The number of columns in the figure layout.
+    use_shape : bool
+        Plot cell in polygon only when shape data is available.
+    show_neighbors : bool
+        Plot the neighbors' relationship
+    selected_types : {selected_types}
+    masked_type_name : str, default: 'Other'
+        The name of the cell types not in selected_types
+    masked_type_color : color-like, default: '#d3d3d3'
+        The color of the cell types not in selected_types
+    figsize : tuple of float
+        The size of figure
+    wspace : float, default: 0
+        The space between plots vertically
+    hspace : float, default: 0.1
+        The space between plots horizontally
+    types_colors : dict
+        Change the color for each cell type,
+        Key is the type and value is the color
+    cell_type_key : {cell_type_key}
+    shape_key : {shape_key}
+    centroid_key : {centroid_key}
+    roi_key : {roi_key}
+    **plot_options:
+        Pass to :func:`milkviz.point_map` or :func:`milkviz.point_map3d` or :func:`milkviz.polygon_map`
 
     """
     ab = AnalysisBase(data,
@@ -235,28 +253,41 @@ def expression_map(
         figsize: Tuple = None,
         wspace: float = 0,
         hspace: float = 0.2,
-        selected_types: Optional[List] = None,
-        cell_type_key: Optional[str] = None,
-        marker_key: Optional[str] = None,
-        shape_key: Optional[str] = None,
-        centroid_key: Optional[str] = None,
-        roi_key: Optional[str] = None,
+        selected_types: List = None,
+        cell_type_key: str = None,
+        marker_key: str = None,
+        shape_key: str = None,
+        centroid_key: str = None,
+        roi_key: str = None,
         **plot_options,
 ):
     """Visualize marker expression in ROI
 
-    Args:
-        data: {adata_plotting}
-        roi: {roi}
-        marker:
-        use_shape:
-        marker_key:
-        shape_key:
-        centroid_key:
-        roi_key:
-        **plot_options:
-
-    Returns:
+    Parameters
+    ----------
+    data : {adata_plotting}
+    rois : list of str
+        A list of ROI name that you want to plot.
+    markers: list of str
+        A list of markers name that you want to plot
+    x_axis: {'marker', 'roi'}, default: 'marker'
+        What is on the x-axis, the marker or roi
+    use_shape : bool
+        Plot cell in polygon only when shape data is available.
+    figsize : tuple of float
+        The size of figure
+    wspace : float, default: 0
+        The space between plots vertically
+    hspace : float, default: 0.1
+        The space between plots horizontally
+    selected_types : {selected_types}
+    cell_type_key : {cell_type_key}
+    marker_key : {marker_key}
+    shape_key : {shape_key}
+    centroid_key : {centroid_key}
+    roi_key : {roi_key}
+    **plot_options :
+        Pass to :func:`milkviz.point_map` or :func:`milkviz.point_map3d` or :func:`milkviz.polygon_map`
 
     """
     ab = AnalysisBase(data,
@@ -360,56 +391,3 @@ def expression_map(
     plt.subplots_adjust(wspace=wspace, hspace=hspace)
     plt.close()
     return fig
-
-# @doc
-# def neighbors_map(
-#         data: AnnData,
-#         rois: str,
-#         ncol: int = 5,
-#         figsize: Tuple = None,
-#         wspace: float = 0,
-#         hspace: float = 0.1,
-#         types_colors: Dict = None,
-#         cell_type_key: Optional[str] = None,
-#         centroid_key: Optional[str] = None,
-#         roi_key: Optional[str] = None,
-#         **plot_options,
-# ):
-#     """Visualize neighbors network built in a ROI
-#
-#     Args:
-#         data: {adata_plotting}
-#         roi: {roi}
-#         cell_type_key: {cell_type_key}
-#         centroid_key: {centroid_key}
-#         roi_key: {roi_key}
-#         **plot_options:
-#
-#     Returns:
-#
-#     """
-#
-#     ab = AnalysisBase(data,
-#                       cell_type_key=cell_type_key,
-#                       centroid_key=centroid_key,
-#                       roi_key=roi_key)
-#     ab.check_neighbors()
-#
-#     color_mapper, legend_color_mapper, unique_types = \
-#         _color_mapper(ab,
-#                       data,
-#                       masked_type_name,
-#                       masked_type_color,
-#                       types_colors,
-#                       selected_types
-#                       )
-#
-#
-#     nmin = labels.min()
-#     links = []
-#     for l, neigh in zip(labels, neighbors):
-#         for n in neigh:
-#             if n > l:
-#                 links.append((n - nmin, l - nmin))
-#
-#     return point_map(x, y, types=cell_types, links=links, **internal_kwargs)

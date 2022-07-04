@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-import warnings
-from pathlib import Path
-from typing import List, Optional
-
 import h5py
 import pandas as pd
+import warnings
 from anndata import AnnData
+from pathlib import Path
 from scipy.io import mmread
 from scipy.sparse import csr_matrix
+from typing import List, Optional
+
+from spatialtis.config import _Config
 
 
 def read_10x_h5(h5file):
@@ -72,17 +73,17 @@ def read_visium(
         read_filtered: bool = True,  # "filtered" or "raw"
         annotations: Optional[pd.DataFrame] = None,
 ) -> AnnData:
-    """Read visium data from visium result folders
+    """Read visium data from visium result folders.
 
-    Args:
-        paths: One or a list of visium result folders
-        read_filtered: To use filtered matrix or raw matrix
-        annotations: You annotations on the ROI, for example:
-            if you have two ROI, you can create a dataframe with two rows
-            to annotate it `pd.DataFrame({"ROI": ["ROI1", "ROI2"]})`
-
-    Returns:
-        `AnnData`
+    Parameters
+    ----------
+    paths : list of str or path
+            Visium result folders.
+    read_filtered : bool, default: True
+        To use filtered matrix or raw matrix.
+    annotations : pd.DataFrame, default: None
+        Your annotations on the ROI, for example:
+        if you have two ROI, you can annotate it with `pd.DataFrame({'ROI': ['ROI1', 'ROI2'])`.
 
     """
     if isinstance(paths, (Path, str)):
@@ -127,7 +128,18 @@ def read_visium(
     obs[roi_header] = anno_collect
 
     exp_all = pd.concat(exp_dfs).fillna(0)
-    return AnnData(obs=obs,
-                   var=exp_all.columns.to_frame(),
+    var = exp_all.columns.to_frame()
+    var.set_index("id")
+
+    data = AnnData(obs=obs,
+                   var=var,
                    X=exp_all.sparse.to_coo().tocsr()
                    )
+
+    config = _Config()
+    config.exp_obs = annotations.columns
+    config.centroid_key = 'spatial'
+    config.marker_key = 'name'
+    config.dumps(data)
+
+    return data

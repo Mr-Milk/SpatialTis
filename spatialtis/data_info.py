@@ -1,5 +1,4 @@
 import warnings
-
 from anndata import AnnData
 
 from spatialtis import Config

@@ -1,8 +1,8 @@
 from importlib import import_module
-from types import ModuleType
-from typing import List
 
 from thefuzz import process
+from types import ModuleType
+from typing import List
 
 
 def options_guard(select: str, options: List[str]):

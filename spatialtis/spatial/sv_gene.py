@@ -20,15 +20,21 @@ def somde(data: AnnData,
           **kwargs, ):
     """This is a wrapper around somde
 
-    Args:
-        data: {adata}
-        k: Number of SOM nodes
-        alpha: Parameters for generate pseudo gene expression
-        epoch: Number of epoch
-        qval: Threshold for qval
-        pval: Threshold for pval
-        export_key: {export_key}
-        **kwargs: {analysis_kwargs}
+    Parameters
+    ----------
+    data : {adata}
+    k : int, default: 20
+        Number of SOM nodes
+    alpha : float, default: 0.5
+        Parameters for generate pseudo gene expression
+    epoch : int, default: 100
+        Number of epoch
+    qval : float, default: 0.05
+        Threshold for qval
+    pval : float, default: 0.05
+        Threshold for pval
+    export_key : {export_key}
+    **kwargs : {analysis_kwargs}
 
     """
     ab = AnalysisBase(data, display_name="SOMDE", export_key=export_key, **kwargs)

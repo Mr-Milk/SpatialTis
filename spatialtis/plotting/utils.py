@@ -1,6 +1,5 @@
-from typing import List, Optional
-
 import pandas as pd
+from typing import List, Optional
 
 COLOR_POOL = [
     "#1f77b4ff",

@@ -1,9 +1,9 @@
-from ast import literal_eval
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from __future__ import annotations
 
 import numpy as np
 import pandas as pd
 from anndata import AnnData
+from ast import literal_eval
 from scipy.sparse import issparse
 from spatialtis_core import (
     dumps_points_wkt,
@@ -11,11 +11,12 @@ from spatialtis_core import (
     reads_wkt_points,
     reads_wkt_polygons,
 )
+from typing import Dict, List, Tuple
 
 from spatialtis.config import Config, console
 
 
-def writer_verbose(key, part: str, verbose: Optional[bool] = None):
+def writer_verbose(key, part: str, verbose: bool = None):
     if verbose is None:
         verbose = Config.verbose
 
@@ -27,8 +28,8 @@ def df2adata_uns(
         df: pd.DataFrame,
         adata: AnnData,
         key: str,
-        params: Optional[Dict] = None,
-        verbose: Optional[bool] = None,
+        params: Dict = None,
+        verbose: bool = None,
 ):
     """Write pandas.DataFrame with parameters to `AnnData.uns`
 
@@ -42,12 +43,18 @@ def df2adata_uns(
         - **colname**: The name of columns/MultiIndex
         - **params**: The parameters
 
-    Args:
-        df: The `pandas.DataFrame` object you want to write to the `AnnData.uns` field
-        adata: The AnnData object for storage
-        key: Which key in `AnnData.obs` key you want to write
-        params: Add parameters
-        verbose: Control the verbosity
+    Parameters
+    ----------
+    df : pd.DataFrame
+        The `pandas.DataFrame` object you want to write to the `AnnData.uns` field
+    adata : AnnData
+        The `AnnData` object for storage
+    key : str
+        key write to `.obs`
+    params : bool
+        Add parameters
+    verbose : bool
+        Control the verbosity
 
     """
     # To support writing with NaN
@@ -66,20 +73,26 @@ def df2adata_uns(
 
 
 def col2adata(
-        col: Sequence,
+        col: List | np.ndarray,
         adata: AnnData,
         key: str,
         slot: str = 'obs',
-        verbose: Optional[bool] = None
+        verbose: bool = None
 ):
     """Write an array to `AnnData.obs`
 
-    Args:
-        col: An array-like object that add to `AnnData.obs`
-        adata: The `AnnData` object for storage
-        key: Which key in `AnnData.obs` key you want to write
-        slot: Which slot to write, `obs`, `obsm`, `obsp`
-        verbose: Control the verbosity
+    Parameters
+    ----------
+    col : array-like
+        An array-like object that add to `AnnData.obs`
+    adata : AnnData
+        The `AnnData` object for storage
+    key : str
+        Which key in `AnnData.obs` key you want to write
+    slot : str
+        Which slot to write, `obs`, `obsm`, `obsp`
+    verbose : bool
+        Control the verbosity
 
     """
     getattr(adata, slot)[key] = col
@@ -90,18 +103,22 @@ def get_result(
         data: AnnData,
         key: str,
         params: bool = False,
-) -> Union[pd.DataFrame, Tuple[pd.DataFrame, Dict]]:
-    """Read spatialtis result from `AnnData.uns` as `pandas.DataFrame` object
+) -> pd.DataFrame | Tuple[pd.DataFrame, Dict]:
+    """Read spatialtis result from `AnnData.uns` as `pandas.DataFrame` object.
 
-    To get the params, use `params=True`
+    To get the params, use `params=True`.
 
     >>> import spatialtis as st
     >>> st.get_result(data, 'cell_components')
 
-    Args:
-        data: The `AnnData` object for storage
-        key: Which key in `AnnData.uns` you want to read
-        params: Whether to return parameters
+    Parameters
+    ----------
+    data : AnnData
+        The `AnnData` object to retrive result from.
+    key : str
+        Which key in `AnnData.uns` you want to read.
+    params : bool, default: False
+        Whether to return parameters.
 
     """
 
@@ -120,33 +137,27 @@ def get_result(
         raise ValueError(f"Info stored in {key} is not a spatialtis result")
 
 
-# def points2wkt(points: List[tuple]) -> List[str]:
-#     return [wkt.dumps(Point(*coord), trim=True) for coord in points]
-#
-#
-# def polygons2wkt(polygons: List[List[tuple]]) -> List[str]:
-#     return [MultiPoint(polygon).convex_hull.wkt for polygon in polygons]
-
-
-# def load_wkt(geom: List) -> List:
-#     return [list(wkt.loads(data).coords) for data in geom]
-
-
 def wkt_points(
         data: AnnData,
-        centroid_keys: Union[str, Sequence[str]],
+        centroid_keys: str | Tuple[str, str],
         export_key: str = "centroid",
         write_config: bool = True,
 ):
-    """Transform normal coordination in `AnnData.obs` to wkt-format
+    """Transform normal coordination in `AnnData.obs` to wkt-format.
 
     >>> import spatialtis as st
     >>> st.wkt_points(data, ('x', 'y'), export_key="centroid_wkt")
 
-    Args:
-        data: The `AnnData` object
-        centroid_keys: The key or a tuple of keys that store X, Y coordination
-        export_key: The key to export, will automatically update the global config
+    Parameters
+    ----------
+    data : AnnData
+        The `AnnData` to work on.
+    centroid_keys : str or list of str
+        The key or a tuple of keys that store X, Y coordination.
+    export_key : str
+        The key to export.
+    write_config : bool, default: True
+        Whether to update centroid key to global configuration.
 
     """
     if isinstance(centroid_keys, str):
@@ -166,16 +177,27 @@ def wkt_points(
         Config.centroid_key = export_key
 
 
-def wkt_shapes(data: AnnData, shape_key: str, export_key: str = "cell_shape", write_config: bool = True):
-    """Transform normal coordination in `AnnData.obs` to wkt-format
+def wkt_shapes(
+        data: AnnData,
+        shape_key: str,
+        export_key: str = "cell_shape",
+        write_config: bool = True,
+):
+    """Transform normal coordination in `AnnData.obs` to wkt-format.
 
     >>> import spatialtis as st
     >>> st.wkt_points(data, 'shape', export_key="shape_wkt")
 
-    Args:
-        data: The `AnnData` object
-        shape_key: The key that store key information
-        export_key: The key to export, will automatically update the global config
+    Parameters
+    ----------
+    data : AnnData
+        The `AnnData` to work on.
+    shape_key : str
+        The key that store shape information.
+    export_key : str
+        The key to export.
+    write_config : bool, default: True
+        Whether to update shape key to global configuration.
 
     """
     shapes = data.obs[shape_key].tolist()

@@ -1,4 +1,3 @@
-from ._version import version_tuple
 from .basic import cell_co_occurrence, cell_components, cell_density, cell_morphology
 from .config import Config
 from .data_info import list_roi, make_roi_unique
@@ -22,6 +21,7 @@ from .spatial import (
 )
 from .utils import get_result, wkt_points, wkt_shapes
 
+from ._version import version_tuple
 __version__ = ".".join([str(i) for i in version_tuple[:3]])
 
 import logging

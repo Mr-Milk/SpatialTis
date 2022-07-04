@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import warnings
-from typing import Optional, List
-
 import numpy as np
 import pandas as pd
+import warnings
 from anndata import AnnData
 from spatialtis_core import comb_bootstrap
+from typing import List
 
 from spatialtis.abc import AnalysisBase
 from spatialtis.utils import doc
@@ -27,15 +26,18 @@ def spatial_enrichment(data: AnnData,
     Similar to neighborhood analysis which tells you the relationship between different type of cells.
     This analysis tells you the spatial relationship between markers.
 
-    Args:
-        data: {adata}
-        threshold: The expression level to determine whether a marker is positive
-        layer_key: {layer_key}
-        selected_markers: {selected_markers}
-        resample: Number of times to perform resample
-        pval: {pval}
-        export_key: {export_key}
-        **kwargs: {analysis_kwargs}
+    Parameters
+    ----------
+    data : {adata}
+    threshold : float
+        The expression level to determine whether a marker is positive
+    layer_key : {layer_key}
+    selected_markers : {selected_markers}
+    resample : int, default: 500
+        Number of times to perform resample
+    pval : {pval}
+    export_key : {export_key}
+    **kwargs : {analysis_kwargs}
 
     .. seealso:: :class:`spatialtis.cell_interaction`
 

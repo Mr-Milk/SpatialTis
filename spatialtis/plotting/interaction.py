@@ -1,14 +1,14 @@
 from collections import Counter
-from itertools import product
-from typing import List, Optional
 
 import numpy as np
 import pandas as pd
 from anndata import AnnData
+from itertools import product
 from milkviz import anno_clustermap, dot_heatmap
 from milkviz.utils import mask_triu
 from natsort import natsorted
 from scipy.stats import pearsonr
+from typing import List
 
 from spatialtis import get_result
 from spatialtis.utils import doc, log_print, df2adata_uns
@@ -61,26 +61,28 @@ def count_size_side_for_enrichment(pdata, type_order):
 def cell_interaction(
         data: AnnData,
         use: str = "dot",
-        groupby: Optional[List] = None,
+        groupby: List = None,
         key: str = "cell_interaction",
-        type_order: Optional[List[str]] = None,
+        type_order: List[str] = None,
         order: bool = True,
         plot_value: str = "relationship",
         **plot_options,
 ):
-    """Visualize cell interaction results
+    """Visualization of the cell interaction analysis
 
-    Args:
-        data:
-        use:
-        groupby:
-        key:
-        type_order:
-        order:
-        plot_value:
-        **plot_options:
+    Parameters
+    ----------
+    data : {adata_plotting}
+    use
+    groupby
+    key
+    type_order
+    order
+    plot_value
+    plot_options
 
-    Returns:
+    Returns
+    -------
 
     """
     if use == "heatmap":
@@ -219,18 +221,21 @@ def cell_interaction(
 def spatial_enrichment(
         data: AnnData,
         key: str = "spatial_enrichment",
-        type_order: Optional[List[str]] = None,
+        type_order: List[str] = None,
         **plot_options,
 ):
-    """Visualize spatial enrichment result
+    """Visualization of the spatial enrichment analysis
 
-    Args:
-        data:
-        key:
-        type_order:
-        **plot_options:
+    Parameters
+    ----------
+    data : {adata_plotting}
+    key : str
+        The
+    type_order
+    plot_options
 
-    Returns:
+    Returns
+    -------
 
     """
     store_key = "spatial_enrichment_dot"

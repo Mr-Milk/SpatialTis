@@ -1,10 +1,9 @@
-from typing import Optional, List
-
 import pandas as pd
 import seaborn as sns
 from anndata import AnnData
 from milkviz import stacked_bar, dot, anno_clustermap
 from milkviz.utils import mask_triu
+from typing import List
 
 from spatialtis.utils import doc, get_result
 from .utils import pairs_to_adj
@@ -13,26 +12,27 @@ from .. import Config
 
 @doc
 def cell_components(data: AnnData,
-                    groupby: Optional[str] = None,
+                    groupby: str = None,
                     key: str = "cell_components",
                     orient: str = "v",
-                    type_order: Optional[List[str]] = None,
+                    type_order: List[str] = None,
                     **plot_options,
                     ):
-    """Visualize cell components result
+    """Visualization of the cell components
 
-    Args:
-        data:
-        groupby:
-        key:
-        orient:
-        type_order:
-        **plot_options:
-
-    Returns:
+    Parameters
+    ----------
+    data : {adata_plotting}
+    groupby : str
+        The key in :code:`Config.exp_obs` to stratify the data.
+    key : {plot_key}
+    orient : {'v', 'h'}, default: 'v'
+    type_order: list of str
+        The list of cell types.
+    plot_options:
+        pass to :func:`milkviz.stacked_bar`.
 
     """
-
     data = get_result(data, key)
     groupby = data.index.names[0] if groupby is None else groupby
     if type_order is not None:
@@ -57,11 +57,27 @@ def cell_components(data: AnnData,
 
 @doc
 def cell_density(data: AnnData,
-                 groupby: Optional[str] = None,
+                 groupby: str = None,
                  key: str = "cell_density",
-                 type_order: Optional[List[str]] = None,
+                 type_order: List[str] = None,
                  **plot_options,
                  ):
+    """Visualization of cell density
+
+    Parameters
+    ----------
+    data : {adata_plotting}
+    groupby : {groupby}
+    key : {plot_key}
+    type_order: list of str
+        The list of cell types.
+    plot_options:
+        pass to :func:`milkviz.stacked_bar`.
+
+    Returns
+    -------
+
+    """
     data = get_result(data, key)
     if type_order is not None:
         data = data.loc[:, type_order]
@@ -79,12 +95,29 @@ def cell_density(data: AnnData,
 
 @doc
 def cell_morphology(data: AnnData,
-                    groupby: Optional[str] = None,
+                    groupby: str = None,
                     key: str = "area",
-                    type_order: Optional[List[str]] = None,
-                    cell_type_key: Optional[str] = None,
+                    type_order: List[str] = None,
+                    cell_type_key: str = None,
                     **plot_options,
                     ):
+    """Visualization of cell morphology
+
+    Parameters
+    ----------
+    data : {adata_plotting}
+    groupby : {groupby}
+    key : {plot_key}
+    type_order: list of str
+        The list of cell types.
+    cell_type_key : {cell_type_key}
+    plot_options :
+        Pass to :func:`seaborn.boxplot`.
+
+    Returns
+    -------
+
+    """
     cell_type_key = Config.cell_type_key if cell_type_key is None else cell_type_key
     options = dict(palette="tab20", **plot_options)
     query_keys = [key, cell_type_key] if groupby is None else [key, cell_type_key, groupby]
@@ -102,12 +135,31 @@ def cell_morphology(data: AnnData,
 @doc
 def cell_co_occurrence(data: AnnData,
                        use: str = "dot",  # dot, heatmap
-                       groupby: Optional[List] = None,
+                       groupby: List = None,
                        key: str = "cell_co_occurrence",
-                       type_order: Optional[List[str]] = None,
+                       type_order: List[str] = None,
                        order: bool = True,
                        **plot_options,
                        ):
+    """Visualization of cell co-occurrence
+
+    Parameters
+    ----------
+    data : {adata_plotting}
+    groupby : {groupby}
+    key : {plot_key}
+    use : {'dot', 'heatmap'}, default: 'dot'
+    type_order: list of str
+        The list of cell types.
+    order: bool
+        The order of co-occurrence.
+    plot_options:
+        Pass to :func:`milkviz.dot` and :func:`milkviz.anno_clustermap`.
+
+    Returns
+    -------
+
+    """
     data = get_result(data, key)
     if use == "dot":
         data = pd.DataFrame(data.sum().reset_index())

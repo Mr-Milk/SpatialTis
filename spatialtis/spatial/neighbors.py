@@ -1,5 +1,3 @@
-from typing import Optional
-
 import pandas as pd
 from anndata import AnnData
 from spatialtis_core import multipoints_bbox, spatial_weight
@@ -17,25 +15,29 @@ def find_neighbors(data: AnnData,
                    scale: float = None,
                    export_key: str = None,
                    **kwargs, ):
-    """To `find the neighbors <../about/implementation.html#find-cell-neighbors>`_ of each cell
+    """To `find the neighbors <../about/implementation.html#find-cell-neighbors>`_ of each cell.
 
-    KD-tree and Delaunay triangulation are used when cells are points, by default search for k=5
+    KD-tree and Delaunay triangulation are used when cells are points, by default search for k=5.
 
-    R-tree is used when cells are polygons, by default search for scale=1.4
+    R-tree is used when cells are polygons, by default search for scale=1.4.
 
     .. note::
         When :code:`method="kdtree"`, you can search neighbors within radius and/or by nearest-neighbors.
         If you specific :code:`r=30, k=5`, this will search within 30 while limited the number of neighbors
-        to 5;
+        to 5.
 
-    Args:
-        data: {adata}
-        method: "kdtree", "rtree" and "delaunay", Default: "kdtree"
-        r: The search radius
-        k: The (minimum) number of nearest-neighbors
-        scale: How much to scale each cell, only if cell has shape
-        export_key: {export_key}
-        **kwargs: {analysis_kwargs}
+    Parameters
+    ----------
+    data : {adata}
+    method : {'kdtree', 'rtree', 'delaunay'}, default: 'kdtree'
+    r : float
+        The search radius
+    k : float
+        The (minimum) number of nearest-neighbors
+    scale : float
+        How much to scale each cell, only if cell has shape
+    export_key : {export_key}
+    **kwargs : {analysis_kwargs}
 
     Methods:
         spatial_weights: A generator that return spatial weight in CSR matrix (roi_name, spatial_weight_matrix)
@@ -112,8 +114,12 @@ def spatial_weights(
 ):
     """A generator that return spatial weight in CSR matrix
 
-    Returns:
-        (roi_name, spatial_weight_matrix)
+    Yields
+    ------
+    roi_name : list of string
+        The name of the roi
+    spatial_weight_matrix : sparse matrix
+        A spatial weight matrix in scipy sparse matrix format
 
     Examples:
         >>> import spatialtis as st

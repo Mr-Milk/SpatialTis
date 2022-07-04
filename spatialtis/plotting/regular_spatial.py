@@ -1,5 +1,4 @@
 from collections import Counter
-from typing import Optional, List
 
 import numpy as np
 import pandas as pd
@@ -8,6 +7,7 @@ from anndata import AnnData
 from matplotlib.colors import ListedColormap
 from milkviz import dot, anno_clustermap
 from natsort import natsorted
+from typing import List
 
 from spatialtis import get_result
 from spatialtis.utils import doc
@@ -16,7 +16,7 @@ from spatialtis.utils import doc
 @doc
 def spatial_heterogeneity(
         data: AnnData,
-        groupby: Optional[str] = None,
+        groupby: str = None,
         key: str = "heterogeneity",
         **plot_options,
 ):
@@ -35,8 +35,8 @@ def spatial_heterogeneity(
 def cell_dispersion(
         data: AnnData,
         use: str = "dot",
-        groupby: Optional[List[str]] = None,
-        type_order: Optional[List[str]] = None,
+        groupby: List[str] = None,
+        type_order: List[str] = None,
         key: str = "cell_dispersion",
         **plot_options,
 ):

@@ -1,6 +1,5 @@
-import warnings
-
 import pandas as pd
+import warnings
 from anndata import AnnData
 from scipy.stats import entropy
 from spatialtis_core import spatial_entropy
@@ -28,13 +27,18 @@ def spatial_heterogeneity(data: AnnData,
         - `Altieri entropy <../about/implementation.html#altieri-entropy>`_:\
         You can specific the distance interval to determine co-occurrence events.
 
-        Args:
-            data: {adata}
-            method: "shannon", "leibovici" and "altieri" (Default: "leibovici")
-            d: :code:`method="leibovici"`, The distance threshold to determine co-occurrence events
-            cut: :code:`method="altieri"`, Distance interval
-            export_key: {export_key}
-            **kwargs: {analysis_kwargs}
+        Parameters
+        ----------
+        data : {adata}
+        method : {'shannon', 'leibovici', 'altieri}, default: 'leibovici'
+        d : float
+            Parameters for method='leibovici',
+            The distance threshold to determine co-occurrence events
+        cut : int
+            Parameters for method='altieri',
+            The number of distance interval to have
+        export_key : {export_key}
+        **kwargs : {analysis_kwargs}
 
     """
 

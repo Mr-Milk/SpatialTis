@@ -3,3 +3,4 @@
 .. currentmodule:: {{ module }}
 
 .. autoclass:: {{ objname }}
+   :no-members:

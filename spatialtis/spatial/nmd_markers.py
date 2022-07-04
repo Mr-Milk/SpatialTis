@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from ast import literal_eval
-from typing import Dict, Optional, List
-
 import numpy as np
 import pandas as pd
 from anndata import AnnData
+from ast import literal_eval
 from scipy.stats import spearmanr
+from typing import Dict, List
 
 from spatialtis.abc import AnalysisBase
 from spatialtis.utils import doc, pbar_iter, read_exp
@@ -25,15 +24,17 @@ def NMD_marker(data: AnnData,
 
     The neighborhood is treated as a single cell.
 
-    Args:
-        data: {adata}
-        importance_cutoff: Standard deviation, threshold to filter out markers that are not variant enough
-        pval: {pval}
-        selected_markers: {selected_markers}
-        layer_key: {layers_key}
-        tree_kwargs: {tree_kwargs}
-        export_key: {export_key}
-        **kwargs: {analysis_kwargs}
+    Parameters
+    ----------
+    data : {adata}
+    importance_cutoff : float
+        Standard deviation, threshold to filter out markers that are not variant enough
+    pval : {pval}
+    selected_markers : {selected_markers}
+    layer_key : {layers_key}
+    tree_kwargs : {tree_kwargs}
+    export_key : {export_key}
+    **kwargs : {analysis_kwargs}
 
     """
     try:

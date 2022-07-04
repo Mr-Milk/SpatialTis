@@ -2,13 +2,12 @@
 Setting Global config for whole processing level
 """
 import warnings
+from anndata import AnnData
 from ast import literal_eval
 from pathlib import Path
-from typing import List, Optional, Sequence
-
-from anndata import AnnData
 from rich.console import Console
 from rich.table import Table
+from typing import List, Optional, Sequence
 
 console = Console()
 
@@ -29,22 +28,22 @@ class History(object):
         self.data.uns[self.key] = self.storage
 
 
-class _Config(object):
-    """Global configurations for spatialtis
+class _Config:
+    """Global configurations for spatialtis.
 
-    Don't directly import this class, import the instance created for you
+    Do not directly import this class, import the instance created for you.
 
     >>> from spatialtis import Config
 
     This allows you to set global configuration, so that you don't have to repeatly pass the same
     parameters in every function.
 
-    To set a config, simple set the attribute
+    To set a config, simple set the attribute.
 
     >>> Config.auto_save = True  # auto save to current directory
     >>> Config.auto_save = "my_spatialtis_result"  # save to custom directory
 
-    To view your current configs
+    To view your current configs.
 
     >>> Config.view()
            Current configurations of SpatialTis
@@ -64,26 +63,37 @@ class _Config(object):
     └─────────────────────────┴───────────────┴───────┘
 
 
-    Attributes:
-        exp_obs: **REQUIRED**, (Default: `None`); The columns in `AnnData.obs` that tells how your experiments organized,
-            for example, you have different columns ["patients", "sex", "organ_part", "roi_id"], the last one will
-            be used as `roi_key` by default.
-        roi_key: *OPTIONAL*, (Default: `None`); Overwrite the `roi_key`
-        centroid_key: **REQUIRED**, (Default: `None`); The column in `AnnData.obs` that store cell coordination,
-            must be in wkt format, you can use `spatialtis.transform_points` to transform you data into wkt.
-        shape_key: *OPTIONAL*, (Default: `None`);The columns in `AnnData.obs` that store cell shape,
-            must be in wkt format, you can use `spatialtis.transform_shapes` to transform you data into wkt.
-        cell_type_key: *OPTIONAL*, (Default: `None`); The columns in `AnnData.obs` that store cell type name,
-            some analysis require cell type name to proceed
-        marker_key: *OPTIONAL*, (Default: `None`); The columns in `AnnData.var` that store protein/gene/transcript... name,
-            if not specific, will use `AnnData.var.index`. some analysis require marker name to proceed
-        mp: *OPTIONAL*, (Default: `True`); To turn on/off multiprocessing. From v0.4.0, It only affects `spatial_coexp`,
-            other analysis are implemented in Rust with default parallel processing on.
-        verbose: *OPTIONAL*, (Default: `True`); Control the printed message
-        progress_bar: *OPTIONAL*, (Default: `True`); Control the progress bar
-        auto_save: *OPTIONAL*, (Default: `None`); Set to `True` will automatically save all images in
-            `spatialtis_result` fold created at current directory, or set a path to store else where.
-
+    Attributes
+    ----------
+    exp_obs : str or list of str, default: None
+        **Required**. The columns in `.obs` that tells how your experiments organized,
+        for example, you have different columns ['patients', 'sex', 'organ_part', 'roi_id'],
+        the last one will be used as `roi_key`. You can override it by setting `roi_key`.
+    centroid_key : str, default: None
+        **Required**. The column in `.obs` or `.obsm` that store cell coordination,
+        could be array-like or wkt format.
+    roi_key : str, default: None
+        Set the `roi_key`.
+    shape_key : str, default: None
+        The columns in `.obs` that store cell shape, must be in wkt format,
+        use `spatialtis.wkt_shapes` to transform you data into wkt.
+    cell_type_key : str, default: None
+        The columns in `.obs` that store cell type name,
+        some analyses require cell type name to proceed.
+    marker_key : str, default: None
+        The columns in `.var` that store protein/gene/transcript... name,
+        if not specific, will use `AnnData.var.index`.
+    mp : bool, default: True
+        To turn on/off multiprocessing.
+        From v0.5.0, this paramter has no effect.
+    verbose : bool, default: True
+        Control the printed message.
+    progress_bar : bool, default True
+        Control the progress bar.
+    auto_save : bool or str or path, default: False
+        Set to `True` will automatically save all images in
+        `spatialtis_result` fold created at current directory,
+        you can also pass a path to it.
 
     """
 
@@ -250,8 +260,10 @@ class _Config(object):
     def dumps(self, data: AnnData):
         """Save configurations to anndata
 
-        Args:
-            data: The `AnnData` object to save the Config
+        Parameters
+        ----------
+        data : AnnData
+            The `AnnData` object to save the Config
 
         """
         data.uns["spatialtis_config"] = str(self._to_dict())
@@ -259,8 +271,10 @@ class _Config(object):
     def loads(self, data: AnnData):
         """Load configurations from anndata
 
-        Args:
-            data: The `AnnData` object to load the Config
+        Parameters
+        ----------
+        data : AnnData
+            The `AnnData` object to load the Config
 
         """
         store_key = "spatialtis_config"

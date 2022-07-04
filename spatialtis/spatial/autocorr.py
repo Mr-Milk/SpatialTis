@@ -1,9 +1,8 @@
-from typing import Optional
-
 import numpy as np
 import pandas as pd
 from anndata import AnnData
 from spatialtis_core import spatial_autocorr as autocorr
+from typing import Literal
 
 from spatialtis.abc import AnalysisBase
 from spatialtis.utils import doc, options_guard
@@ -12,28 +11,30 @@ from spatialtis.utils import doc, options_guard
 @doc
 def spatial_autocorr(
         data: AnnData,
-        method: str = "moran_i",
+        method: Literal["moran_i", "geary_c"] = "moran_i",
         pval: float = 0.05,
         two_tailed: bool = True,
         layer_key: str = None,
         export_key: str = "spatial_autocorr",
         **kwargs,
 ):
-    """Spatial auto-correlation for every markers
+    """Spatial auto-correlation for every marker.
 
-    This is used measure the correlation of marker expression with spatial locations.
+    Measure the correlation of marker expression with spatial locations.
 
-    Moran's I is more for global spatial autocorrelation,
-    Geary's C is more for local spatial autocorrelation
+    - **Moran's I** is more for global spatial autocorrelation.
+    - **Geary's C** is more for local spatial autocorrelation.
 
-    Args:
-        data: {data}
-        method: "moran_i" or "geary_c" (Default: "moran_i")
-        pval: {pval}
-        two_tailed: Whether to use two tailed for p-value
-        layer_key: {layer_key}
-        export_key: {export_key}
-        **kwargs: {analysis_kwargs}
+    Parameters
+    ----------
+    data : {adata}
+    method : {'moran_i', 'geary_c'}, default: 'moran_i'
+    pval : {pval}
+    two_tailed : bool, default: True
+        If True, p-value is two-tailed.
+    layer_key : {layer_key}
+    export_key : {export_key}
+    **kwargs : {analysis_kwargs}
 
     .. seealso:: :class:`spatialtis.somde`
 

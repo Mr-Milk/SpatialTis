@@ -22,13 +22,15 @@ def cell_interaction(data: AnnData,
     - Avoidance (-1)
     - No relationship (0)
 
-    Args:
-        data: {adata}
-        method: "pval" and "zscore" (Default: "pval")
-        resample: Number of times to perform resample
-        pval: {pval}
-        export_key: {export_key}
-        **kwargs: {analysis_kwargs}
+    Parameters
+    ----------
+    data : {adata}
+    method : {'pval', 'zscore'}, default: 'pval'
+    resample : float, default: 1000
+        Number of times to perform resample
+    pval : {pval}
+    export_key : {export_key}
+    **kwargs : {analysis_kwargs}
 
     .. seealso:: :class:`spatialtis.spatial_enrichment`
 
