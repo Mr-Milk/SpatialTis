@@ -33,6 +33,11 @@ def test_find_neighbors_shape(data_shape):
     st.find_neighbors(data_shape, scale=1.2, method="rtree", shape_key="cell_shape")
 
 
+def test_community(data2d):
+    Config.loads(data2d)
+    st.cell_community(data2d)
+
+
 @pytest.mark.parametrize("method", ["moran_i", "geary_c"])
 def test_spatial_autocorr(data2d, data3d, method):
     Config.loads(data2d)
