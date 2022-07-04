@@ -218,7 +218,7 @@ def read_images(
     data.obsm['spatial'] = data.obs[centroid_cols].to_numpy()
 
     config = _Config()
-    config.exp_obs = annotations.columns
+    config.exp_obs = annotations.columns.tolist()
     config.centroid_key = 'spatial'
     config.marker_key = 'name'
     config.dumps(data)

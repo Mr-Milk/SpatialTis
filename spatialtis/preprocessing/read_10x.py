@@ -137,7 +137,7 @@ def read_visium(
                    )
 
     config = _Config()
-    config.exp_obs = annotations.columns
+    config.exp_obs = annotations.columns.tolist()
     config.centroid_key = 'spatial'
     config.marker_key = 'name'
     config.dumps(data)
