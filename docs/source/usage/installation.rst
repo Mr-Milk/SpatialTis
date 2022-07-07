@@ -1,7 +1,9 @@
 Installation
 ============
 
-SpatialTis requires **Python >= 3.7**, it's recommended that you install it in a new environment.
+SpatialTis requires **Python >= 3.8**.
+
+.. |Version Support| image:: https://img.shields.io/pypi/pyversions/spatialtis?style=flat-square
 
 PYPI
 ----

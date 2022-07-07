@@ -40,6 +40,8 @@ SpatialTis is an ultra-fast spatial analysis toolkit for large-scale spatial sin
 
 ### pypi
 
+SpatialTis requires **Python >= 3.8**.
+
 ![Version Support](https://img.shields.io/pypi/pyversions/spatialtis?style=flat-square)
 
 ```shell
