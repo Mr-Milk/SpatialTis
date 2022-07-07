@@ -23,11 +23,11 @@ def cell_community(data: AnnData,
     ----------
     data : {adata}
     resolution : float, default: 0.05
-        Control the process of partition
+        Control the process of partition.
     partition_type :
-        The leidenalg partition type
+        The leidenalg partition type.
     partition_kwargs :
-        Pass to leidenalg.find_partition
+        Pass to leidenalg.find_partition.
     export_key : {export_key}
     **kwargs : {analysis_kwargs}
 

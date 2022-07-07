@@ -87,12 +87,12 @@ class AnalysisBase(Timer):
     ----------
     data : {adata}
     method : str, default: None
-        The method used in the run of the analysis
+        The method used in the run of the analysis.
     export_key : {export_key}
     display_name : str, default: None
-        The name use to display the name of analysis
+        The name use to display the name of analysis.
     mp : bool, default: Config.mp
-        Enable parallel processing, no effect since v0.5.0
+        Enable parallel processing, no effect since v0.5.0.
     exp_obs : {exp_obs}
     roi_key : {roi_key}
     cell_type_key : {cell_type_key}
@@ -216,7 +216,10 @@ class AnalysisBase(Timer):
 
     @cached_property
     def cell_types(self):
-        return natsorted(pd.unique(self.data.obs[self.cell_type_key]))
+        if self.has_cell_type:
+            return natsorted(pd.unique(self.data.obs[self.cell_type_key]))
+        else:
+            return []
 
     def _get_wkt_points(self, key):
         wkt_strings = self.data.obs[key].tolist()
@@ -299,21 +302,40 @@ class AnalysisBase(Timer):
                 self.check_neighbors()
                 iter_data['__cell_neighbors'] = self.data.obsm[self.neighbors_key]
 
-            if f == 'cell_type':
-                self.check_cell_type()
-
         return iter_data
 
     def iter_roi(self,
                  fields: List[str] = None,
                  filter_rois: List[str] = None,
                  sort: bool = False,
-                 desc: Optional[str] = None,
+                 desc: str = None,
                  disable_pbar: bool = None,
-                 selected_markers: Optional[List[Any]] = None,
-                 layer_key: Optional[str] = None,
+                 selected_markers: List = None,
+                 layer_key: str = None,
                  dtype: Any = None,
                  ):
+        """A generator to iterate ROI
+
+        Parameters
+        ----------
+        fields : list of str, {'centroid', 'exp', 'neighbors', 'cell_type', 'shape', 'label', 'index'}
+            What fields to retrieve when iterate ROI.
+        filter_rois : list of str
+            The roi to be filtered.
+        sort : bool
+            Whether to sort ROI.
+        desc : str
+            The description in the progress bar.
+        disable_pbar : bool
+            Whether to disable progress bar.
+        selected_markers : list of str
+            The list of markers to be selected.
+        layer_key : str
+            The layer to use for expression.
+        dtype :
+            The datatype.
+
+        """
         desc = default_args(desc, self.display_name)
         disable_pbar = default_args(disable_pbar, not Config.progress_bar)
         fields = default_args(fields, [])

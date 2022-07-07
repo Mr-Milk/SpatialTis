@@ -17,6 +17,7 @@ def hotspot(data: AnnData,
             quad: Tuple[int, int] = None,
             rect_side: Tuple[float, float] = None,
             pval: float = 0.01,
+            export_key: str = None,
             **kwargs,
             ):
     """`Getis-ord hotspot detection <../about/implementation.html#hotspot-detection>`_
@@ -28,23 +29,25 @@ def hotspot(data: AnnData,
     data : {adata}
     selected_types : {selected_types}
     search_level : int, default: 3
-        How deep the search level to reach
+        How deep the search level to reach.
     quad : tuple of int, default: (10, 10)
-        A tuple (X, Y), Use a grid that is X * Y to tessellation your ROI
+        A tuple (X, Y), Use a grid that is X * Y to tessellation your ROI.
     rect_side : tuple of float
-        A tuple (X, Y), Use many rectangles with X * Y side to tessellation your ROI
+        A tuple (X, Y), Use many rectangles with X * Y side to tessellation your ROI.
     pval : {pval}
     export_key : {export_key}
     **kwargs : {analysis_kwargs}
 
     """
 
-    ab = AnalysisBase(data, display_name="Hotspot analysis", **kwargs)
+    ab = AnalysisBase(data, display_name="Hotspot analysis", export_key="hotspot", **kwargs)
     ab.check_cell_type()
     if selected_types is not None:
         ab.export_key = f"hotspot_{'_'.join(selected_types)}"
     else:
         selected_types = ab.cell_types
+    if export_key is not None:
+        ab.export_key = export_key
     hotcells = []
     for roi_name, cell_types, points, ix in ab.iter_roi(fields=['cell_type', 'centroid', 'index']):
         bbox = points_bbox(points)

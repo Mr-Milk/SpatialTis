@@ -73,16 +73,14 @@ def cell_interaction(
     Parameters
     ----------
     data : {adata_plotting}
-    use
-    groupby
-    key
-    type_order
-    order
-    plot_value
-    plot_options
-
-    Returns
-    -------
+    use : {'dot', 'heatmap'}, default: 'dot'
+    groupby : {groupby}
+    key : {plot_key}
+    type_order: {type_order}
+    order : bool
+    plot_value : {'relationship', 'statistic'}
+    **plot_options :
+        Pass to :func:`milkviz.dot_heatmap` or :func:`milkviz.anno_clustermap`.
 
     """
     if use == "heatmap":
@@ -229,13 +227,10 @@ def spatial_enrichment(
     Parameters
     ----------
     data : {adata_plotting}
-    key : str
-        The
-    type_order
-    plot_options
-
-    Returns
-    -------
+    key : {plot_key}
+    type_order : {type_order}
+    **plot_options :
+        Pass to :func:`milkviz.dot_heatmap`.
 
     """
     store_key = "spatial_enrichment_dot"

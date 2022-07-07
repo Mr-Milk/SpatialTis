@@ -51,19 +51,19 @@ def cell_dispersion(
     data : {adata}
     method : {'id', 'morisita', 'clark_evans'}, default: 'id'
     min_cells : int, default: 10
-        The minimum number of the specific type of cells in a ROI to perform analysis
+        The minimum number of the specific type of cells in a ROI to perform analysis.
     pval : {pval}
     r : float
         Parameters for method='id', determine diameter of sample window,
         default will take 1/10 of the shortest side of the ROI as the diameter.
     resample : int, default: 1000
-        Parameters for method='id', the number of random permutations to perform
+        Parameters for method='id', the number of random permutations to perform.
     quad : tuple of int, default: (10, 10)
         Parameters for method='morisita',
-        A tuple (X, Y), Use a grid that is X * Y to tessellation your ROI
+        A tuple (X, Y), Use a grid that is X * Y to tessellation your ROI.
     rect_side : tuple of float
         Parameters for method='morisita',
-        A tuple (X, Y), Use many rectangles with X * Y side to tessellation your ROI
+        A tuple (X, Y), Use many rectangles with X * Y side to tessellation your ROI.
     export_key : {export_key}
     **kwargs : {analysis_kwargs}
 

@@ -112,21 +112,21 @@ def cell_map(
     use_shape : bool
         Plot cell in polygon only when shape data is available.
     show_neighbors : bool
-        Plot the neighbors' relationship
+        Plot the neighbors' relationship.
     selected_types : {selected_types}
     masked_type_name : str, default: 'Other'
-        The name of the cell types not in selected_types
+        The name of the cell types not in selected_types.
     masked_type_color : color-like, default: '#d3d3d3'
-        The color of the cell types not in selected_types
+        The color of the cell types not in selected_types.
     figsize : tuple of float
-        The size of figure
+        The size of figure.
     wspace : float, default: 0
-        The space between plots vertically
+        The space between plots vertically.
     hspace : float, default: 0.1
-        The space between plots horizontally
+        The space between plots horizontally.
     types_colors : dict
         Change the color for each cell type,
-        Key is the type and value is the color
+        Key is the type and value is the color.
     cell_type_key : {cell_type_key}
     shape_key : {shape_key}
     centroid_key : {centroid_key}
@@ -268,18 +268,18 @@ def expression_map(
     data : {adata_plotting}
     rois : list of str
         A list of ROI name that you want to plot.
-    markers: list of str
-        A list of markers name that you want to plot
-    x_axis: {'marker', 'roi'}, default: 'marker'
-        What is on the x-axis, the marker or roi
+    markers : list of str
+        A list of markers name that you want to plot.
+    x_axis : {'marker', 'roi'}, default: 'marker'
+        What is on the x-axis, the marker or roi.
     use_shape : bool
         Plot cell in polygon only when shape data is available.
     figsize : tuple of float
-        The size of figure
+        The size of figure.
     wspace : float, default: 0
-        The space between plots vertically
+        The space between plots vertically.
     hspace : float, default: 0.1
-        The space between plots horizontally
+        The space between plots horizontally.
     selected_types : {selected_types}
     cell_type_key : {cell_type_key}
     marker_key : {marker_key}
@@ -308,8 +308,10 @@ def expression_map(
 
     nrow = len(rois)
     ncol = len(markers)
+    ax_indexes = np.arange(1, nrow * ncol + 1)
     if x_axis == "roi":
         nrow, ncol = ncol, nrow
+        ax_indexes = ax_indexes.reshape(nrow, ncol).T.flatten()
     if figsize is None:
         figsize = (ncol * 4, nrow * 4)
     fig = plt.figure(figsize=figsize)
@@ -322,7 +324,7 @@ def expression_map(
     )
     cbar_options = {**cbar_options, **cbar_kw}
 
-    ax_index = 1
+    ax_indexes_iter = iter(ax_indexes)
     axes = []
     roi_names = []
     for roi_name, points, markers_name, exp, cell_types, polygons in ab.iter_roi(
@@ -342,10 +344,10 @@ def expression_map(
             if cell_mask is not None:
                 polygons = np.asarray(polygons)[cell_mask]
             for varray in exp:
+                ax_index = next(ax_indexes_iter)
                 ax = fig.add_subplot(nrow, ncol, ax_index)
                 polygon_map(polygons, values=varray, ax=ax,
                             cbar_kw=cbar_options, **plot_options)
-                ax_index += 1
                 axes.append(ax)
         else:
             points = np.array(points)
@@ -354,27 +356,30 @@ def expression_map(
             if ab.dimension == 2:
                 x, y = points[:, 0], points[:, 1]
                 for varray in exp:
+                    ax_index = next(ax_indexes_iter)
                     ax = fig.add_subplot(nrow, ncol, ax_index)
                     point_map(x, y, values=varray, ax=ax,
                               cbar_kw=cbar_options, **plot_options)
-                    ax_index += 1
                     axes.append(ax)
             else:
                 x, y, z = points[:, 0], points[:, 1], points[:, 2]
                 for varray in exp:
+                    ax_index = next(ax_indexes_iter)
                     ax = fig.add_subplot(nrow, ncol, ax_index, projection="3d")
                     point_map3d(x, y, z, values=varray, ax=ax,
                                 cbar_kw=cbar_options, **plot_options)
-                    ax_index += 1
                     axes.append(ax)
 
     # add title
+
     roi_label = [", ".join([str(i) for i in roi_name]) for roi_name in roi_names]
-    x_index = [i for i in range(ncol)]
-    y_index = [i for i in range(0, ncol * nrow, ncol)]
+    label_index = np.arange(0, nrow * ncol).reshape(nrow, ncol)
+    x_index = label_index[0]
+    y_index = label_index[:, 0]
     x_content = markers
     y_content = roi_label
     if x_axis == "roi":
+        axes = np.asarray(axes)[np.argsort(ax_indexes)]
         x_content, y_content = y_content, x_content
 
     for i, c in zip(x_index, x_content):

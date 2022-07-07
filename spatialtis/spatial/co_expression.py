@@ -31,10 +31,10 @@ def spatial_coexp(data: AnnData,
     data : {adata}
     method : {'spearman', 'pearson'}, default: 'spearman'
     use_cell_type : bool
-        Whether to use cell type information
+        Whether to use cell type information.
     selected_markers : {selected_markers}
     corr_thresh : float, default: 0.5
-        The minimum correlation value to store the result,
+        The minimum correlation value to store the result.
     layer_key : {layer_key}
     export_key : {export_key}
     **kwargs : {analysis_kwargs}

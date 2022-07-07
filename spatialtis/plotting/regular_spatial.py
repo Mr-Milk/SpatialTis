@@ -20,6 +20,17 @@ def spatial_heterogeneity(
         key: str = "heterogeneity",
         **plot_options,
 ):
+    """Visualization of spatial heterogeneity analysis
+
+    Parameters
+    ----------
+    data : {adata_plotting}
+    groupby : {groupby}
+    key : {plot_key}
+    **plot_options :
+        Pass to :func:`seaborn.boxplot`.
+
+    """
     pdata = get_result(data, key).reset_index()
     exp_obs = pdata.columns[0:-1].tolist()
     if (len(exp_obs) == 1) | (groupby == exp_obs[0]):
@@ -40,6 +51,19 @@ def cell_dispersion(
         key: str = "cell_dispersion",
         **plot_options,
 ):
+    """
+
+    Parameters
+    ----------
+    data : {adata_plotting}
+    use : {'dot', 'heatmap'}
+    groupby : {groupby}
+    type_order : {type_order}
+    key : {plot_key}
+    **plot_options :
+        Pass to :func:`milkviz.dot` and :func:`milkviz.anno_clustermap`.
+
+    """
     pdata = get_result(data, key)
     pdata = pd.pivot_table(
         pdata, columns="cell_type", index=pdata.index.names[1::], values="pattern"

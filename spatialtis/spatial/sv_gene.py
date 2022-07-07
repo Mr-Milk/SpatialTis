@@ -24,15 +24,15 @@ def somde(data: AnnData,
     ----------
     data : {adata}
     k : int, default: 20
-        Number of SOM nodes
+        Number of SOM nodes.
     alpha : float, default: 0.5
-        Parameters for generate pseudo gene expression
+        Parameters for generate pseudo gene expression.
     epoch : int, default: 100
-        Number of epoch
+        Number of epoch.
     qval : float, default: 0.05
-        Threshold for qval
+        Threshold for qval.
     pval : float, default: 0.05
-        Threshold for pval
+        Threshold for pval.
     export_key : {export_key}
     **kwargs : {analysis_kwargs}
 

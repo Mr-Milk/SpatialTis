@@ -33,10 +33,10 @@ def spatial_heterogeneity(data: AnnData,
         method : {'shannon', 'leibovici', 'altieri}, default: 'leibovici'
         d : float
             Parameters for method='leibovici',
-            The distance threshold to determine co-occurrence events
+            The distance threshold to determine co-occurrence events.
         cut : int
             Parameters for method='altieri',
-            The number of distance interval to have
+            The number of distance interval to have.
         export_key : {export_key}
         **kwargs : {analysis_kwargs}
 

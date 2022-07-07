@@ -28,11 +28,12 @@ def NMD_marker(data: AnnData,
     ----------
     data : {adata}
     importance_cutoff : float
-        Standard deviation, threshold to filter out markers that are not variant enough
+        Standard deviation, threshold to filter out markers that are not variant enough.
     pval : {pval}
     selected_markers : {selected_markers}
     layer_key : {layers_key}
-    tree_kwargs : {tree_kwargs}
+    tree_kwargs : dict
+        The keyword arguments that pass to the boosting tree class, (Default: n_jobs=-1, random_state=0).
     export_key : {export_key}
     **kwargs : {analysis_kwargs}
 

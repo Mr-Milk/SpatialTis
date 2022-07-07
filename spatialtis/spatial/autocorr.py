@@ -36,7 +36,9 @@ def spatial_autocorr(
     export_key : {export_key}
     **kwargs : {analysis_kwargs}
 
-    .. seealso:: :class:`spatialtis.somde`
+    See Also
+    --------
+    :class:`spatialtis.somde`
 
     """
     method = options_guard(method, ['moran_i', 'geary_c'])

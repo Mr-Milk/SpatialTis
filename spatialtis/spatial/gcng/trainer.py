@@ -44,29 +44,29 @@ def GCNG(data: AnnData,
         The input data for training, should be a dataframe with three columns,
         ligand, receptor, relationship; 0 means not interact, 1 means interact.
     predict_pairs : tuple of str
-        The pairs that you interested
+        The pairs that you interested.
     train_partition : float, default: 0.9
-        The ratio to split the dataset for training
+        The ratio to split the dataset for training.
     gpus : int
-        Number of gpu to use, can be auto-detected
+        Number of gpu to use, can be auto-detected.
     max_epochs : int, default: 10
-        Number of epoch
+        Number of epoch.
     lr : float, default: 1e-4
-        Learning rate
+        Learning rate.
     batch_size : float, default: 32
-        The batch size
+        The batch size.
     random_seed : int
-        The random seed
+        The random seed.
     load_model : bool, default: False
-        To load a pretrained model from anndata
+        To load a pretrained model from anndata.
     **kwargs: {analysis_kwargs}
 
     Returns
     -------
-    Model :
-        Trained model
-    Trainer:
-        The lightning trainer
+    Model
+        Trained model.
+    Trainer
+        The lightning trainer.
 
     """
     try:

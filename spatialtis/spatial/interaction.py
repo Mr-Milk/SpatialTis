@@ -27,12 +27,14 @@ def cell_interaction(data: AnnData,
     data : {adata}
     method : {'pval', 'zscore'}, default: 'pval'
     resample : float, default: 1000
-        Number of times to perform resample
+        Number of times to perform resample.
     pval : {pval}
     export_key : {export_key}
     **kwargs : {analysis_kwargs}
 
-    .. seealso:: :class:`spatialtis.spatial_enrichment`
+    See Also
+    --------
+    :class:`spatialtis.spatial_enrichment`
 
     """
     method = options_guard(method, ["pval", "zscore"])

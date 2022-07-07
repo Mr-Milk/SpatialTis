@@ -82,7 +82,7 @@ class _Config:
         some analyses require cell type name to proceed.
     marker_key : str, default: None
         The columns in `.var` that store protein/gene/transcript... name,
-        if not specific, will use `AnnData.var.index`.
+        if not specific, will use `.var.index`.
     mp : bool, default: True
         To turn on/off multiprocessing.
         From v0.5.0, this paramter has no effect.
@@ -163,7 +163,8 @@ class _Config:
     def roi_key(self, key):
         self._roi_key = key
         if self.exp_obs is None:
-            self.exp_obs = [key]
+            if key is not None:
+                self.exp_obs = [key]
         if key not in self.exp_obs:
             self.exp_obs = [*self._exp_obs, key]
         else:

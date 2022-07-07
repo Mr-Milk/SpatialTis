@@ -39,7 +39,9 @@ def spatial_enrichment(data: AnnData,
     export_key : {export_key}
     **kwargs : {analysis_kwargs}
 
-    .. seealso:: :class:`spatialtis.cell_interaction`
+    See Also
+    --------
+    :class:`spatialtis.cell_interaction`
 
     """
 

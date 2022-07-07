@@ -34,12 +34,14 @@ def NCD_marker(data: AnnData,
     ----------
     data : {adata}
     importance_cutoff : float, default: 0.5
-        Threshold to determine the feature markers
+        Threshold to determine the feature markers.
     selected_markers : {selected_markers}
     layer_key : {layer_key}
-    tree_kwargs : {tree_kwargs}
+    tree_kwargs : dict
+        The keyword arguments that pass to the boosting tree class, (Default: n_jobs=-1, random_state=0).
     test_method : str, default: 'mannwhitneyu'
-        which test method to use, anything from `scipy.stats <https://docs.scipy.org/doc/scipy/reference/stats.html>`_
+        which test method to use, anything from
+        `scipy.stats <https://docs.scipy.org/doc/scipy/reference/stats.html>`_.
     pval : {pval}
     export_key : {export_key}
     **kwargs : {analysis_kwargs}

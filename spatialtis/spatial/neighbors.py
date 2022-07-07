@@ -31,16 +31,13 @@ def find_neighbors(data: AnnData,
     data : {adata}
     method : {'kdtree', 'rtree', 'delaunay'}, default: 'kdtree'
     r : float
-        The search radius
+        The search radius.
     k : float
-        The (minimum) number of nearest-neighbors
+        The (minimum) number of nearest-neighbors.
     scale : float
-        How much to scale each cell, only if cell has shape
+        How much to scale each cell, only if cell has shape.
     export_key : {export_key}
     **kwargs : {analysis_kwargs}
-
-    Methods:
-        spatial_weights: A generator that return spatial weight in CSR matrix (roi_name, spatial_weight_matrix)
 
     """
 
@@ -117,9 +114,9 @@ def spatial_weights(
     Yields
     ------
     roi_name : list of string
-        The name of the roi
+        The name of the roi.
     spatial_weight_matrix : sparse matrix
-        A spatial weight matrix in scipy sparse matrix format
+        A spatial weight matrix in scipy sparse matrix format.
 
     Examples:
         >>> import spatialtis as st

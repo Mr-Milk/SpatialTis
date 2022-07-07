@@ -27,10 +27,9 @@ def cell_components(data: AnnData,
         The key in :code:`Config.exp_obs` to stratify the data.
     key : {plot_key}
     orient : {'v', 'h'}, default: 'v'
-    type_order: list of str
-        The list of cell types.
-    plot_options:
-        pass to :func:`milkviz.stacked_bar`.
+    type_order : {type_order}
+    **plot_options:
+        Pass to :func:`milkviz.stacked_bar`.
 
     """
     data = get_result(data, key)
@@ -69,13 +68,9 @@ def cell_density(data: AnnData,
     data : {adata_plotting}
     groupby : {groupby}
     key : {plot_key}
-    type_order: list of str
-        The list of cell types.
-    plot_options:
-        pass to :func:`milkviz.stacked_bar`.
-
-    Returns
-    -------
+    type_order : {type_order}
+    **plot_options:
+        Pass to :func:`milkviz.stacked_bar`.
 
     """
     data = get_result(data, key)
@@ -108,14 +103,10 @@ def cell_morphology(data: AnnData,
     data : {adata_plotting}
     groupby : {groupby}
     key : {plot_key}
-    type_order: list of str
-        The list of cell types.
+    type_order : {type_order}
     cell_type_key : {cell_type_key}
-    plot_options :
+    **plot_options :
         Pass to :func:`seaborn.boxplot`.
-
-    Returns
-    -------
 
     """
     cell_type_key = Config.cell_type_key if cell_type_key is None else cell_type_key
@@ -149,15 +140,11 @@ def cell_co_occurrence(data: AnnData,
     groupby : {groupby}
     key : {plot_key}
     use : {'dot', 'heatmap'}, default: 'dot'
-    type_order: list of str
-        The list of cell types.
+    type_order : {type_order}
     order: bool
         The order of co-occurrence.
-    plot_options:
+    **plot_options:
         Pass to :func:`milkviz.dot` and :func:`milkviz.anno_clustermap`.
-
-    Returns
-    -------
 
     """
     data = get_result(data, key)
