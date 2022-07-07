@@ -1,0 +1,19 @@
+html[data-theme="light"] {
+    --pst-color-primary: #3fb0ca;
+    --pst-color-secondary: #ed8992;
+}
+
+html[data-theme="dark"] {
+    --pst-color-primary: #3fb0ca;
+    --pst-color-secondary: #ed8992;
+}
+
+div.output_area > img {
+    max-width: 550px !important;
+    max-height: 600px !important;
+    height: auto !important;
+}
+
+dl.field-list > dt {
+    word-break: normal;
+}

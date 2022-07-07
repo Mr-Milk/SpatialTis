@@ -105,6 +105,7 @@ Base class
 .. autosummary::
    :toctree: API
    :template: autosummary/abc.rst
+   :nosignatures:
 
     abc.AnalysisBase
 

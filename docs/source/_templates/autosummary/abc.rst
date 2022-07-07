@@ -1,7 +1,6 @@
-{{ fullname }}
-{{ underline }}
+{{ fullname | escape | underline}}
 
 .. currentmodule:: {{ module }}
 
 .. autoclass:: {{ objname }}
-   :no-members:
+    :members: iter_roi
