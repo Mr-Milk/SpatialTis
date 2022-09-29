@@ -38,26 +38,22 @@ def cell_components(data: AnnData,
         data = data.loc[:, type_order]
     data = data.groupby(groupby).sum().melt(ignore_index=False, value_name="Count").reset_index()
     data = data.rename(columns={'cell type': 'Cell Type'})
-    if orient == "v":
-        return stacked_bar(data,
-                           x=groupby,
-                           y="Count",
-                           stacked="Cell Type",
-                           orient=orient,
-                           **plot_options)
-    else:
-        return stacked_bar(data,
-                           y=groupby,
-                           x="Count",
-                           stacked="Cell Type",
-                           orient=orient,
-                           **plot_options)
+    x, y = groupby, "Count"
+    if orient == "h":
+        x, y = y, x
+    return stacked_bar(data,
+                       x=x,
+                       y=y,
+                       stacked="Cell Type",
+                       orient=orient,
+                       **plot_options)
 
 
 @doc
 def cell_density(data: AnnData,
                  groupby: str = None,
                  key: str = "cell_density",
+                 orient: str = "v",
                  type_order: List[str] = None,
                  **plot_options,
                  ):
@@ -68,6 +64,7 @@ def cell_density(data: AnnData,
     data : {adata_plotting}
     groupby : {groupby}
     key : {plot_key}
+    orient : {'v', 'h'}, default: 'v'
     type_order : {type_order}
     **plot_options:
         Pass to :func:`milkviz.stacked_bar`.
@@ -78,13 +75,29 @@ def cell_density(data: AnnData,
         data = data.loc[:, type_order]
     data = pd.melt(data, ignore_index=False, value_name="density").reset_index()
     options = dict(palette="tab20", **plot_options)
-    if groupby is None:
-        ax = sns.boxplot(data=data, x="cell type", y="density", **options)
-    else:
-        ax = sns.boxplot(data=data, x=groupby, y="density", hue="cell type", **options)
-        ax.legend(loc="upper left", bbox_to_anchor=(1.05, 0, 1, 1), title="cell type", frameon=False)
-    ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
-    ax.set(xlabel="Cell Type", ylabel="Density")
+    x, y, hue = "cell type", "density", None
+    xlabel, ylabel = "Cell Type", "Density"
+    if groupby is not None:
+        x = groupby
+        xlabel = groupby
+        hue = "cell type"
+    if orient == "h":
+        x, y = y, x
+        xlabel, ylabel = ylabel, xlabel
+
+    ax = sns.boxplot(data=data, x=x, y=y, hue=hue, **options)
+    ax.set(xlabel=xlabel, ylabel=ylabel)
+    ax.legend(loc="center left",
+              bbox_transform=ax.transAxes,
+              bbox_to_anchor=(1, 0.5),
+              title="cell type",
+              handleheight=1,
+              handlelength=1,
+              labelspacing=0.3,
+              handletextpad=0.3,
+              frameon=False)
+    if orient == "v":
+        ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
     return ax
 
 
