@@ -5,7 +5,7 @@ import pandas as pd
 import seaborn as sns
 from anndata import AnnData
 from matplotlib.colors import ListedColormap
-from milkviz import dot, anno_clustermap
+from milkviz import dot_heatmap, anno_clustermap
 from natsort import natsorted
 from typing import List
 
@@ -74,13 +74,13 @@ def cell_dispersion(
 
     if use == "dot":
         pattern = {}
-        for t, arr in pdata.iteritems():
+        for t, arr in pdata.items():
             pattern[t] = {0: 0, 1: 0, 2: 0, 3: 0, **Counter(arr)}
         pdata = pd.DataFrame(pattern).T[[0, 1, 2, 3]]
         colors = np.repeat(
             [["#FFC408", "#c54a52", "#4a89b9", "#5a539d"]], len(pdata), axis=0
         )
-        return dot(
+        return dot_heatmap(
             dot_size=pdata.to_numpy(dtype=int),
             dot_hue=colors,
             xticklabels=["No Cell", "Random", "Regular", "Cluster"],
@@ -89,9 +89,10 @@ def cell_dispersion(
         )
     else:
         pdata = pdata.rename_axis(columns={"cell_type": "Cell Type"})
+        pdata.fillna(0., inplace=True)
         plot_kw = dict(
             categorical_cbar=["No Cell", "Random", "Regular", "Cluster"],
-            heat_cmap=ListedColormap(["#FFC408", "#c54a52", "#4a89b9", "#5a539d"]),
+            heat_cmap="tab20",
             col_legend_split=False,
             cbar_title="Pattern",
             vmin=0,

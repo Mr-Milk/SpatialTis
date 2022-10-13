@@ -1,8 +1,8 @@
+import numpy as np
 import pandas as pd
 import seaborn as sns
 from anndata import AnnData
-from milkviz import stacked_bar, dot, anno_clustermap
-from milkviz.utils import mask_triu
+from milkviz import stacked_bar, dot_heatmap, anno_clustermap
 from typing import List
 
 from spatialtis.utils import doc, get_result
@@ -36,14 +36,12 @@ def cell_components(data: AnnData,
     groupby = data.index.names[0] if groupby is None else groupby
     if type_order is not None:
         data = data.loc[:, type_order]
-    data = data.groupby(groupby).sum().melt(ignore_index=False, value_name="Count").reset_index()
+    data = data.groupby(groupby).sum().melt(
+        ignore_index=False, value_name="Count").reset_index()
     data = data.rename(columns={'cell type': 'Cell Type'})
-    x, y = groupby, "Count"
-    if orient == "h":
-        x, y = y, x
     return stacked_bar(data,
-                       x=x,
-                       y=y,
+                       group=groupby,
+                       value="Count",
                        stacked="Cell Type",
                        orient=orient,
                        **plot_options)
@@ -73,7 +71,8 @@ def cell_density(data: AnnData,
     data = get_result(data, key)
     if type_order is not None:
         data = data.loc[:, type_order]
-    data = pd.melt(data, ignore_index=False, value_name="density").reset_index()
+    data = pd.melt(data, ignore_index=False,
+                   value_name="density").reset_index()
     options = dict(palette="tab20", **plot_options)
     x, y, hue = "cell type", "density", None
     xlabel, ylabel = "Cell Type", "Density"
@@ -124,13 +123,18 @@ def cell_morphology(data: AnnData,
     """
     cell_type_key = Config.cell_type_key if cell_type_key is None else cell_type_key
     options = dict(palette="tab20", **plot_options)
-    query_keys = [key, cell_type_key] if groupby is None else [key, cell_type_key, groupby]
+    query_keys = [key, cell_type_key] if groupby is None else [key,
+                                                               cell_type_key,
+                                                               groupby]
     pdata = data.obs[query_keys]
     if groupby is None:
-        ax = sns.boxplot(data=pdata, x=cell_type_key, y=key, order=type_order, **options)
+        ax = sns.boxplot(data=pdata, x=cell_type_key, y=key, order=type_order,
+                         **options)
     else:
-        ax = sns.boxplot(data=pdata, x=groupby, y=key, hue=cell_type_key, hue_order=type_order, **options)
-        ax.legend(loc="upper left", bbox_to_anchor=(1.05, 0, 1, 1), title="cell type", frameon=False)
+        ax = sns.boxplot(data=pdata, x=groupby, y=key, hue=cell_type_key,
+                         hue_order=type_order, **options)
+        ax.legend(loc="upper left", bbox_to_anchor=(1.05, 0, 1, 1),
+                  title="cell type", frameon=False)
     ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
     ax.set(xlabel="Cell Type", ylabel=key.capitalize())
     return ax
@@ -168,14 +172,14 @@ def cell_co_occurrence(data: AnnData,
         xticklabels = data.columns
         yticklabels = data.index.tolist()
         if not order:
-            plot_data = mask_triu(plot_data)
+            plot_data = np.ma.masked_values(np.tril(plot_data), 0)
             xticklabels = xticklabels[::-1]
         plot_options = {"dot_patch": "pie", **plot_options}
-        return dot(plot_data,
-                   xticklabels=xticklabels,
-                   yticklabels=yticklabels,
-                   **plot_options
-                   )
+        return dot_heatmap(plot_data,
+                           xticklabels=xticklabels,
+                           yticklabels=yticklabels,
+                           **plot_options
+                           )
     else:
         groupby = data.index.names[0] if groupby is None else groupby
         plot_options = {"categorical_cbar": ['Non-Occur', 'Co-occur'],

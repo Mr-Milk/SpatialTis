@@ -51,7 +51,7 @@ def cell_interaction(data: AnnData,
     repeat_time = 0
     for roi_name, cell_types, labels, neighbors in ab.iter_roi(fields=['cell_type', 'neighbors']):
         result = cc.bootstrap(
-            cell_types,
+            list(cell_types),
             neighbors,
             labels,
             times=resample,

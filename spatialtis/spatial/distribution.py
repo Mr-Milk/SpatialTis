@@ -88,7 +88,7 @@ def cell_dispersion(
         points_collections = []
         cell_types = []
         for c, g in new_df.groupby("cell_types"):
-            points_collections.append(g["points"])
+            points_collections.append(list(g["points"]))
             cell_types.append(c)
         result = spatial_distribution_pattern(
             points_collections,

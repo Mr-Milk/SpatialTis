@@ -6,7 +6,7 @@ from itertools import cycle
 from legendkit import CatLegend
 from matplotlib import pyplot as plt
 from matplotlib.colors import to_hex
-from milkviz import point_map, point_map3d, polygon_map
+from milkviz import point_map, polygon_map
 from typing import List, Optional, Tuple, Dict
 
 from spatialtis.abc import AnalysisBase
@@ -73,7 +73,8 @@ def _color_mapper(ab,
     return color_mapper, legend_color_mapper, unique_types
 
 
-def _masked_cell_type(cell_types, unique_types, selected_types, masked_type_name):
+def _masked_cell_type(cell_types, unique_types, selected_types,
+                      masked_type_name):
     if (cell_types is not None) & (selected_types is not None):
         cell_mask = np.isin(cell_types, unique_types)
         cell_types[~cell_mask] = masked_type_name
@@ -132,7 +133,7 @@ def cell_map(
     centroid_key : {centroid_key}
     roi_key : {roi_key}
     **plot_options:
-        Pass to :func:`milkviz.point_map` or :func:`milkviz.point_map3d` or :func:`milkviz.polygon_map`
+        Pass to :func:`milkviz.point_map` or :func:`milkviz.polygon_map`
 
     """
     ab = AnalysisBase(data,
@@ -177,7 +178,6 @@ def cell_map(
                                            selected_types, masked_type_name)
             # get points
             points = np.array(points)
-            x, y = points[:, 0], points[:, 1]
             # get neighbors
             labels = np.asarray(labels)
             nmin = labels.min()
@@ -187,9 +187,9 @@ def cell_map(
                     if int(n) > l:
                         links.append((n - nmin, l - nmin))
             ax = fig.add_subplot(nrow, ncol, ax_index)
-            point_map(x, y, types=cell_types,
+            point_map(points, types=cell_types,
                       links=links,
-                      types_colors=color_mapper,
+                      colors=color_mapper,
                       ax=ax, legend=False,
                       **plot_options)
             ax.set_title(", ".join([str(i) for i in roi_name]))
@@ -206,22 +206,20 @@ def cell_map(
             if use_shape:
                 ax = fig.add_subplot(nrow, ncol, ax_index)
                 polygon_map(polygons, types=cell_types,
-                            types_colors=color_mapper, ax=ax,
+                            colors=color_mapper, ax=ax,
                             legend=False, **plot_options)
             else:
                 points = np.array(points)
                 if ab.dimension == 2:
-                    x, y = points[:, 0], points[:, 1]
                     ax = fig.add_subplot(nrow, ncol, ax_index)
-                    point_map(x, y, types=cell_types,
-                              types_colors=color_mapper, ax=ax,
+                    point_map(points, types=cell_types,
+                              colors=color_mapper, ax=ax,
                               legend=False, **plot_options)
                 else:
-                    x, y, z = points[:, 0], points[:, 1], points[:, 2]
                     ax = fig.add_subplot(nrow, ncol, ax_index, projection="3d")
-                    ax = point_map3d(x, y, z, types=cell_types,
-                                     types_colors=color_mapper, ax=ax,
-                                     legend=False, **plot_options)
+                    ax = point_map(points, types=cell_types,
+                                   colors=color_mapper, ax=ax,
+                                   legend=False, **plot_options)
             ax.set_title(", ".join([str(i) for i in roi_name]))
             ax_index += 1
             axes.append(ax)
@@ -231,7 +229,6 @@ def cell_map(
         labels, colors = zip(*legend_color_mapper.items())
         legend_options = dict(
             title="Cell Type",
-            title_align="left",
             bbox_to_anchor=(1.05, 0.5),
             loc="center left",
         )
@@ -287,7 +284,7 @@ def expression_map(
     centroid_key : {centroid_key}
     roi_key : {roi_key}
     **plot_options :
-        Pass to :func:`milkviz.point_map` or :func:`milkviz.point_map3d` or :func:`milkviz.polygon_map`
+        Pass to :func:`milkviz.point_map` or :func:`milkviz.polygon_map`
 
     """
     ab = AnalysisBase(data,
@@ -354,25 +351,24 @@ def expression_map(
             if cell_mask is not None:
                 points = points[cell_mask]
             if ab.dimension == 2:
-                x, y = points[:, 0], points[:, 1]
                 for varray in exp:
                     ax_index = next(ax_indexes_iter)
                     ax = fig.add_subplot(nrow, ncol, ax_index)
-                    point_map(x, y, values=varray, ax=ax,
+                    point_map(points, values=varray, ax=ax,
                               cbar_kw=cbar_options, **plot_options)
                     axes.append(ax)
             else:
-                x, y, z = points[:, 0], points[:, 1], points[:, 2]
                 for varray in exp:
                     ax_index = next(ax_indexes_iter)
                     ax = fig.add_subplot(nrow, ncol, ax_index, projection="3d")
-                    point_map3d(x, y, z, values=varray, ax=ax,
-                                cbar_kw=cbar_options, **plot_options)
+                    point_map(points, values=varray, ax=ax,
+                              cbar_kw=cbar_options, **plot_options)
                     axes.append(ax)
 
     # add title
 
-    roi_label = [", ".join([str(i) for i in roi_name]) for roi_name in roi_names]
+    roi_label = [", ".join([str(i) for i in roi_name]) for roi_name in
+                 roi_names]
     label_index = np.arange(0, nrow * ncol).reshape(nrow, ncol)
     x_index = label_index[0]
     y_index = label_index[:, 0]
