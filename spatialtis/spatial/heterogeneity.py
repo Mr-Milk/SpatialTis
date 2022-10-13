@@ -68,7 +68,7 @@ def spatial_heterogeneity(data: AnnData,
         # type_mapper = {t: i for i, t in enumerate(self.cell_types)}
         for roi_name, cell_types, points in ab.iter_roi(fields=['cell_type', 'centroid']):
             points_collections.append(points)
-            types_collections.append(cell_types)
+            types_collections.append(list(cell_types))
             track_ix.append(roi_name)
 
         ent = spatial_entropy(

@@ -56,7 +56,7 @@ def hotspot(data: AnnData,
             "types": cell_types
         }, index=ix)
         for t, g in roi_iter.groupby("types"):
-            cells = g['cells']
+            cells = list(g['cells'])
             if t in selected_types:
                 hots = getis_ord(
                     cells,

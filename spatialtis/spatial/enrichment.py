@@ -76,7 +76,7 @@ def spatial_enrichment(data: AnnData,
     ):
         result = comb_bootstrap(
             exp,
-            mks,
+            list(mks),
             neighbors,
             labels,
             pval=pval,

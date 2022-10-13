@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from anndata import AnnData
-from matplotlib.colors import ListedColormap
 from milkviz import dot_heatmap, anno_clustermap
 from natsort import natsorted
 from typing import List

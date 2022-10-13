@@ -186,10 +186,13 @@ def read_images(
         if is3d:
             meta['centroid_z'] = measurements['centroid-2']
         else:
-            points = [d.values for _, d in meta[['centroid_x', 'centroid_y']].iterrows()]
+            points = [list(d.values) for _, d in meta[
+                ['centroid_x', 'centroid_y']].iterrows()]
             if geopandas_compatible:
                 meta['wkt_centroid'] = dumps_points_wkt(points)
-                shapes = points_shapes(measurements['coords'], method=shape_approx, concavity=concavity)
+                shapes = points_shapes([c.tolist() for c in measurements['coords']],
+                                       method=shape_approx,
+                                       concavity=concavity)
                 meta['wkt_shape'] = dumps_polygons_wkt(shapes)
 
         meta['area'] = measurements['area']
