@@ -1,4 +1,4 @@
-FROM python:3.10
+FROM python:3.12
 RUN pip install --no-cache-dir scanpy spatialtis==0.5.0rc0 lightgbm scikit-image leidenalg \
     jupyter jupyterlab jupyter_http_over_ws ipywidgets
 WORKDIR /analysis
